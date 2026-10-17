@@ -28,6 +28,8 @@ export interface Backend {
   scrape(target: NormalizedTarget): Promise<SiteMetadata>;
   checkout(req: CheckoutRequest): Promise<CheckoutResult>;
   click(listingId: string): void;
+  /** Newsletter sign-up. */
+  subscribeEmail(email: string): Promise<{ ok: boolean; error?: string }>;
   /** Push updates (simulated live activity or server polling). */
   subscribe(cb: (s: Snapshot) => void): () => void;
   reset?(): void;
@@ -178,6 +180,15 @@ function createLocalBackend(): Backend {
       subs.forEach((cb) => cb(s));
       return { kind: 'applied', state: s.state, listingId: result.listing.id, paymentId: result.payment.id, quote: result.quote };
     },
+    async subscribeEmail(email) {
+      try {
+        const list = JSON.parse(localStorage.getItem('asf:subscribers') ?? '[]') as string[];
+        if (!list.includes(email)) localStorage.setItem('asf:subscribers', JSON.stringify([...list, email]));
+      } catch {
+        /* storage blocked — still acknowledge in the demo */
+      }
+      return { ok: true };
+    },
     click(listingId) {
       persisted = { ...persisted, clicks: { ...persisted.clicks, [listingId]: (persisted.clicks[listingId] ?? 0) + 1 } };
       clicksToday++;
@@ -249,6 +260,7 @@ function createRemoteBackend(health: HealthResponse): Backend {
       }
       return res;
     },
+    subscribeEmail: (email) => json<{ ok: boolean; error?: string }>('/api/newsletter', { method: 'POST', body: JSON.stringify({ email }) }),
     click(listingId) {
       const body = JSON.stringify({ listingId });
       if (!navigator.sendBeacon?.('/api/click', new Blob([body], { type: 'application/json' }))) {

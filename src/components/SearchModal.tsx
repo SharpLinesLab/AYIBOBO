@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { categoryById } from '../lib/categories';
+import { searchListings } from '../lib/search';
 import { usd } from '../lib/format';
 import { useApp } from '../store';
 import { Modal } from './Modal';
@@ -10,24 +11,7 @@ export function SearchModal({ onClose }: { onClose: () => void }) {
   const [q, setQ] = useState('');
   const [active, setActive] = useState(0);
 
-  const results = useMemo(() => {
-    const ranked = new Map(boards.all.map((e) => [e.listing.id, e]));
-    const query = q.trim().toLowerCase();
-    const list = snapshot.state.listings
-      .map((l) => {
-        if (!query) return { l, score: ranked.get(l.id)?.total ?? 0 };
-        const hay = [l.title, l.display, l.tagline, categoryById(l.category).label].join(' ').toLowerCase();
-        const desc = l.description.toLowerCase();
-        let score = 0;
-        if (l.title.toLowerCase().startsWith(query)) score += 100;
-        if (hay.includes(query)) score += 50;
-        if (desc.includes(query)) score += 10;
-        return { l, score };
-      })
-      .filter((r) => r.score > 0 || !query)
-      .sort((a, b) => b.score - a.score);
-    return list.slice(0, 8).map((r) => ({ listing: r.l, entry: ranked.get(r.l.id) }));
-  }, [q, snapshot.state.listings, boards.all]);
+  const results = useMemo(() => searchListings(snapshot.state.listings, boards.all, q), [q, snapshot.state.listings, boards.all]);
 
   const choose = (id: string) => {
     onClose();

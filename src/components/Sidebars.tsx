@@ -3,6 +3,25 @@ import { relativeTime, untilUtcMidnight, usd } from '../lib/format';
 import { computeBoard, rankOnBoard } from '../lib/ranking';
 import { useApp } from '../store';
 import { Thumb } from './Thumb';
+import { togglePreview } from '../lib/audio';
+import type { Listing } from '../lib/types';
+import { PauseIcon, PlayIcon } from './icons';
+import { usePlayer } from './PreviewButton';
+
+function MiniPlay({ listing }: { listing: Listing }) {
+  const player = usePlayer(listing.id);
+  if (!listing.preview) return <span />;
+  const playing = player.playingId === listing.id;
+  return (
+    <button
+      className={`mini-play${playing ? ' is-playing' : ''}`}
+      aria-label={playing ? `Pause ${listing.title}` : `Play ${listing.title} preview`}
+      onClick={() => togglePreview(listing.id, listing.preview!)}
+    >
+      {playing ? <PauseIcon /> : <PlayIcon />}
+    </button>
+  );
+}
 
 export function TodayWidget() {
   const { boards, now, setBoard, openDetail, navigate } = useApp();
@@ -29,7 +48,7 @@ export function TodayWidget() {
       ) : (
         <ol className="mini-list">
           {top.map((e) => (
-            <li key={e.listing.id}>
+            <li key={e.listing.id} className="mini-row-wrap">
               <button className="mini-row" onClick={() => openDetail(e.listing.id)}>
                 <span className="mini-row__rank">#{e.rank}</span>
                 <Thumb art={e.listing.artwork} size="sm" />
@@ -39,6 +58,7 @@ export function TodayWidget() {
                 </span>
                 <span className="mini-row__amt">{usd(e.total)}</span>
               </button>
+              <MiniPlay listing={e.listing} />
             </li>
           ))}
         </ol>

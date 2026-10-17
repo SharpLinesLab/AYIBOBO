@@ -4,7 +4,7 @@ import { detectCategory } from '../src/lib/categories';
 import { generateArtwork, generatePreview, simulateMetadata, type SiteMetadata } from '../src/lib/metadata';
 import type { NormalizedTarget } from '../src/lib/normalize';
 
-const UA = 'Mozilla/5.0 (compatible; soundbid-bot/1.0; +https://soundbid.lol/#/rules)';
+const UA = 'Mozilla/5.0 (compatible; asf-charts-bot/1.0)';
 
 function isPrivateAddress(ip: string): boolean {
   if (isIP(ip) === 4) {

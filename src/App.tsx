@@ -10,6 +10,7 @@ import { AboutPage, CategoriesPage, DailyPage, HomePage, RulesPage } from './com
 import { SearchModal } from './components/SearchModal';
 import { ActivityFeed, TodayWidget } from './components/Sidebars';
 import { StatsModal } from './components/StatsModal';
+import { SubscribeModal } from './components/SubscribeModal';
 
 type Theme = 'light' | 'dark';
 
@@ -17,9 +18,9 @@ function useTheme(): [Theme, () => void] {
   const [theme, setTheme] = useState<Theme>(() => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'));
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute('content', theme === 'dark' ? '#121110' : '#FAF8F5'));
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute('content', theme === 'dark' ? '#121417' : '#F4F5F7'));
     try {
-      localStorage.setItem('soundbid:theme', theme);
+      localStorage.setItem('asf:theme', theme);
     } catch {
       /* ignore */
     }
@@ -102,6 +103,7 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
   const [detailId, setDetailId] = useState<string | null>(null);
   const [statsOpen, setStatsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [subscribeOpen, setSubscribeOpen] = useState(false);
   const [checkout, setCheckout] = useState<CheckoutRequestState | null>(null);
   const [heroPrefill, setHeroPrefill] = useState<HeroPrefill>({ nonce: 0 });
   const [highlightId, setHighlightId] = useState<string | null>(null);
@@ -225,7 +227,7 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
       <a href="#board" className="sr-only">
         Skip to leaderboard
       </a>
-      <TopNav theme={theme} onToggleTheme={toggleTheme} />
+      <TopNav theme={theme} onToggleTheme={toggleTheme} onSubscribe={() => setSubscribeOpen(true)} />
       <CategoryBar />
       <main className="page">
         {route.page === 'home' ? (
@@ -257,6 +259,7 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
       {detailId && <DetailDrawer listingId={detailId} onClose={() => setDetailId(null)} />}
       {statsOpen && <StatsModal onClose={() => setStatsOpen(false)} />}
       {searchOpen && <SearchModal onClose={() => setSearchOpen(false)} />}
+      {subscribeOpen && <SubscribeModal onClose={() => setSubscribeOpen(false)} />}
       {toastMsg && (
         <div className="toast" role="status">
           {toastMsg}

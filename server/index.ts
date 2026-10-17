@@ -29,5 +29,5 @@ const app = createApp({
 });
 
 app.listen(port, () => {
-  console.log(`soundbid server listening on http://localhost:${port}`);
+  console.log(`ASF Charts server listening on http://localhost:${port}`);
 });

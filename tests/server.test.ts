@@ -70,6 +70,11 @@ describe('API server', () => {
     expect(badDraft.status).toBe(400);
   });
 
+  it('accepts newsletter sign-ups and rejects bad emails', async () => {
+    expect((await post('/api/newsletter', { email: 'fan@example.com' })).status).toBe(200);
+    expect((await post('/api/newsletter', { email: 'nope' })).status).toBe(400);
+  });
+
   it('counts clicks', async () => {
     const s = (await (await fetch(`${base}/api/state`)).json()) as StateResponse;
     const l = s.state.listings[0];

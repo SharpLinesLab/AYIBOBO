@@ -2,9 +2,11 @@ import { forwardRef } from 'react';
 import { categoryById } from '../lib/categories';
 import { num, relativeTime, usd } from '../lib/format';
 import { minBidForRank } from '../lib/ranking';
-import type { RankedEntry } from '../lib/types';
+import type { Listing, RankedEntry } from '../lib/types';
 import { useApp } from '../store';
-import { PreviewButton } from './PreviewButton';
+import { PreviewButton, usePlayer } from './PreviewButton';
+import { PauseIcon, PlayIcon } from './icons';
+import { togglePreview } from '../lib/audio';
 import { Thumb } from './Thumb';
 
 interface Props {
@@ -20,7 +22,7 @@ export const ListingCard = forwardRef<HTMLLIElement, Props>(function ListingCard
   const claimFor = minBidForRank(entries, rank);
   return (
     <li ref={ref} className={`card${rank <= 3 ? ' is-top' : ''}${highlight ? ' is-highlight' : ''}`} data-id={listing.id}>
-      <Thumb art={listing.artwork} label={`${listing.title} artwork`} />
+      <QuickPlayThumb listing={listing} />
       <div className="card__body">
         <div className="card__head">
           <span className="card__rank">#{rank}</span>
@@ -66,3 +68,24 @@ export const ListingCard = forwardRef<HTMLLIElement, Props>(function ListingCard
     </li>
   );
 });
+
+/** Artwork with a hover "quick play" overlay; isolated so playback progress only re-renders this. */
+export function QuickPlayThumb({ listing }: { listing: Listing }) {
+  const player = usePlayer(listing.id);
+  const playing = player.playingId === listing.id;
+  return (
+    <div className={`thumb-wrap${playing ? ' is-playing' : ''}`}>
+      <Thumb art={listing.artwork} label={`${listing.title} artwork`} />
+      {listing.preview && (
+        <button
+          type="button"
+          className="thumb-play"
+          aria-label={playing ? `Pause ${listing.title}` : `Quick play ${listing.title}`}
+          onClick={() => togglePreview(listing.id, listing.preview!)}
+        >
+          {playing ? <PauseIcon /> : <PlayIcon />}
+        </button>
+      )}
+    </div>
+  );
+}

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { CATEGORIES, categoryById } from '../lib/categories';
 import { formatDayKey, usd } from '../lib/format';
 import { MAX_BID, MIN_BID, getArchiveBoard, getBoard, shiftDayKey, utcDayKey } from '../lib/ranking';
@@ -6,6 +6,7 @@ import type { CategoryId } from '../lib/types';
 import { useApp } from '../store';
 import { Board } from './Board';
 import { BoardToggle, LivePill } from './Chrome';
+import { FeaturedCarousel } from './FeaturedCarousel';
 import { HeroClaim } from './HeroClaim';
 import { ChevronLeft, ChevronRight } from './icons';
 import { PreviewButton } from './PreviewButton';
@@ -19,9 +20,12 @@ export function HomePage() {
 
   return (
     <>
-      <LivePill />
-      <BoardToggle />
-      <HeroClaim />
+      <FeaturedCarousel />
+      <div className="claim-panel">
+        <LivePill />
+        <BoardToggle />
+        <HeroClaim />
+      </div>
       {filter === 'leaderboards' ? (
         <CategoryLeaderboards />
       ) : filter === 'explore' ? (
@@ -102,6 +106,35 @@ function CategoryLeaderboards() {
   );
 }
 
+/** Horizontal, swipeable row with arrow buttons (scroll-snap). */
+function Row({ label, children }: { label: string; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [edges, setEdges] = useState({ start: true, end: false });
+  const update = () => {
+    const el = ref.current;
+    if (el) setEdges({ start: el.scrollLeft < 4, end: el.scrollLeft + el.clientWidth >= el.scrollWidth - 4 });
+  };
+  useEffect(update, [children]);
+  const page = (dir: 1 | -1) => ref.current?.scrollBy({ left: dir * ref.current.clientWidth * 0.85, behavior: 'smooth' });
+  return (
+    <div className="hrow">
+      {!edges.start && (
+        <button className="hrow__arrow hrow__arrow--prev" onClick={() => page(-1)} aria-label={`Scroll ${label} left`}>
+          <ChevronLeft />
+        </button>
+      )}
+      <div className="hrow__track" ref={ref} role="list" aria-label={label} onScroll={update}>
+        {children}
+      </div>
+      {!edges.end && (
+        <button className="hrow__arrow hrow__arrow--next" onClick={() => page(1)} aria-label={`Scroll ${label} right`}>
+          <ChevronRight />
+        </button>
+      )}
+    </div>
+  );
+}
+
 function Explore() {
   const { snapshot, boards, now, openDetail } = useApp();
   const rankOf = new Map(boards.all.map((e) => [e.listing.id, e]));
@@ -114,7 +147,7 @@ function Explore() {
     if (!e) return null;
     const l = e.listing;
     return (
-      <div className="cat-card" key={l.id}>
+      <div className="cat-card hrow__item" role="listitem" key={l.id}>
         <div className="row">
           <Thumb art={l.artwork} />
           <div style={{ minWidth: 0 }}>
@@ -142,11 +175,11 @@ function Explore() {
           most spend in the last 7 days
         </span>
       </div>
-      <div className="cat-grid">{rising.map((e) => tile(e.listing.id))}</div>
+      <Row label="Rising this week">{rising.map((e) => tile(e.listing.id))}</Row>
       <div className="section-head">
         <h2>Newest listings</h2>
       </div>
-      <div className="cat-grid">{newest.map((l) => tile(l.id))}</div>
+      <Row label="Newest listings">{newest.map((l) => tile(l.id))}</Row>
     </section>
   );
 }

@@ -23,6 +23,7 @@ export interface DbShape {
   pending: Record<string, PendingClaim>;
   daily: Record<string, { visitors: number; clicks: number }>;
   lifetimeVisitors: number;
+  subscribers?: { email: string; at: number }[];
 }
 
 /**

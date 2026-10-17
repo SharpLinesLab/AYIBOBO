@@ -198,6 +198,19 @@ export function createApp(cfg: AppConfig) {
     res.json({ ok: true });
   });
 
+  app.post('/api/newsletter', rateLimit('newsletter', 5, 60_000), async (req, res) => {
+    const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase().slice(0, 254) : '';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      res.status(400).json({ ok: false, error: 'Enter a valid email address.' });
+      return;
+    }
+    await db.mutate((d) => {
+      d.subscribers ??= [];
+      if (!d.subscribers.some((s) => s.email === email)) d.subscribers.push({ email, at: Date.now() });
+    });
+    res.json({ ok: true });
+  });
+
   app.post('/api/resolve', rateLimit('resolve', 60, 60_000), async (req, res) => {
     const input = typeof req.body?.input === 'string' ? req.body.input.slice(0, 500) : '';
     res.json(await resolveAndNormalize(input, resolver));
@@ -271,7 +284,7 @@ export function createApp(cfg: AppConfig) {
               unit_amount: quote.charge * 100,
               product_data: {
                 name: `${quote.mode === 'topup' ? 'Raise rank' : 'Claim rank'}: ${target.display}`.slice(0, 120),
-                description: `New ${board === 'all' ? 'all-time' : 'today'} total $${amount.toLocaleString('en-US')} on soundbid.lol`,
+                description: `New ${board === 'all' ? 'all-time' : 'today'} total $${amount.toLocaleString('en-US')} on ASF Charts`,
               },
             },
           },

@@ -1,4 +1,6 @@
-# soundbid.lol
+# ASF Charts — Ayiti Sakap Fet
+
+The ASF (Ayiti Sakap Fet) public music leaderboard, styled after the ASF music-portal mockup: dark charcoal UI, electric-green accent, featured carousel, hover/quick-play cards and swipeable rows.
 
 **No algorithms, no playlist gatekeepers, no ad networks. Claim a rank on the public music leaderboard — rank is strictly what you pay.**
 
@@ -22,7 +24,7 @@ npm start                       # serves the app and /api on http://localhost:87
 
 Develop against the API with hot reload: `npm run dev:server` in one terminal, then `API_PROXY=http://localhost:8787 npm run dev`.
 
-Docker: `docker build -t soundbid . && docker run -p 8787:8787 -v soundbid-data:/data --env-file .env soundbid`
+Docker: `docker build -t asf-charts . && docker run -p 8787:8787 -v asf-data:/data --env-file .env asf-charts`
 
 ### Two runtime modes
 
@@ -61,6 +63,10 @@ Implemented in `src/lib/ranking.ts`, `src/lib/claim.ts` and `src/lib/normalize.t
    - Ordinary sites are keyed by domain. Shared platforms are keyed by tenant path: `artist.bandcamp.com[/album/x]`, `open.spotify.com/artist/<id>`, `soundcloud.com/<artist>[/<track>|/sets/<set>]`, `splice.com/sounds/packs/<vendor>/<pack>`, `gumroad.com/l/<id>`, `music.apple.com/<type>/<id>`, YouTube, Beatstars, and others.
    - Discord, Telegram, WhatsApp and Signal invites, and NSFW domains, are refused.
 
+## Branding
+
+Brand name, tagline, contact email and social profile URLs live in `src/brand.ts`. Social icons link to each platform's home page until you fill in your profile URLs. Colors are CSS tokens at the top of `src/styles/app.css` (dark by default, with a light theme toggle).
+
 ## Payments (Stripe)
 
 With `STRIPE_SECRET_KEY` set, `POST /api/checkout` re-quotes on the server, stores a pending claim and redirects to Stripe Checkout. The `checkout.session.completed` webhook (`POST /api/stripe/webhook`, verified with `STRIPE_WEBHOOK_SECRET`) credits the amount actually paid. It does so idempotently, keyed per session. The money is final, so if someone outbids you between the quote and the payment, your spend still counts.
@@ -77,6 +83,7 @@ Local webhook testing: `stripe listen --forward-to localhost:8787/api/stripe/web
 | POST | `/api/metadata` | `{input}` → scraped metadata (OpenGraph / title / icon / `og:audio`) |
 | POST | `/api/checkout` | `{input, board, amount, draft}` → `applied` / `redirect` / `error` |
 | POST | `/api/click` | `{listingId}` (outbound click counter) |
+| POST | `/api/newsletter` | `{email}` (Subscribe button) |
 | POST | `/api/ping` | `{visitorId}` (presence and visitor counts) |
 | POST | `/api/stripe/webhook` | Stripe events |
 
