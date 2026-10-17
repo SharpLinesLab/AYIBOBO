@@ -239,7 +239,7 @@ export function CategoriesPage() {
               className="cat-card"
               onClick={() => {
                 setFilter(c.id);
-                navigate('#/');
+                navigate('#/leaderboard');
               }}
             >
               <div className="cat-card__head">

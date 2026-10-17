@@ -91,7 +91,7 @@ export function FeaturedCarousel() {
               <p className="featured__desc">{l.tagline || l.description}</p>
               <div className="featured__actions">
                 {l.preview && (
-                  <button className="btn-watch" tabIndex={active ? 0 : -1} onClick={() => togglePreview(l.id, l.preview!)}>
+                  <button className="btn-watch" tabIndex={active ? 0 : -1} onClick={() => togglePreview(l)}>
                     {playing ? <PauseIcon width={12} height={12} /> : <PlayIcon width={12} height={12} />}
                     {playing ? 'Pause' : 'Play preview'}
                   </button>

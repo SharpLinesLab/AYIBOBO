@@ -16,7 +16,7 @@ function MiniPlay({ listing }: { listing: Listing }) {
     <button
       className={`mini-play${playing ? ' is-playing' : ''}`}
       aria-label={playing ? `Pause ${listing.title}` : `Play ${listing.title} preview`}
-      onClick={() => togglePreview(listing.id, listing.preview!)}
+      onClick={() => togglePreview(listing)}
     >
       {playing ? <PauseIcon /> : <PlayIcon />}
     </button>
@@ -33,7 +33,7 @@ export function TodayWidget() {
         <button
           className="link-btn link-btn--accent"
           onClick={() => {
-            navigate('#/');
+            navigate('#/leaderboard');
             setBoard('today');
             window.setTimeout(() => document.getElementById('board')?.scrollIntoView({ behavior: 'smooth' }), 50);
           }}

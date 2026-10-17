@@ -137,3 +137,43 @@ export const ShareIcon = (p: SVGProps<SVGSVGElement>) => (
     <path d="M14 4v4C7 9 4 14 3 19c2.5-3.5 6-5.1 11-5.1V18l7-7Z" />
   </svg>
 );
+
+const line = (d: string | string[]) => (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base} {...p}>
+    {(Array.isArray(d) ? d : [d]).map((x) => (
+      <path key={x} d={x} />
+    ))}
+  </svg>
+);
+
+export const HomeIcon = line(['M3 10.5 12 3l9 7.5', 'M5 9.5V21h5v-6h4v6h5V9.5']);
+export const FlameIcon = line('M12 22c4 0 7-2.7 7-6.8 0-4-3-6.6-4.3-9.7-.5 2.3-1.7 3.6-3 4.2C11.7 6.7 10.2 4 8.3 2.5 8.6 6 5 8.6 5 13.5 5 18.8 8 22 12 22Z');
+export const ChartIcon = line(['M4 20V10', 'M10 20V4', 'M16 20v-7', 'M22 20H2']);
+export const GridIcon = line(['M4 4h7v7H4z', 'M13 4h7v7h-7z', 'M4 13h7v7H4z', 'M13 13h7v7h-7z']);
+export const LibraryIcon = line(['M4 4v16', 'M9 4v16', 'M14 4l5 16']);
+export const UploadIcon = line(['M12 16V4', 'M6 10l6-6 6 6', 'M4 20h16']);
+export const TrophyIcon = line(['M8 21h8', 'M12 17v4', 'M7 4h10v5a5 5 0 0 1-10 0V4Z', 'M17 6h3a3 3 0 0 1-3 4', 'M7 6H4a3 3 0 0 0 3 4']);
+export const HeartLine = line('M12 20.5s-7.5-4.6-9.3-9.2C1.4 8 3.6 4.5 7.2 4.5c2 0 3.6 1.1 4.8 2.7 1.2-1.6 2.8-2.7 4.8-2.7 3.6 0 5.8 3.5 4.5 6.8-1.8 4.6-9.3 9.2-9.3 9.2Z');
+export const ClockIcon = line(['M12 7v5l3 2', 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z']);
+export const ListIcon = line(['M8 6h13', 'M8 12h13', 'M8 18h13', 'M3 6h.01', 'M3 12h.01', 'M3 18h.01']);
+export const UsersIcon = line(['M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2', 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z', 'M22 21v-2a4 4 0 0 0-3-3.9', 'M16 3.1a4 4 0 0 1 0 7.8']);
+export const ShuffleIcon = line(['M16 3h5v5', 'M4 20 21 3', 'M21 16v5h-5', 'M15 15l6 6', 'M4 4l5 5']);
+export const RepeatIcon = line(['M17 2l4 4-4 4', 'M3 11V9a3 3 0 0 1 3-3h15', 'M7 22l-4-4 4-4', 'M21 13v2a3 3 0 0 1-3 3H3']);
+export const QueueIcon = line(['M3 6h12', 'M3 12h12', 'M3 18h8', 'M17 14v7', 'M21 17l-4-3']);
+export const ExpandIcon = line(['M15 3h6v6', 'M9 21H3v-6', 'M21 3l-7 7', 'M3 21l7-7']);
+export const CollapseIcon = line('m6 9 6 6 6-6');
+export const MoonSleepIcon = line(['M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z', 'M16 3h4l-4 4h4']);
+export const VolumeIcon = line(['M11 5 6 9H2v6h4l5 4V5Z', 'M15.5 8.5a5 5 0 0 1 0 7', 'M19 5a10 10 0 0 1 0 14']);
+export const MuteIcon = line(['M11 5 6 9H2v6h4l5 4V5Z', 'M23 9l-6 6', 'M17 9l6 6']);
+
+export const PrevIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden {...p}>
+    <path d="M6 5h2v14H6zM9.5 12 19 5v14z" />
+  </svg>
+);
+
+export const NextIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden {...p}>
+    <path d="M16 5h2v14h-2zM14.5 12 5 19V5z" />
+  </svg>
+);

@@ -7,16 +7,62 @@ export type Filter = 'all' | 'leaderboards' | 'explore' | CategoryId;
 
 export type Route =
   | { page: 'home' }
+  | { page: 'trending'; genre?: string }
+  | { page: 'charts'; kind: 'songs' | 'albums'; window: 'day' | 'week' | 'month' | 'year' }
+  | { page: 'genres' }
+  | { page: 'genre'; id: string }
+  | { page: 'song'; id: string }
+  | { page: 'album'; id: string }
+  | { page: 'artist'; id: string }
+  | { page: 'playlist'; id: string }
+  | { page: 'library'; tab: string }
+  | { page: 'search'; q: string }
+  | { page: 'upload' }
+  | { page: 'leaderboard' }
   | { page: 'daily'; day?: string }
   | { page: 'categories' }
   | { page: 'about' }
   | { page: 'rules' };
 
 export function parseRoute(hash: string): Route {
-  const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
-  switch (parts[0]) {
+  const [path] = hash.replace(/^#\/?/, '').split('?');
+  const parts = path.split('/').filter(Boolean).map((p) => {
+    try {
+      return decodeURIComponent(p);
+    } catch {
+      return p;
+    }
+  });
+  const [head, a, b] = parts;
+  switch (head) {
+    case 'trending':
+      return { page: 'trending', genre: a };
+    case 'charts': {
+      const kind = a === 'albums' ? 'albums' : 'songs';
+      const window = b === 'day' || b === 'month' || b === 'year' ? b : 'week';
+      return { page: 'charts', kind, window };
+    }
+    case 'genres':
+      return a ? { page: 'genre', id: a } : { page: 'genres' };
+    case 'song':
+      return a ? { page: 'song', id: a } : { page: 'home' };
+    case 'album':
+      return a ? { page: 'album', id: a } : { page: 'home' };
+    case 'artist':
+      return a ? { page: 'artist', id: a } : { page: 'home' };
+    case 'playlist':
+      return a ? { page: 'playlist', id: a } : { page: 'home' };
+    case 'library':
+      return { page: 'library', tab: a ?? 'likes' };
+    case 'search':
+      return { page: 'search', q: a ?? '' };
+    case 'upload':
+      return { page: 'upload' };
+    case 'leaderboard':
+    case 'boost':
+      return { page: 'leaderboard' };
     case 'daily':
-      return { page: 'daily', day: /^\d{4}-\d{2}-\d{2}$/.test(parts[1] ?? '') ? parts[1] : undefined };
+      return { page: 'daily', day: /^\d{4}-\d{2}-\d{2}$/.test(a ?? '') ? a : undefined };
     case 'categories':
       return { page: 'categories' };
     case 'about':

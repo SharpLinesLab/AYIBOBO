@@ -81,7 +81,7 @@ export function QuickPlayThumb({ listing }: { listing: Listing }) {
           type="button"
           className="thumb-play"
           aria-label={playing ? `Pause ${listing.title}` : `Quick play ${listing.title}`}
-          onClick={() => togglePreview(listing.id, listing.preview!)}
+          onClick={() => togglePreview(listing)}
         >
           {playing ? <PauseIcon /> : <PlayIcon />}
         </button>

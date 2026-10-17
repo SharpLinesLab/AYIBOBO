@@ -1,16 +1,25 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { createBackend, type Backend, type Snapshot } from './backend';
 import { stopPreview } from './lib/audio';
 import type { BoardId } from './lib/types';
+import { MusicProvider } from './music';
+import * as player from './player/engine';
 import { AppProvider, parseRoute, useBoards, useNow, type AppContextValue, type Filter, type HeroPrefill } from './store';
-import { CategoryBar, Footer, TopNav } from './components/Chrome';
+import { CategoryBar, Footer } from './components/Chrome';
 import { CheckoutModal, type CheckoutRequestState } from './components/CheckoutModal';
 import { DetailDrawer } from './components/DetailDrawer';
-import { AboutPage, CategoriesPage, DailyPage, HomePage, RulesPage } from './components/Pages';
-import { SearchModal } from './components/SearchModal';
+import { AboutPage, CategoriesPage, DailyPage, HomePage as LeaderboardHome, RulesPage } from './components/Pages';
 import { ActivityFeed, TodayWidget } from './components/Sidebars';
 import { StatsModal } from './components/StatsModal';
 import { SubscribeModal } from './components/SubscribeModal';
+import { Sidebar } from './components/shell/Sidebar';
+import { TopBar } from './components/shell/TopBar';
+import { NowPlaying, PlayerBar } from './components/shell/Player';
+import { MobileTabs } from './components/shell/MobileTabs';
+import { DiscoverPage } from './pages/Discover';
+import { ChartsPage, GenrePage, GenresPage, TrendingPage } from './pages/Browse';
+import { AlbumPage, ArtistPage, PlaylistPage, SongPage } from './pages/Detail';
+import { LibraryPage, SearchPage, UploadPage } from './pages/Library';
 
 type Theme = 'light' | 'dark';
 
@@ -102,7 +111,8 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
   const [filter, setFilter] = useState<Filter>('all');
   const [detailId, setDetailId] = useState<string | null>(null);
   const [statsOpen, setStatsOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [npOpen, setNpOpen] = useState(false);
+  const hasPlayer = useSyncExternalStore(player.subscribe, () => !!player.getState().current);
   const [subscribeOpen, setSubscribeOpen] = useState(false);
   const [checkout, setCheckout] = useState<CheckoutRequestState | null>(null);
   const [heroPrefill, setHeroPrefill] = useState<HeroPrefill>({ nonce: 0 });
@@ -144,14 +154,23 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
     if (status === 'success') void backend.load().then(setSnapshot);
   }, [backend, setSnapshot, toast]);
 
-  // Keyboard: "/" or Cmd/Ctrl+K opens search.
+  // Player keyboard shortcuts: Space play/pause, ←/→ seek, Shift+←/→ prev/next, M mute.
   useEffect(() => {
     const on = (e: KeyboardEvent) => {
-      const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target as HTMLElement)?.tagName ?? '');
-      if ((e.key === '/' && !typing) || (e.key.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey))) {
+      const el = e.target as HTMLElement;
+      if (/^(INPUT|TEXTAREA|SELECT)$/.test(el?.tagName ?? '') || el?.isContentEditable || el?.getAttribute('role') === 'slider') return;
+      // Space on a focused button/link should activate it, not toggle playback.
+      if (e.key === ' ' && /^(BUTTON|A)$/.test(el?.tagName ?? '')) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (!player.getState().current) return;
+      if (e.key === ' ') {
         e.preventDefault();
-        setSearchOpen(true);
-      }
+        player.toggle();
+      } else if (e.key === 'ArrowRight' && e.shiftKey) player.next();
+      else if (e.key === 'ArrowLeft' && e.shiftKey) player.prev();
+      else if (e.key === 'ArrowRight') player.seek(player.getPosition() + 5);
+      else if (e.key === 'ArrowLeft') player.seek(player.getPosition() - 5);
+      else if (e.key.toLowerCase() === 'm') player.toggleMute();
     };
     window.addEventListener('keydown', on);
     return () => window.removeEventListener('keydown', on);
@@ -172,9 +191,9 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
     navigate,
     openDetail: setDetailId,
     openStats: () => setStatsOpen(true),
-    openSearch: () => setSearchOpen(true),
+    openSearch: () => navigate('#/search'),
     prefillHero: (p) => {
-      if (route.page !== 'home') navigate('#/');
+      if (route.page !== 'leaderboard') navigate('#/leaderboard');
       setHeroPrefill((prev) => ({ ...p, nonce: prev.nonce + 1 }));
     },
     heroPrefill,
@@ -191,7 +210,7 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
     if (claimed) {
       // Reveal the freshly claimed listing on the board it was bought on.
       setFilter('all');
-      navigate('#/');
+      navigate('#/leaderboard');
       const { id, from } = claimed;
       setClaimed(null);
       // Scroll first (measured without transforms), then start the climb animation.
@@ -204,8 +223,44 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
     }
   };
 
-  let page;
+  let page: ReactNode;
   switch (route.page) {
+    case 'home':
+      page = <DiscoverPage />;
+      break;
+    case 'trending':
+      page = <TrendingPage genre={route.genre} />;
+      break;
+    case 'charts':
+      page = <ChartsPage kind={route.kind} window={route.window} />;
+      break;
+    case 'genres':
+      page = <GenresPage />;
+      break;
+    case 'genre':
+      page = <GenrePage id={route.id} />;
+      break;
+    case 'song':
+      page = <SongPage key={route.id} id={route.id} />;
+      break;
+    case 'album':
+      page = <AlbumPage id={route.id} />;
+      break;
+    case 'artist':
+      page = <ArtistPage id={route.id} />;
+      break;
+    case 'playlist':
+      page = <PlaylistPage id={route.id} />;
+      break;
+    case 'library':
+      page = <LibraryPage tab={route.tab} />;
+      break;
+    case 'search':
+      page = <SearchPage q={route.q} />;
+      break;
+    case 'upload':
+      page = <UploadPage />;
+      break;
     case 'daily':
       page = <DailyPage day={route.day} />;
       break;
@@ -218,53 +273,65 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
     case 'rules':
       page = <RulesPage />;
       break;
-    default:
-      page = <HomePage />;
-  }
-
-  return (
-    <AppProvider value={value}>
-      <a href="#board" className="sr-only">
-        Skip to leaderboard
-      </a>
-      <TopNav theme={theme} onToggleTheme={toggleTheme} onSubscribe={() => setSubscribeOpen(true)} />
-      <CategoryBar />
-      <main className="page">
-        {route.page === 'home' ? (
+    case 'leaderboard':
+      page = (
+        <div className="lb">
+          <CategoryBar />
           <div className="layout">
             <aside className="sidebar sidebar--left" aria-label="Today">
               <TodayWidget />
             </aside>
-            <div className="main">{page}</div>
+            <div className="main">
+              <LeaderboardHome />
+            </div>
             <aside className="sidebar sidebar--right" aria-label="Activity">
               <ActivityFeed />
             </aside>
           </div>
-        ) : (
-          page
-        )}
-      </main>
-      <Footer />
-
-      {checkout && (
-        <CheckoutModal
-          req={checkout}
-          onClose={closeCheckout}
-          onClaimed={(id, b, from) => {
-            setClaimed({ id, from });
-            setBoard(b);
-          }}
-        />
-      )}
-      {detailId && <DetailDrawer listingId={detailId} onClose={() => setDetailId(null)} />}
-      {statsOpen && <StatsModal onClose={() => setStatsOpen(false)} />}
-      {searchOpen && <SearchModal onClose={() => setSearchOpen(false)} />}
-      {subscribeOpen && <SubscribeModal onClose={() => setSubscribeOpen(false)} />}
-      {toastMsg && (
-        <div className="toast" role="status">
-          {toastMsg}
         </div>
-      )}
+      );
+      break;
+  }
+
+  return (
+    <AppProvider value={value}>
+      <MusicProvider now={now}>
+        <a href="#content" className="sr-only">
+          Skip to content
+        </a>
+        <div className={`app${hasPlayer ? ' has-player' : ''}`}>
+          <Sidebar />
+          <div className="app__main">
+            <TopBar theme={theme} onToggleTheme={toggleTheme} onSubscribe={() => setSubscribeOpen(true)} />
+            <main id="content" className="content" key={route.page === 'leaderboard' ? 'lb' : hash}>
+              {page}
+            </main>
+            <Footer showStats={route.page === 'leaderboard'} />
+          </div>
+          <PlayerBar onExpand={() => setNpOpen(true)} />
+          <MobileTabs />
+        </div>
+        {npOpen && <NowPlaying onClose={() => setNpOpen(false)} />}
+
+        {checkout && (
+          <CheckoutModal
+            req={checkout}
+            onClose={closeCheckout}
+            onClaimed={(id, b, from) => {
+              setClaimed({ id, from });
+              setBoard(b);
+            }}
+          />
+        )}
+        {detailId && <DetailDrawer listingId={detailId} onClose={() => setDetailId(null)} />}
+        {statsOpen && <StatsModal onClose={() => setStatsOpen(false)} />}
+        {subscribeOpen && <SubscribeModal onClose={() => setSubscribeOpen(false)} />}
+        {toastMsg && (
+          <div className="toast" role="status">
+            {toastMsg}
+          </div>
+        )}
+      </MusicProvider>
     </AppProvider>
   );
 }

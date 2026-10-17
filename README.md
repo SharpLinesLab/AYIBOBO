@@ -1,17 +1,53 @@
-# ASF Charts — Ayiti Sakap Fet
+# ASF — Ayiti Sakap Fet Music
 
-The ASF (Ayiti Sakap Fet) public music leaderboard, styled after the ASF music-portal mockup: dark charcoal UI, electric-green accent, featured carousel, hover/quick-play cards and swipeable rows.
+A premium music streaming and discovery platform for Haiti and the diaspora, in the spirit of Audiomack. It has full-length songs, charts, genres, artist, album and playlist pages, a personal library and uploads. It also includes the **Boost Board**, a public pay-to-rank leaderboard where "rank is strictly what you pay".
+
+## Streaming app
+
+- **Discover:**
+  - A cinematic featured-release carousel with blurred-artwork backdrops.
+  - Genre tiles.
+  - Shelves for Jump back in, Trending now, Top songs this week, New releases, Made for you, Featured playlists and Artists to watch.
+  - A Boost Board spotlight.
+- **Browse pages:**
+  - **Trending:** songs ranked by week-over-week growth, with genre filters.
+  - **Top Charts:** songs or albums for today, this week, this month or this year, with ▲▼/NEW movement.
+  - **Genres:** 13 genres, from kompa, rap kreyòl, afrobeats and amapiano to drill, zouk, rara and gospel.
+- **Detail pages:**
+  - **Song:** a scrubbable waveform; play, like and repost buttons; timestamped comments (pinned on the waveform); more from the artist; and similar songs.
+  - **Album and playlist:** play, shuffle play, and save or follow.
+  - **Artist:** a banner, follow, popular songs, releases, appears-on and fans-also-like.
+- **Player:**
+  - A persistent glass player bar with queue, shuffle, repeat (off / all / one), volume and a sleep timer.
+  - A full-screen **Now Playing** view with a live frequency visualizer, the waveform and the queue.
+  - Media Session support for lock-screen and hardware keys.
+  - Keyboard shortcuts: Space play/pause, ←/→ seek, Shift+←/→ previous/next, M mute, `/` search.
+- **Library:** liked songs, your playlists ("⋯ → Add to playlist" on any song), followed artists, recently played, and your uploads.
+- **Search:** grouped, accent-insensitive results as you type, across songs, artists, albums, playlists and Boost Board listings.
+- **Upload:**
+  - Drag in an MP3, WAV, M4A or OGG file; it's decoded in the browser to build the waveform.
+  - Design generative cover art.
+  - Publish with your artist name. The audio is stored in IndexedDB.
+- **Audio without assets:**
+  - Every catalog song is synthesized live with the Web Audio API from a recipe (genre, BPM, key, seed).
+  - Bars are rendered on demand with genre-specific drums, bass, chords and lead, in an intro / verse / hook / break / outro structure. So songs stream from any position with almost no memory.
+  - Artwork is generative SVG.
+- **Look and feel:** a dark premium theme by default with the ASF green accent, plus a light theme, responsive layouts, and a sidebar on desktop or bottom tabs with a mini-player on mobile.
+
+The demo catalog (18 artists, ~100 songs, albums, editorial playlists) is **fictional**. Library data (likes, playlists, follows, comments, uploads) is stored per browser.
+
+## Boost Board (pay-to-rank leaderboard)
 
 **No algorithms, no playlist gatekeepers, no ad networks. Claim a rank on the public music leaderboard — rank is strictly what you pay.**
 
-A pay-to-rank leaderboard for music on the web: standalone artist sites, DAWs and plugins, sample packs, AI music tools, indie labels, beat stores, vinyl and merch, ticketing, communities, sync libraries and synth makers. Its UI, UX and bidding rules follow the outbid.lol pattern, adapted for music.
+A pay-to-rank leaderboard for music on the web: standalone artist sites, DAWs and plugins, sample packs, AI music tools, indie labels, beat stores, vinyl and merch, ticketing, communities, sync libraries and synth makers. Its UI, UX and bidding rules follow the outbid.lol pattern, adapted for music. It's available at `#/leaderboard`.
 
 ## Quick start
 
 ```bash
 npm install
 npm run dev          # self-contained demo at http://localhost:5173 (bids saved in localStorage)
-npm test             # ranking, URL normalization and API tests
+npm test             # catalog/charts/search, ranking, URL normalization and API tests
 ```
 
 Full stack (API server, persistence, Stripe):
@@ -97,8 +133,12 @@ Server hardening:
 ## Project layout
 
 ```
-src/lib/        shared domain logic (ranking, claims, normalization, seed, stats, audio synth)
-src/components/ UI components
+src/catalog/    music catalog: seed, generative covers, play history & charts, search, uploads (IndexedDB)
+src/player/     audio engine (queue, transport, Media Session) and genre synthesizer
+src/pages/      streaming pages (Discover, Browse, Detail, Library/Search/Upload)
+src/music.tsx   catalog + library context and player hooks
+src/lib/        Boost Board domain logic (ranking, claims, normalization, seed, stats)
+src/components/ UI components (shell/, music/, and the Boost Board)
 src/backend.ts  remote/demo data backends
 server/         Express API, JSON datastore, scraping & link resolution
 tests/          vitest suites

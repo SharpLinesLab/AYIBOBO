@@ -26,7 +26,7 @@ export function PreviewButton({ listing }: { listing: Listing }) {
     <button
       type="button"
       className={`preview${playing ? ' is-playing' : ''}`}
-      onClick={() => togglePreview(listing.id, listing.preview!)}
+      onClick={() => togglePreview(listing)}
       aria-label={playing ? `Stop preview of ${listing.title}` : `Play a ${PREVIEW_SECONDS}-second preview of ${listing.title}`}
       aria-pressed={playing}
     >
