@@ -888,3 +888,14 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+/* Keep the sidebar tidy on shorter screens: the promo card is the first thing to go. */
+@media (min-width: 1024px) and (max-height: 940px) {
+  .side__promo {
+    display: none;
+  }
+}
+
+.side > * {
+  flex-shrink: 0;
+}
