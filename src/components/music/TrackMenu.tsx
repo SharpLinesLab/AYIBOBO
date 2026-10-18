@@ -1,3 +1,4 @@
+import { openShare } from './Share';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Track } from '../../catalog/types';
@@ -102,19 +103,9 @@ export function TrackMenu({ track, playlistId }: { track: Track; playlistId?: st
                 </button>
                 <button
                   role="menuitem"
-                  onClick={async () => {
-                    const url = `${location.origin}${location.pathname}#/song/${track.id}`;
-                    try {
-                      if (navigator.share) await navigator.share({ title: track.title, text: m.artistNames(track), url });
-                      else {
-                        await navigator.clipboard.writeText(url);
-                        done('Link copied');
-                        return;
-                      }
-                    } catch {
-                      /* dismissed */
-                    }
+                  onClick={() => {
                     setOpen(false);
+                    openShare({ kind: 'Song', title: track.title, subtitle: m.artistNames(track), cover: track.cover, href: `#/song/${track.id}`, trackId: track.id, peaks: m.peaks(track) });
                   }}
                 >
                   Share

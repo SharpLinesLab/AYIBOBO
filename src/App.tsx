@@ -17,6 +17,7 @@ const DailyPage = lazy(() => import('./components/Pages').then((m) => ({ default
 const CategoriesPage = lazy(() => import('./components/Pages').then((m) => ({ default: m.CategoriesPage })));
 const AboutPage = lazy(() => import('./components/Pages').then((m) => ({ default: m.AboutPage })));
 const RulesPage = lazy(() => import('./components/Pages').then((m) => ({ default: m.RulesPage })));
+const NowPlaying = lazy(() => import('./components/shell/NowPlaying').then((m) => ({ default: m.NowPlaying })));
 const StudioPage = lazy(() => import('./pages/Studio').then((m) => ({ default: m.StudioPage })));
 const TodayWidget = lazy(() => import('./components/Sidebars').then((m) => ({ default: m.TodayWidget })));
 const ActivityFeed = lazy(() => import('./components/Sidebars').then((m) => ({ default: m.ActivityFeed })));
@@ -32,8 +33,10 @@ import { SubscribeModal } from './components/SubscribeModal';
 import { Sidebar } from './components/shell/Sidebar';
 import { TopBar } from './components/shell/TopBar';
 import { SettingsPage } from './pages/Settings';
+import { PaletteHost } from './components/shell/PaletteHost';
+import { ShareHost } from './components/music/Share';
 import { ConnectionBanner } from './components/music/Offline';
-import { NowPlaying, NowPlayingPanel, PlayerBar, usePanelOpen, type NpTab } from './components/shell/Player';
+import { NowPlayingPanel, PlayerBar, usePanelOpen, type NpTab } from './components/shell/Player';
 import { MobileTabs } from './components/shell/MobileTabs';
 import { DiscoverPage } from './pages/Discover';
 import { ChartsPage, GenrePage, GenresPage, NotFound, TrendingPage } from './pages/Browse';
@@ -60,6 +63,8 @@ function useTheme(): [Theme, () => void] {
 function useHashRoute() {
   const [hash, setHash] = useState(() => window.location.hash);
   useEffect(() => {
+    // Commit navigations immediately (not as transitions) so pages respond instantly; pages
+    // animate themselves in with CSS.
     const on = () => setHash(window.location.hash);
     window.addEventListener('hashchange', on);
     return () => window.removeEventListener('hashchange', on);
@@ -142,6 +147,10 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
   const [npTab, setNpTab] = useState<NpTab | null>(null);
   const [panelOpen, setPanelOpen] = usePanelOpen();
   const hasPlayer = useSyncExternalStore(player.subscribe, () => !!player.getState().current);
+  // Once something plays, fetch the full-screen player and queue in the background so they open instantly.
+  useEffect(() => {
+    if (hasPlayer) void import('./components/shell/NowPlaying');
+  }, [hasPlayer]);
   const [subscribeOpen, setSubscribeOpen] = useState(false);
   const [checkout, setCheckout] = useState<CheckoutRequestState | null>(null);
   const [heroPrefill, setHeroPrefill] = useState<HeroPrefill>({ nonce: 0 });
@@ -353,7 +362,13 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
           {panelOpen && hasPlayer && <NowPlayingPanel onClose={() => setPanelOpen(false)} onLyrics={() => setNpTab('lyrics')} />}
           <MobileTabs />
         </div>
-        {npTab && <NowPlaying initialTab={npTab} onClose={() => setNpTab(null)} />}
+        <ShareHost />
+        <PaletteHost onToggleTheme={toggleTheme} onLyrics={() => setNpTab('lyrics')} />
+        {npTab && (
+          <Suspense fallback={null}>
+            <NowPlaying initialTab={npTab} onClose={() => setNpTab(null)} />
+          </Suspense>
+        )}
 
         <Suspense fallback={null}>
         {checkout && (

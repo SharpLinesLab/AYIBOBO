@@ -1,8 +1,9 @@
 import { useMusic, usePlayerState } from '../music';
 import { clearOffline, requestPersistence, useOnline, useServiceWorker, useStorageInfo } from '../offline';
-import { MAX_CROSSFADE, setCrossfade } from '../player/engine';
+import { MAX_CROSSFADE, setAutoplay, setCrossfade } from '../player/engine';
 import { useApp } from '../store';
 import { PageHead } from './Browse';
+import { SoundPanel } from '../components/music/SoundPanel';
 
 function bytes(n: number): string {
   if (n >= 1e9) return `${(n / 1e9).toFixed(1)} GB`;
@@ -59,6 +60,26 @@ export function SettingsPage() {
             </output>
           </div>
         </div>
+        <div className="set-row">
+          <div className="set-row__text">
+            <label htmlFor="autoplay" className="set-row__title">
+              Autoplay
+            </label>
+            <p className="muted">When your music ends, keep listening with similar songs.</p>
+          </div>
+          <label className="switch">
+            <input id="autoplay" type="checkbox" role="switch" checked={player.autoplay} onChange={(e) => setAutoplay(e.target.checked)} />
+            <span aria-hidden />
+          </label>
+        </div>
+      </section>
+
+      <section className="card-panel set-group" aria-labelledby="set-sound">
+        <h2 className="panel-title" id="set-sound">
+          Sound
+        </h2>
+        <p className="muted set-intro">Shape how everything sounds: equalizer presets, a bass boost, or sped-up and slowed + reverb versions of any song.</p>
+        <SoundPanel />
       </section>
 
       <section className="card-panel set-group" aria-labelledby="set-offline">

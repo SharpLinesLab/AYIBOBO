@@ -23,6 +23,8 @@ export interface Playable {
   subtitleHref?: string;
   /** Short previews are not added to "recently played". */
   preview?: boolean;
+  /** Added by autoplay after your own queue ran out. */
+  autoplay?: boolean;
 }
 
 export type RepeatMode = 'off' | 'all' | 'one';
@@ -42,6 +44,46 @@ export interface PlayerState {
   sleepAt: number | null;
   /** Seconds the end of a song overlaps the start of the next (0 = off, gapless). */
   crossfade: number;
+  sound: SoundSettings;
+  /** Keep playing similar songs when the queue ends. */
+  autoplay: boolean;
+}
+
+/** EQ, speed and space. Gains are dB for the 5 bands in `EQ_BANDS`. */
+export interface SoundSettings {
+  preset: string;
+  gains: number[];
+  speed: number;
+  keepPitch: boolean;
+  reverb: number;
+}
+
+export const EQ_BANDS = [60, 230, 910, 3600, 14000];
+export const EQ_PRESETS: { id: string; label: string; gains: number[] }[] = [
+  { id: 'flat', label: 'Flat', gains: [0, 0, 0, 0, 0] },
+  { id: 'bass', label: 'Bass boost', gains: [7, 4, 0, 0, 0] },
+  { id: 'warm', label: 'Kompa warmth', gains: [4, 2, -1, 1, 3] },
+  { id: 'vocal', label: 'Vocals', gains: [-2, 0, 3, 4, 1] },
+  { id: 'treble', label: 'Treble', gains: [0, 0, 0, 3, 6] },
+  { id: 'night', label: 'Late night', gains: [-3, -1, 0, -1, -4] },
+];
+export const VIBES: { id: string; label: string; speed: number; keepPitch: boolean; reverb: number }[] = [
+  { id: 'normal', label: 'Normal', speed: 1, keepPitch: true, reverb: 0 },
+  { id: 'sped', label: 'Sped up', speed: 1.2, keepPitch: false, reverb: 0 },
+  { id: 'slowed', label: 'Slowed + reverb', speed: 0.85, keepPitch: false, reverb: 0.4 },
+];
+const DEFAULT_SOUND: SoundSettings = { preset: 'flat', gains: [0, 0, 0, 0, 0], speed: 1, keepPitch: true, reverb: 0 };
+
+function cleanSound(v: unknown): SoundSettings {
+  const o = (v && typeof v === 'object' ? v : {}) as Partial<SoundSettings>;
+  const clamp = (n: unknown, lo: number, hi: number, d: number) => (typeof n === 'number' && isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d);
+  return {
+    preset: typeof o.preset === 'string' ? o.preset : 'flat',
+    gains: EQ_BANDS.map((_, i) => clamp(o.gains?.[i], -12, 12, 0)),
+    speed: clamp(o.speed, 0.5, 1.5, 1),
+    keepPitch: o.keepPitch !== false,
+    reverb: clamp(o.reverb, 0, 1, 0),
+  };
 }
 
 type Listener = (s: PlayerState) => void;
@@ -49,8 +91,8 @@ type PosListener = (position: number, duration: number) => void;
 
 const PREFS_KEY = 'asf:player';
 
-type Prefs = Pick<PlayerState, 'volume' | 'muted' | 'shuffle' | 'repeat' | 'crossfade'>;
-const PREF_KEYS = ['volume', 'muted', 'shuffle', 'repeat', 'crossfade'] as const;
+type Prefs = Pick<PlayerState, 'volume' | 'muted' | 'shuffle' | 'repeat' | 'crossfade' | 'sound' | 'autoplay'>;
+const PREF_KEYS = ['volume', 'muted', 'shuffle', 'repeat', 'crossfade', 'sound', 'autoplay'] as const;
 export const MAX_CROSSFADE = 12;
 
 function loadPrefs(): Prefs {
@@ -62,9 +104,11 @@ function loadPrefs(): Prefs {
       shuffle: !!p.shuffle,
       repeat: p.repeat === 'all' || p.repeat === 'one' ? p.repeat : 'off',
       crossfade: typeof p.crossfade === 'number' ? Math.min(MAX_CROSSFADE, Math.max(0, Math.round(p.crossfade))) : 0,
+      sound: cleanSound(p.sound),
+      autoplay: p.autoplay !== false,
     };
   } catch {
-    return { volume: 0.85, muted: false, shuffle: false, repeat: 'off', crossfade: 0 };
+    return { volume: 0.85, muted: false, shuffle: false, repeat: 'off', crossfade: 0, sound: DEFAULT_SOUND, autoplay: true };
   }
 }
 
@@ -76,6 +120,10 @@ const playListeners = new Set<(p: Playable) => void>();
 let ac: AudioContext | null = null;
 let master: GainNode | null = null;
 let analyser: AnalyserNode | null = null;
+let eq: BiquadFilterNode[] = [];
+let wet: GainNode | null = null;
+/** Playback speed of the current voice (song seconds per real second). */
+let curRate = 1;
 let raf = 0;
 let watchTimer = 0;
 let sleepTimer = 0;
@@ -162,8 +210,57 @@ function ensureContext(): AudioContext {
   analyser = ac.createAnalyser();
   analyser.fftSize = 256;
   analyser.smoothingTimeConstant = 0.8;
-  master.connect(comp).connect(analyser).connect(ac.destination);
+  // master → 5-band EQ → compressor → analyser → out, with a reverb send off the EQ.
+  eq = EQ_BANDS.map((f, i) => {
+    const b = ac!.createBiquadFilter();
+    b.type = i === 0 ? 'lowshelf' : i === EQ_BANDS.length - 1 ? 'highshelf' : 'peaking';
+    b.frequency.value = f;
+    b.Q.value = 1;
+    return b;
+  });
+  let node: AudioNode = master;
+  for (const b of eq) node = node.connect(b);
+  node.connect(comp);
+  const verb = ac.createConvolver();
+  verb.buffer = impulse(ac, 2.6);
+  wet = ac.createGain();
+  node.connect(verb).connect(wet).connect(comp);
+  comp.connect(analyser).connect(ac.destination);
+  applySound(state.sound);
   return ac;
+}
+
+/** Synthetic room: decaying stereo noise. */
+function impulse(ctx: AudioContext, seconds: number): AudioBuffer {
+  const len = Math.floor(ctx.sampleRate * seconds);
+  const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let c = 0; c < 2; c++) {
+    const d = buf.getChannelData(c);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len) ** 3;
+  }
+  return buf;
+}
+
+function applySound(snd: SoundSettings) {
+  if (!ac) return;
+  const t = ac.currentTime;
+  eq.forEach((b, i) => b.gain.setTargetAtTime(snd.gains[i], t, 0.05));
+  wet?.gain.setTargetAtTime(snd.reverb * 0.55, t, 0.08);
+}
+
+/** Change EQ / speed / reverb. Speed changes restart the current song at the same spot. */
+export function setSound(patch: Partial<SoundSettings>) {
+  const before = state.sound;
+  const sound = cleanSound({ ...before, ...patch });
+  emit({ sound });
+  applySound(sound);
+  const cur = state.current;
+  if (!cur || (sound.speed === before.speed && sound.keepPitch === before.keepPitch)) return;
+  if (voice?.slot) {
+    voice.slot.el.playbackRate = sound.speed;
+    voice.slot.el.preservesPitch = sound.keepPitch;
+    curRate = sound.speed;
+  } else if (state.playing) void startCurrent(getPosition());
 }
 
 export function getPosition(): number {
@@ -171,7 +268,7 @@ export function getPosition(): number {
   if (!cur) return 0;
   if (!state.playing || !ac || !voice) return pausedAt;
   if (voice.slot) return voice.slot.el.currentTime;
-  return Math.min(cur.duration, Math.max(0, ac.currentTime - trackT0));
+  return Math.min(cur.duration, Math.max(0, (ac.currentTime - trackT0) * curRate));
 }
 
 function tickPosition() {
@@ -188,7 +285,30 @@ function tickPosition() {
 /** Whether finishing the current item would continue into another one. */
 function hasAutoNext(): boolean {
   if (state.repeat === 'one') return false;
-  return orderPos() < order.length - 1 || (state.repeat === 'all' && order.length > 1);
+  return orderPos() < order.length - 1 || (state.repeat === 'all' && order.length > 1) || (state.autoplay && !state.current?.preview);
+}
+
+/** Supplies similar songs when the queue runs out (set by the music layer). */
+let autoplayProvider: ((last: Playable, queue: Playable[]) => Playable[]) | null = null;
+
+export function setAutoplayProvider(fn: (last: Playable, queue: Playable[]) => Playable[]) {
+  autoplayProvider = fn;
+}
+
+export function setAutoplay(on: boolean) {
+  emit({ autoplay: on });
+}
+
+/** Append autoplay songs to the queue; true if any were added. */
+function extendWithAutoplay(): boolean {
+  const cur = state.current;
+  if (!state.autoplay || !cur || cur.preview || !autoplayProvider) return false;
+  const more = autoplayProvider(cur, state.queue).filter((p) => !state.queue.some((q) => q.id === p.id));
+  if (!more.length) return false;
+  const base = state.queue.length;
+  emit({ queue: [...state.queue, ...more.map((p) => ({ ...p, autoplay: true }))] });
+  order.push(...more.map((_, i) => base + i));
+  return true;
 }
 
 /**
@@ -250,19 +370,23 @@ function startSynth(recipe: SynthRecipe, duration: number, from: number, fade: n
   const gain = ctx.createGain();
   gain.connect(master!);
   fadeIn(gain, fade);
-  const barDur = barSeconds(recipe);
+  // Speed: render bars at a scaled tempo; without "keep pitch" also transpose (sped up / slowed).
+  const { speed, keepPitch } = state.sound;
+  curRate = speed;
+  const played = speed === 1 ? recipe : { ...recipe, bpm: recipe.bpm * speed, root: recipe.root + (keepPitch ? 0 : Math.round(12 * Math.log2(speed))) };
+  const barDur = barSeconds(played);
   const total = barCount(recipe, duration);
   const startAt = ctx.currentTime + 0.06;
-  const t0 = startAt - from;
+  const t0 = startAt - from / speed;
   trackT0 = t0;
-  let nextBar = Math.floor(from / barDur);
+  let nextBar = Math.floor(from / barSeconds(recipe));
   const v: Voice = { gain, timer: 0 };
   const schedule = () => {
     if (!ac) return;
     // Background tabs throttle timers to ~1s, so schedule further ahead while hidden.
     const horizon = ac.currentTime + (document.hidden ? 3 : 0.8);
     while (nextBar < total && t0 + nextBar * barDur < horizon) {
-      renderBar(ac, gain, recipe, nextBar, total, t0 + nextBar * barDur, startAt);
+      renderBar(ac, gain, played, nextBar, total, t0 + nextBar * barDur, startAt);
       nextBar++;
     }
   };
@@ -302,6 +426,9 @@ async function startFile(url: string, from: number, my: number, fade: number) {
     if (my !== token) return;
     if (slot.el.src !== src) slot.el.src = src;
     slot.el.currentTime = from;
+    slot.el.playbackRate = state.sound.speed;
+    slot.el.preservesPitch = state.sound.keepPitch;
+    curRate = state.sound.speed;
     await slot.el.play();
   } catch {
     if (my === token) emit({ playing: false });
@@ -413,7 +540,12 @@ export function next(auto = false, fade = 0) {
     void startCurrent(0, fade);
     return;
   }
-  // End of the queue.
+  // End of the queue: repeat, keep going with similar songs, or stop.
+  if (state.repeat === 'off' && extendWithAutoplay()) {
+    setCurrent(order[p + 1]);
+    void startCurrent(0, fade);
+    return;
+  }
   if (state.repeat === 'all' || (!auto && order.length > 1)) {
     setCurrent(order[0]);
     void startCurrent(0, fade);
@@ -503,6 +635,29 @@ export function removeFromQueue(id: string) {
   const q = state.queue.filter((x) => x.id !== id);
   emit({ queue: q, index: q.findIndex((x) => x.id === state.current?.id) });
   rebuildOrderKeepingCurrent();
+}
+
+/** Songs that will play after the current one, in play order (respects shuffle). */
+export function getUpNext(): Playable[] {
+  const p = orderPos();
+  return p < 0 ? state.queue.slice(state.index + 1) : order.slice(p + 1).map((i) => state.queue[i]).filter(Boolean);
+}
+
+/**
+ * Rearrange what plays next (drag-and-drop in the queue). The new arrangement becomes the play
+ * order — played songs stay before the current one.
+ */
+export function reorderUpNext(ids: string[]) {
+  const cur = state.current;
+  if (!cur) return;
+  const upcoming = getUpNext();
+  const byId = new Map(upcoming.map((p) => [p.id, p]));
+  const next = ids.map((id) => byId.get(id)).filter((p): p is Playable => !!p);
+  const rest = upcoming.filter((p) => !ids.includes(p.id));
+  const done = state.queue.filter((p) => p.id !== cur.id && !byId.has(p.id));
+  const queue = [...done, cur, ...next, ...rest];
+  emit({ queue, index: done.length });
+  order = queue.map((_, i) => i);
 }
 
 export function jumpTo(id: string) {

@@ -9,7 +9,8 @@ export function TrackCard({ track, context, rank }: { track: Track; context?: Tr
   const { current } = useIsCurrent([track.id]);
   return (
     <div className={`mcard${current ? ' is-current' : ''}`} role="listitem">
-      <a className="mcard__art" href={`#/song/${track.id}`} aria-label={track.title}>
+      <a className="mcard__art" href={`#/song/${track.id}`}>
+        <span className="sr-only">{track.title}</span>
         <Cover spec={track.cover} />
         {rank !== undefined && <span className="mcard__rank">{rank}</span>}
       </a>
@@ -63,7 +64,8 @@ export function AlbumCard({ album }: { album: Album }) {
   const tracks = m.tracksOf(album.trackIds);
   return (
     <div className="mcard" role="listitem">
-      <a className="mcard__art" href={`#/album/${album.id}`} aria-label={album.title}>
+      <a className="mcard__art" href={`#/album/${album.id}`}>
+        <span className="sr-only">{album.title}</span>
         <Cover spec={album.cover} />
       </a>
       <span className="mcard__play">
@@ -85,7 +87,8 @@ export function PlaylistCard({ playlist }: { playlist: Playlist }) {
   const tracks = m.tracksOf(playlist.trackIds);
   return (
     <div className="mcard" role="listitem">
-      <a className="mcard__art" href={`#/playlist/${playlist.id}`} aria-label={playlist.title}>
+      <a className="mcard__art" href={`#/playlist/${playlist.id}`}>
+        <span className="sr-only">{playlist.title}</span>
         <Cover spec={playlist.cover} />
       </a>
       <span className="mcard__play">
@@ -105,7 +108,8 @@ export function ArtistCard({ artist }: { artist: Artist }) {
   const following = m.library.follows.includes(artist.id);
   return (
     <div className="mcard mcard--artist" role="listitem">
-      <a className="mcard__art" href={`#/artist/${artist.id}`} aria-label={artist.name}>
+      <a className="mcard__art" href={`#/artist/${artist.id}`}>
+        <span className="sr-only">{artist.name}</span>
         <Cover spec={artist.avatar} round />
         <span className="mcard__initials" aria-hidden>
           {artist.name
@@ -159,7 +163,7 @@ export function PosterCard({ artist }: { artist: Artist }) {
   const top = m.artistTracks(artist.id).filter((t) => t.artistId === artist.id);
   return (
     <div className="poster" role="listitem">
-      <a href={`#/artist/${artist.id}`} className="poster__link" aria-label={artist.name}>
+      <a href={`#/artist/${artist.id}`} className="poster__link">
         <Cover spec={artist.poster} className="poster__img" />
         <span className="poster__shade" aria-hidden />
         <span className="poster__text">

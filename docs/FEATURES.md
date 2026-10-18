@@ -44,3 +44,43 @@
 - **Your uploads ("me"):** plays counted on this device, per day.
 - **Demo artist profiles:** simulated numbers from the sample catalog, labelled as such on the page.
 - **Before launch:** real listener counts, cities and stream sources need accounts and server-side play logging. See the launch blockers in `UI-UX-AUDIT.md`.
+
+## Sound: equalizer, speed and reverb
+- **Where:** the sliders button in the player bar and in the phone player, plus Settings → Sound.
+- **Equalizer:** presets (Bass boost, Kompa warmth, Vocals, Treble, Late night) or a custom 5-band EQ.
+- **Vibes:** "Sped up" and "Slowed + reverb" versions of any song.
+- **Speed:** adjustable, with or without keeping the original pitch.
+- **How it works:** everything runs in Web Audio and is saved per device.
+
+## Autoplay
+When the queue ends, ASF keeps going with similar songs:
+- same artist and collaborators first, then the same genre, then songs you've liked
+- recently played songs are skipped
+- the songs appear under "Autoplay" in the queue
+- it can be turned off in Settings → Playback
+
+## Queue
+- **Reorder:** drag songs by their handle, or use the ↑/↓ buttons from the keyboard. The new order is what plays next, even with shuffle on.
+- **Phones:** swipe down on the artwork, the header or the grab bar to close the full-screen player.
+
+## Sharing
+Share buttons sit on songs, albums, playlists and artists, and in the ⋯ menu. The share sheet offers:
+- WhatsApp, X, Facebook and Telegram
+- the native share menu
+- copy link
+- **Start at m:ss** while the song is playing. The song page then offers "Shared moment · play from m:ss".
+- a downloadable 1080×1920 story image for Instagram, TikTok or WhatsApp Status
+
+## Command palette
+- **Open it:** ⌘K / Ctrl+K. (`/` still focuses the search box.)
+- **Search:** find songs, artists, albums and playlists.
+- **Actions:** play/pause, play or shuffle liked songs, sleep timer, lyrics, theme, settings, and so on.
+
+## Testing
+- **Unit tests:** `npm test` (vitest).
+- **End-to-end:** `npm run test:e2e` builds the app and runs Playwright against the production server, on desktop and mobile. It covers:
+  - axe accessibility checks (WCAG 2.1 AA), page overflow and console errors on 20 pages in both themes
+  - navigation and focus
+  - player features
+  - offline mode
+- **CI:** `.github/workflows/ci.yml` runs the typecheck, unit tests, build and end-to-end tests on every push.

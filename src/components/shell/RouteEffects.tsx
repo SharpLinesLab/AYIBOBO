@@ -74,8 +74,10 @@ export function RouteEffects({ hash }: { hash: string }) {
     document.title = route.page === 'home' ? title : `${title} · ASF`;
   }, [title, route.page]);
 
-  // Remember scroll per history entry.
+  // Remember scroll per history entry. The browser's own restoration is off: it would restore
+  // against the previous page's layout before React renders the new one.
   useEffect(() => {
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
     let raf = 0;
     const on = () => {
       cancelAnimationFrame(raf);

@@ -15,7 +15,8 @@ import { ArtistLinks, TrackList } from '../components/music/TrackRow';
 import { LyricsEditor, LyricsView, hasLyrics } from '../components/music/Lyrics';
 import { DownloadButton } from '../components/music/Offline';
 import { Waveform } from '../components/music/Waveform';
-import { ShuffleIcon } from '../components/icons';
+import { PlayIcon, ShareIcon, ShuffleIcon } from '../components/icons';
+import { openShare, type ShareTarget } from '../components/music/Share';
 import { NotFound } from './Browse';
 import { PageTint, StickyBar, useWatchRef } from '../components/music/premium';
 
@@ -93,6 +94,26 @@ function seedComments(t: Track, now: number): Comment[] {
   })).sort((a, b) => b.at - a.at);
 }
 
+function ShareButton({ target, icon }: { target: ShareTarget; icon?: boolean }) {
+  return (
+    <button className={icon ? 'round-btn' : 'btn-glass'} onClick={() => openShare(target)} aria-label={icon ? `Share ${target.title}` : undefined}>
+      <ShareIcon width={16} height={16} /> {!icon && 'Share'}
+    </button>
+  );
+}
+
+/** "?t=83" on a shared song link: offer to play from that moment. */
+function SharedMoment({ track }: { track: Track }) {
+  const m = useMusic();
+  const t = Number(new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('t'));
+  if (!t || t <= 0 || t >= track.duration) return null;
+  return (
+    <button className="moment" onClick={() => m.play([track], 0, t)}>
+      <PlayIcon width={14} height={14} /> Shared moment · play from {fmtTime(t)}
+    </button>
+  );
+}
+
 function SongLyrics({ track }: { track: Track }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -146,6 +167,7 @@ export function SongPage({ id }: { id: string }) {
         <div className="dhero__by">
           <ArtistLinks track={t} />
         </div>
+        <SharedMoment track={t} />
         <div className="dhero__meta">
           <a href={`#/genres/${t.genre}`} className="tag">
             {genreById(t.genre).label}
@@ -177,6 +199,9 @@ export function SongPage({ id }: { id: string }) {
             <RepostIcon /> {reposted ? 'Reposted' : 'Repost'}
           </button>
           <DownloadButton tracks={[t]} label={t.title} />
+          <ShareButton
+            target={{ kind: 'Song', title: t.title, subtitle: m.artistNames(t), cover: t.cover, href: `#/song/${t.id}`, trackId: t.id, peaks: m.peaks(t) }}
+          />
           <TrackMenu track={t} />
         </div>
       </DetailHero>
@@ -281,6 +306,7 @@ export function AlbumPage({ id }: { id: string }) {
             <HeartIcon filled={saved} /> {saved ? 'Saved' : 'Save'}
           </button>
           <DownloadButton tracks={tracks} label={a.title} />
+          <ShareButton target={{ kind: 'Album', title: a.title, subtitle: m.artist(a.artistId)?.name ?? '', cover: a.cover, href: `#/album/${a.id}` }} />
         </div>
       </DetailHero>
       <section className="card-panel">
@@ -338,6 +364,7 @@ export function PlaylistPage({ id }: { id: string }) {
             </button>
           )}
           {tracks.length > 0 && <DownloadButton tracks={tracks} label={p.title} />}
+          <ShareButton target={{ kind: 'Playlist', title: p.title, subtitle: `Playlist by ${p.curator}`, cover: p.cover, href: `#/playlist/${p.id}` }} />
         </div>
       </DetailHero>
       <section className="card-panel">
@@ -400,6 +427,7 @@ export function ArtistPage({ id }: { id: string }) {
               <button className={`follow-btn follow-btn--lg${following ? ' is-on' : ''}`} onClick={() => m.toggleFollow(a.id)}>
                 {following ? 'Following' : 'Follow'}
               </button>
+              <ShareButton icon target={{ kind: 'Artist', title: a.name, subtitle: `${compact(m.followerCount(a))} followers on ASF`, cover: a.avatar, href: `#/artist/${a.id}` }} />
               <span className="muted">{a.handle}</span>
             </div>
           </div>

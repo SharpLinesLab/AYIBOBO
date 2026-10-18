@@ -26,7 +26,8 @@ export function Sidebar() {
   const active = (page: string) => route.page === page || (page === 'genres' && route.page === 'genre');
   return (
     <aside className="side" aria-label="Main navigation">
-      <a href="#/" className="side__brand" aria-label="ASF home">
+      <a href="#/" className="side__brand">
+        <span className="sr-only">ASF — Ayiti Sakap Fet, home</span>
         <AsfLogo />
       </a>
       <nav className="side__group" aria-label="Browse">

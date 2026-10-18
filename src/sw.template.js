@@ -3,7 +3,7 @@
  * - App shell (HTML, JS, CSS, icons) is precached, so the app opens and plays with no network.
  *   Catalog songs are synthesized on the device and uploads live in IndexedDB, so they play offline.
  * - Hashed /assets/* are cache-first; pages are network-first with the cached shell as fallback.
- * - Images and fonts are cached as they're used. Downloaded audio lives in its own cache
+ * - Fonts are self-hosted and precached; images are cached as they're used. Downloaded audio lives in its own cache
  *   ("asf-audio-v1") that is never purged on update; the app reads it directly.
  * - API calls always go to the network.
  */
@@ -70,8 +70,5 @@ self.addEventListener('fetch', (event) => {
     if (url.pathname.startsWith('/assets/')) return event.respondWith(cacheFirst(req, RUNTIME));
     if (req.headers.has('range')) return; // media streams
     return event.respondWith(staleWhileRevalidate(req));
-  }
-  if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
-    event.respondWith(url.hostname === 'fonts.gstatic.com' ? cacheFirst(req, RUNTIME) : staleWhileRevalidate(req));
   }
 });

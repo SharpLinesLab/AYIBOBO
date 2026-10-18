@@ -30,7 +30,7 @@ function GlobalSearch() {
     const onDoc = (e: MouseEvent) => !wrap.current?.contains(e.target as Node) && setOpen(false);
     const onKey = (e: KeyboardEvent) => {
       const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target as HTMLElement)?.tagName ?? '');
-      if ((e.key === '/' && !typing) || (e.key.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey))) {
+      if (e.key === '/' && !typing) {
         e.preventDefault();
         input.current?.focus();
         setOpen(true);

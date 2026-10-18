@@ -10,7 +10,7 @@ import { createMixes } from './catalog/mixes';
 import { createCatalog } from './catalog/seed';
 import type { Album, Artist, Catalog, Playlist, Track } from './catalog/types';
 import { deleteAudio, loadAudio } from './catalog/uploads';
-import { getPosition, getState, onPlay, playQueue, subscribe, subscribePosition, toggleItem, type Playable, type PlayerState } from './player/engine';
+import { getPosition, getState, onPlay, playQueue, setAutoplayProvider, subscribe, subscribePosition, toggleItem, type Playable, type PlayerState } from './player/engine';
 import { synthPeaks } from './player/synth';
 import { isStreamed, removeFromOffline, saveForOffline } from './offline';
 
@@ -224,6 +224,32 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
     }),
     [artistNames, maps],
   );
+
+  // Autoplay: when the queue runs out, continue with songs like the last one — same artist and
+  // collaborators first, then the same genre — skipping what was just played.
+  useEffect(() => {
+    setAutoplayProvider((last, queue) => {
+      const t = maps.tracks.get(last.id);
+      if (!t) return [];
+      const recent = new Set([...queue.map((q) => q.id), ...library.recents.slice(0, 30)]);
+      const people = new Set([t.artistId, ...(t.featuring ?? [])]);
+      const liked = new Set(library.likes);
+      const score = (x: Track) => {
+        let v = 0;
+        if (people.has(x.artistId) || x.featuring?.some((a) => people.has(a))) v += 3;
+        if (x.genre === t.genre) v += 2;
+        if (liked.has(x.id)) v += 1.5;
+        v += Math.min(1.5, x.popularity / 4);
+        return v + Math.random() * 1.2; // a little variety each time
+      };
+      return catalog.tracks
+        .filter((x) => !recent.has(x.id) && !x.uploaded && x.id !== t.id)
+        .map((x) => ({ x, v: score(x) }))
+        .sort((a, b) => b.v - a.v)
+        .slice(0, 10)
+        .map(({ x }) => toPlayable(x));
+    });
+  }, [catalog, maps, library.recents, library.likes, toPlayable]);
 
   // Count plays & recents for real tracks.
   useEffect(

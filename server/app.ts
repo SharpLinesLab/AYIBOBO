@@ -50,8 +50,12 @@ function sanitizeDraft(raw: unknown, target: NormalizedTarget): ListingDraft | n
   return { title, tagline: str(d.tagline, 80), description: str(d.description, 400), category: d.category, artwork, preview };
 }
 
-/** Minimal fixed-window rate limiter keyed by IP + bucket. */
-function rateLimit(bucket: string, limit: number, windowMs: number) {
+/**
+ * Minimal fixed-window rate limiter keyed by IP + bucket. RATE_LIMIT_MULTIPLIER scales every limit
+ * (e.g. for end-to-end tests where many browsers share one IP); it defaults to 1.
+ */
+function rateLimit(bucket: string, perWindow: number, windowMs: number) {
+  const limit = perWindow * Math.max(1, Number(process.env.RATE_LIMIT_MULTIPLIER) || 1);
   const hits = new Map<string, { n: number; reset: number }>();
   return (req: Request, res: Response, next: NextFunction) => {
     const key = `${bucket}:${req.ip}`;
