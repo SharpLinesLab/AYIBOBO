@@ -5,7 +5,8 @@ import { useMusic } from '../../music';
 import { LanguageMenu } from '../LanguagePicker';
 import { useApp } from '../../store';
 import { SocialLinks } from './Footer';
-import { AsfLogo, ChevronLeft, ChevronRight, MoonIcon, SearchIcon, SunIcon, UploadIcon } from '../icons';
+import { AsfLogo, ChevronLeft, ChevronRight, MoonIcon, SearchIcon, SunIcon, UploadIcon, UserIcon } from '../icons';
+import { useAccount } from '../../lib/account';
 import { Cover } from '../music/bits';
 
 /** Search box with instant, grouped suggestions (songs, artists, albums, playlists). */
@@ -107,6 +108,18 @@ function GlobalSearch() {
   );
 }
 
+/** Sign-in / account link. Hidden when there's no API server (static hosting). */
+function AccountButton() {
+  const { status, user } = useAccount();
+  if (status === 'unavailable') return null;
+  const label = t(user ? 'account.top.account' : 'account.top.signIn');
+  return (
+    <a className={`round-btn${user ? ' is-on' : ''}`} href="#/account" aria-label={label} title={label}>
+      <UserIcon width={18} height={18} />
+    </a>
+  );
+}
+
 export function TopBar({ theme, onToggleTheme, onSubscribe }: { theme: 'light' | 'dark'; onToggleTheme: () => void; onSubscribe: () => void }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -137,6 +150,7 @@ export function TopBar({ theme, onToggleTheme, onSubscribe }: { theme: 'light' |
           <UploadIcon width={16} height={16} /> {t('common.top.upload')}
         </a>
         <LanguageMenu />
+        <AccountButton />
         <button className="round-btn" onClick={onToggleTheme} aria-label={theme === 'dark' ? t('common.top.light') : t('common.top.dark')}>
           {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
         </button>

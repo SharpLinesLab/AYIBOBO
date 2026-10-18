@@ -78,6 +78,8 @@ export interface Track {
   /** Uploaded tracks play a real file instead of the synth recipe. */
   audioUrl?: string;
   uploaded?: boolean;
+  /** A real song an artist account published through the server (approved in moderation). */
+  published?: boolean;
   /** Normalized waveform peaks (0..1) for uploaded audio. */
   peaks?: number[];
 }

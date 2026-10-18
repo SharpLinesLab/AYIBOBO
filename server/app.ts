@@ -1,11 +1,22 @@
 import express, { type NextFunction, type Request, type Response } from 'express';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { attachUser, clearSessionCookie, createAuth, currentUser, readCookie, sameOrigin, SESSION_COOKIE, sessionCookie } from './auth';
 import type { Db } from './db';
+import type { Storage } from './storage';
+import { registerUploadRoutes, type UploadLimits } from './uploads';
 
 export interface AppConfig {
   db: Db;
   staticDir?: string;
+  /** Signs session ids (see server/index.ts for the production check). */
+  sessionSecret: string;
+  /** bcrypt cost; tests lower it. */
+  bcryptRounds?: number;
+  /** Where uploaded audio and covers are kept. */
+  storage: Storage;
+  /** Upload size caps in bytes (defaults: 50 MB audio, 8 MB cover). */
+  uploadLimits?: Partial<UploadLimits>;
 }
 
 /**
@@ -32,7 +43,7 @@ const CSP = [
  * Minimal fixed-window rate limiter keyed by IP + bucket. RATE_LIMIT_MULTIPLIER scales every limit
  * (e.g. for end-to-end tests where many browsers share one IP); it defaults to 1.
  */
-function rateLimit(bucket: string, perWindow: number, windowMs: number) {
+export function rateLimit(bucket: string, perWindow: number, windowMs: number) {
   const limit = perWindow * Math.max(1, Number(process.env.RATE_LIMIT_MULTIPLIER) || 1);
   const hits = new Map<string, { n: number; reset: number }>();
   return (req: Request, res: Response, next: NextFunction) => {
@@ -54,6 +65,7 @@ function rateLimit(bucket: string, perWindow: number, windowMs: number) {
 
 export function createApp(cfg: AppConfig) {
   const { db } = cfg;
+  const auth = createAuth(db, { sessionSecret: cfg.sessionSecret, bcryptRounds: cfg.bcryptRounds });
 
   const app = express();
   app.disable('x-powered-by');
@@ -67,6 +79,7 @@ export function createApp(cfg: AppConfig) {
   });
 
   app.use(express.json({ limit: '32kb' }));
+  app.use('/api', attachUser(auth));
 
   app.get('/api/health', (_req, res) => {
     res.json({ ok: true });
@@ -95,6 +108,47 @@ export function createApp(cfg: AppConfig) {
     }
     res.json({ ok: true });
   });
+
+  // --- accounts --------------------------------------------------------------------------------
+
+  const startSession = (res: Response, userId: string) => res.setHeader('Set-Cookie', sessionCookie(auth.createSession(userId), auth.ttl));
+
+  app.post('/api/auth/signup', rateLimit('signup', 10, 60 * 60_000), sameOrigin, async (req, res) => {
+    const out = await auth.signup(req.body ?? {});
+    if (typeof out === 'string') {
+      res.status(out === 'email_taken' ? 409 : 400).json({ ok: false, code: out });
+      return;
+    }
+    startSession(res, out.id);
+    res.status(201).json({ ok: true, user: out });
+  });
+
+  app.post('/api/auth/login', rateLimit('login', 10, 60_000), sameOrigin, async (req, res) => {
+    const user = await auth.login(req.body?.email, req.body?.password);
+    if (!user) {
+      // Same answer for an unknown email and a wrong password.
+      res.status(401).json({ ok: false, code: 'invalid_credentials' });
+      return;
+    }
+    startSession(res, user.id);
+    res.json({ ok: true, user });
+  });
+
+  app.post('/api/auth/logout', rateLimit('logout', 30, 60_000), sameOrigin, (req, res) => {
+    auth.destroySession(readCookie(req, SESSION_COOKIE));
+    res.setHeader('Set-Cookie', clearSessionCookie());
+    res.json({ ok: true });
+  });
+
+  // 200 with user: null when signed out, so the app can ask on every load without an error.
+  app.get('/api/auth/me', (_req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({ ok: true, user: currentUser(res) });
+  });
+
+  // --- artist uploads ----------------------------------------------------------------------------
+
+  registerUploadRoutes(app, { db, storage: cfg.storage, limits: cfg.uploadLimits, rateLimit });
 
   app.use('/api', (_req, res) => {
     res.status(404).json({ ok: false, error: 'Not found' });

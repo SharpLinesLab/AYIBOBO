@@ -6,6 +6,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { coverUrl, makeCover } from './catalog/covers';
 import { lifetimePlays } from './catalog/plays';
+import { CATALOG_CHANGED, fetchPublished, toCatalog, type PublishedTrack } from './lib/serverCatalog';
 import { createMixes } from './catalog/mixes';
 import { createCatalog } from './catalog/seed';
 import type { Album, Artist, Catalog, Playlist, Track } from './catalog/types';
@@ -176,6 +177,16 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
     };
   }, [uploadIds]);
 
+  // Songs artists published through the server; refreshed when an admin approves one.
+  const [published, setPublished] = useState<PublishedTrack[]>([]);
+  useEffect(() => {
+    const load = () => void fetchPublished().then(setPublished);
+    load();
+    window.addEventListener(CATALOG_CHANGED, load);
+    return () => window.removeEventListener(CATALOG_CHANGED, load);
+  }, []);
+  const server = useMemo(() => toCatalog(published), [published]);
+
   // Personal mixes follow your likes (not every play, so they don't reshuffle mid-listen).
   const likesKey = library.likes.join('|');
   const mixes = useMemo(() => createMixes(seed.tracks, seed.artists, library.likes, []), [seed, likesKey]);
@@ -186,12 +197,12 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
       return { ...t, audioUrl: uploadUrls[t.id], cover: art ? { ...t.cover, imageUrl: art } : t.cover };
     });
     return {
-      artists: seed.artists,
-      tracks: [...uploads, ...seed.tracks],
+      artists: [...server.artists, ...seed.artists],
+      tracks: [...uploads, ...server.tracks, ...seed.tracks],
       albums: seed.albums,
       playlists: [...library.playlists, ...mixes, ...seed.playlists],
     };
-  }, [seed, library.uploads, library.playlists, uploadUrls, mixes]);
+  }, [seed, library.uploads, library.playlists, uploadUrls, mixes, server]);
 
   const maps = useMemo(
     () => ({
@@ -295,7 +306,7 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
         toggleItem(toPlayable(t), q);
       },
       peaks: (t) => t.peaks ?? synthPeaks(t.recipe, t.duration),
-      totalPlays: (t) => (library.plays[t.id] ?? 0) + (t.uploaded ? 0 : lifetimeCache(t, now)),
+      totalPlays: (t) => (library.plays[t.id] ?? 0) + (t.uploaded || t.published ? 0 : lifetimeCache(t, now)),
       followerCount: (a) => a.followers + (library.follows.includes(a.id) ? 1 : 0),
       isLiked: (id) => library.likes.includes(id),
       toggleLike: (id) => update((l) => ({ ...l, likes: toggleIn(l.likes, id) })),

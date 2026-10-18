@@ -86,6 +86,7 @@ const FANS = ['kreyolvibes', 'jacmel_girl', 'ti_moun_okap', 'lakay4ever', 'dj_fa
 const LINES = ['This one hits different 🔥', 'On repeat all week', 'Pure vibes, lakay proud 🇭🇹', 'That drop at the hook!!', 'Production is crazy', 'Who else here from the playlist?', 'Classic in the making', 'Need the music video ASAP', 'Played this at the cookout, everybody went crazy', 'Respè 💯'];
 
 function seedComments(tr: Track, now: number): Comment[] {
+  if (tr.published) return []; // real songs only show real comments
   const r = mulberry32(hashString(`cm:${tr.id}`));
   const n = 2 + Math.floor(r() * 4);
   return Array.from({ length: n }, (_, i) => ({
@@ -182,7 +183,7 @@ export function SongPage({ id }: { id: string }) {
           )}
           <span>{fmtDate(tr.releasedAt)}</span>
           <span>{fmtTime(tr.duration)}</span>
-          <span>{tr.recipe.bpm} BPM</span>
+          {!tr.published && <span>{tr.recipe.bpm} BPM</span>}
         </div>
         <div className="dhero__stats">
           <span>
@@ -255,7 +256,7 @@ export function SongPage({ id }: { id: string }) {
         </section>
         <aside className="card-panel">
           <h2 className="panel-title">{t('pages.detail.about')}</h2>
-          <p className="muted">{tr.description}</p>
+          {tr.description && <p className="muted">{tr.description}</p>}
           {more.length > 0 && (
             <>
               <h3 className="panel-sub">{t('pages.detail.moreFrom', { name: m.artist(tr.artistId)?.name ?? '' })}</h3>

@@ -21,6 +21,9 @@ import { SettingsPage } from './pages/Settings';
 import { PrivacyPage } from './pages/legal/Privacy';
 import { TermsPage } from './pages/legal/Terms';
 import { CopyrightPage } from './pages/legal/Copyright';
+import { AccountPage } from './pages/Account';
+import { AdminPage } from './pages/Admin';
+import { refreshAccount } from './lib/account';
 import { PaletteHost } from './components/shell/PaletteHost';
 import { t, useLang } from './i18n';
 import { ShareHost } from './components/music/Share';
@@ -80,6 +83,8 @@ function Shell() {
     if (hasPlayer) void import('./components/shell/NowPlaying');
   }, [hasPlayer]);
   const [subscribeOpen, setSubscribeOpen] = useState(false);
+  // Ask the server who is signed in (once; the answer is shared app-wide).
+  useEffect(() => void refreshAccount(), []);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const navigate = useCallback((h: string) => {
@@ -166,6 +171,12 @@ function Shell() {
       break;
     case 'copyright':
       page = <CopyrightPage />;
+      break;
+    case 'account':
+      page = <AccountPage />;
+      break;
+    case 'admin':
+      page = <AdminPage />;
       break;
     case 'studio':
       page = <StudioPage artistId={route.artistId} />;

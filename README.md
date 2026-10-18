@@ -55,7 +55,7 @@ npm run test:e2e     # build, then Playwright + axe in English, French and Krey√
 Production server (serves the built app, the newsletter API and the security headers):
 
 ```bash
-cp .env.example .env            # optional: PORT, DATA_FILE
+cp .env.example .env            # see the file for every setting
 npm run build
 npm start                       # http://localhost:8787
 ```

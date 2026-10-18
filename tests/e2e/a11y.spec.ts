@@ -20,6 +20,8 @@ const ROUTES = [
   '#/upload',
   '#/settings',
   '#/studio/ar-tiga-blaze',
+  '#/account',
+  '#/admin',
   '#/privacy',
   '#/terms',
   '#/copyright',

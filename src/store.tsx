@@ -18,6 +18,8 @@ export type Route =
   | { page: 'privacy' }
   | { page: 'terms' }
   | { page: 'copyright' }
+  | { page: 'account' }
+  | { page: 'admin' }
   | { page: 'notfound' };
 
 export function parseRoute(hash: string): Route {
@@ -64,6 +66,10 @@ export function parseRoute(hash: string): Route {
       return { page: 'terms' };
     case 'copyright':
       return { page: 'copyright' };
+    case 'account':
+      return { page: 'account' };
+    case 'admin':
+      return { page: 'admin' };
     case undefined:
     case 'discover':
       return { page: 'home' };

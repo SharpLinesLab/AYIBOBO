@@ -26,7 +26,7 @@ export default defineConfig({
   webServer: {
     command: `node dist-server/index.js`,
     // Its own throwaway database, and room for many parallel browsers sharing one IP.
-    env: { PORT: String(PORT), NODE_ENV: 'production', DATA_FILE: join(tmpdir(), `asf-e2e-${PORT}.json`), RATE_LIMIT_MULTIPLIER: '50' },
+    env: { PORT: String(PORT), NODE_ENV: 'production', DATABASE_FILE: join(tmpdir(), `asf-e2e-${PORT}.db`), UPLOADS_DIR: join(tmpdir(), `asf-e2e-${PORT}-uploads`), DATA_FILE: join(tmpdir(), `asf-e2e-${PORT}.json`), RATE_LIMIT_MULTIPLIER: '50', SESSION_SECRET: 'e2e-only-session-secret-0123456789abcdef' },
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,

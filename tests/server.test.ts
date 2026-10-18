@@ -1,7 +1,11 @@
+import { mkdtempSync } from 'node:fs';
 import type { AddressInfo } from 'node:net';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../server/app';
 import { Db } from '../server/db';
+import { LocalDiskStorage } from '../server/storage';
 
 let base = '';
 let close: () => void;
@@ -10,7 +14,9 @@ let db: Db;
 beforeAll(async () => {
   db = new Db(null);
   await db.init();
-  const app = createApp({ db });
+  const storage = new LocalDiskStorage(mkdtempSync(join(tmpdir(), 'asf-srv-')));
+  await storage.init();
+  const app = createApp({ db, sessionSecret: 'test-secret-0123456789abcdef0123456789', bcryptRounds: 4, storage });
   await new Promise<void>((resolve) => {
     const server = app.listen(0, () => {
       base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;

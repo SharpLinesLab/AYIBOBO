@@ -7,7 +7,7 @@ RUN npm run build
 
 FROM node:22-alpine
 WORKDIR /app
-ENV NODE_ENV=production PORT=8787 DATA_FILE=/data/db.json
+ENV NODE_ENV=production PORT=8787 DATABASE_FILE=/data/asf.db DATA_FILE=/data/db.json UPLOADS_DIR=/data/uploads
 COPY package*.json ./
 RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
@@ -21,4 +21,5 @@ VOLUME /data
 EXPOSE 8787
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD wget -qO- "http://127.0.0.1:${PORT}/api/health" > /dev/null || exit 1
-CMD ["node", "dist-server/index.js"]
+# node:sqlite is stable in practice but still flagged experimental in Node 22; keep the logs quiet.
+CMD ["node", "--disable-warning=ExperimentalWarning", "dist-server/index.js"]

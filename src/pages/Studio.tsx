@@ -6,6 +6,7 @@ import { mulberry32 } from '../lib/random';
 import { fmtDate, fmtNumber, t, type Key } from '../i18n';
 import { compact, dayKey, useMusic } from '../music';
 import { useApp } from '../store';
+import { isPublishedArtist } from '../lib/serverCatalog';
 import { Cover } from '../components/music/bits';
 import { PageHead } from './Browse';
 
@@ -314,10 +315,12 @@ export function StudioPage({ artistId }: { artistId?: string }) {
   const { navigate } = useApp();
   const [range, setRange] = useState<Range>(28);
   const uploads = useMemo(() => m.catalog.tracks.filter((t) => t.uploaded), [m.catalog.tracks]);
-  const fallback = uploads.length ? 'me' : (m.library.follows[0] ?? [...m.catalog.artists].sort((a, b) => b.followers - a.followers)[0]?.id);
+  // Studio's numbers are simulated, so it only offers the demo profiles, never real artist accounts.
+  const demoArtists = useMemo(() => m.catalog.artists.filter((a) => !isPublishedArtist(a.id)), [m.catalog.artists]);
+  const fallback = uploads.length ? 'me' : (m.library.follows.find((id) => !isPublishedArtist(id)) ?? [...demoArtists].sort((a, b) => b.followers - a.followers)[0]?.id);
   const pid = artistId ?? fallback;
   const isMe = pid === 'me';
-  const artist = isMe ? undefined : m.artist(pid ?? '');
+  const artist = isMe || isPublishedArtist(pid ?? '') ? undefined : m.artist(pid ?? '');
   const tracks = useMemo(() => (isMe ? uploads : artist ? m.artistTracks(artist.id) : []), [isMe, uploads, artist, m]);
   const data = useStudioData(tracks, range);
   const rangeLabel = t(lastKey(range));
@@ -329,7 +332,7 @@ export function StudioPage({ artistId }: { artistId?: string }) {
       <select className="input" value={pid} onChange={(e) => navigate(`#/studio/${e.target.value}`)}>
         <option value="me">{t('player.studio.meOption', { name: m.library.displayName || t('common.word.you') })}</option>
         <optgroup label={t('player.studio.demoProfiles')}>
-          {[...m.catalog.artists]
+          {[...demoArtists]
             .sort((a, b) => a.name.localeCompare(b.name))
             .map((a) => (
               <option key={a.id} value={a.id}>

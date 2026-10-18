@@ -39,7 +39,7 @@ export function startOfDay(t: number): number {
 
 /** Synthetic plays in [now - days, now). */
 export function playsInWindow(t: Track, now: number, days: number, offsetDays = 0): number {
-  if (t.uploaded) return 0;
+  if (t.uploaded || t.published) return 0;
   const today = startOfDay(now);
   const s = series(t, today);
   const frac = (now - today) / DAY;
@@ -99,10 +99,10 @@ export function trending(tracks: Track[], now: number): Track[] {
 
 /**
  * Daily plays for the last `days` days, oldest first (the last entry is today so far).
- * Uploaded tracks have no synthetic history (all zeros).
+ * Uploaded and published tracks have no synthetic history (all zeros).
  */
 export function dailyPlays(t: Track, now: number, days: number): number[] {
-  if (t.uploaded) return new Array(days).fill(0);
+  if (t.uploaded || t.published) return new Array(days).fill(0);
   const today = startOfDay(now);
   const s = series(t, today);
   const frac = (now - today) / DAY;

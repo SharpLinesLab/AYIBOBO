@@ -188,9 +188,10 @@ function demoLyrics(t: Track): Lyrics | null {
 const cache = new Map<string, Lyrics | null>();
 
 export function lyricsFor(t: Track): Lyrics | null {
-  const key = `${t.id}|${t.uploaded ? 1 : 0}|${t.duration}|${t.lyrics ?? ''}`;
+  const key = `${t.id}|${t.uploaded || t.published ? 1 : 0}|${t.duration}|${t.lyrics ?? ''}`;
   if (cache.has(key)) return cache.get(key)!;
-  const l = t.lyrics ? parseLyrics(t.lyrics) : t.uploaded ? null : demoLyrics(t);
+  // Real songs (your uploads, published songs) never get made-up demo lyrics.
+  const l = t.lyrics ? parseLyrics(t.lyrics) : t.uploaded || t.published ? null : demoLyrics(t);
   cache.set(key, l);
   return l;
 }

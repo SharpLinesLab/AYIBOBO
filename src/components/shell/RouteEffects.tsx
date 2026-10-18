@@ -2,11 +2,12 @@ import { Component, useEffect, useLayoutEffect, useRef, type ErrorInfo, type Rea
 import { genreById, isGenreId } from '../../catalog/genres';
 import { t } from '../../i18n';
 import { useMusic } from '../../music';
+import { useAccount } from '../../lib/account';
 import { useApp, type Route } from '../../store';
 
 const BRAND = 'ASF — Ayiti Sakap Fet';
 
-function titleFor(route: Route, m: ReturnType<typeof useMusic>): string {
+function titleFor(route: Route, m: ReturnType<typeof useMusic>, isAdmin: boolean): string {
   switch (route.page) {
     case 'home':
       return `${BRAND} · ${t('player.title.music')}`;
@@ -48,6 +49,11 @@ function titleFor(route: Route, m: ReturnType<typeof useMusic>): string {
       return t('legal.terms.title');
     case 'copyright':
       return t('legal.copyright.title');
+    case 'account':
+      return t('account.title');
+    case 'admin':
+      // Not even the title gives the page away to non-admins.
+      return isAdmin ? t('admin.title') : t('player.title.pageNotFound');
     case 'notfound':
       return t('player.title.pageNotFound');
   }
@@ -62,11 +68,12 @@ function titleFor(route: Route, m: ReturnType<typeof useMusic>): string {
 export function RouteEffects({ hash }: { hash: string }) {
   const { route } = useApp();
   const m = useMusic();
+  const isAdmin = useAccount().user?.role === 'admin';
   const positions = useRef(new Map<number, number>());
   const counter = useRef(0);
   const lastHash = useRef(hash);
 
-  const title = titleFor(route, m);
+  const title = titleFor(route, m, isAdmin);
   useEffect(() => {
     document.title = route.page === 'home' ? title : `${title} · ASF`;
   }, [title, route.page]);

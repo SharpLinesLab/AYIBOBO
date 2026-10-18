@@ -1641,3 +1641,142 @@
 .legal__related a:hover {
   text-decoration: underline;
 }
+
+/* --- account, artist submissions, moderation ------------------------------------------------ */
+
+.account__panel {
+  max-width: 560px;
+}
+
+.account__panel + .account__panel,
+.account__panel + .card-panel {
+  margin-top: 20px;
+}
+
+.account__type {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.account__type legend {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.account__choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+}
+
+.account__switch {
+  margin-top: 14px;
+}
+
+.account__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.account__fine {
+  font-size: 13px;
+  margin: 0;
+}
+
+.account__songs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.account__songs li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.account__songs li > span:first-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.status-pill {
+  flex: none;
+  padding: 3px 10px;
+  border-radius: var(--pill);
+  font-size: 12.5px;
+  font-weight: 700;
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+}
+
+.status-pill--approved {
+  border-color: var(--accent);
+}
+
+.status-pill--rejected {
+  border-color: var(--danger);
+}
+
+.admin__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+  max-width: 820px;
+}
+
+.admin__item {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.admin__cover {
+  flex: none;
+  width: 112px;
+  height: 112px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--surface-sunk);
+}
+
+.admin__body {
+  min-width: 0;
+  flex: 1;
+}
+
+.admin__body h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+
+.admin__body audio {
+  width: 100%;
+  margin: 10px 0 4px;
+}
+
+.admin__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+@media (max-width: 559px) {
+  .admin__item {
+    flex-direction: column;
+  }
+}
