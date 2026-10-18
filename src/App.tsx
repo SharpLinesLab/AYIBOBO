@@ -17,6 +17,7 @@ const DailyPage = lazy(() => import('./components/Pages').then((m) => ({ default
 const CategoriesPage = lazy(() => import('./components/Pages').then((m) => ({ default: m.CategoriesPage })));
 const AboutPage = lazy(() => import('./components/Pages').then((m) => ({ default: m.AboutPage })));
 const RulesPage = lazy(() => import('./components/Pages').then((m) => ({ default: m.RulesPage })));
+const StudioPage = lazy(() => import('./pages/Studio').then((m) => ({ default: m.StudioPage })));
 const TodayWidget = lazy(() => import('./components/Sidebars').then((m) => ({ default: m.TodayWidget })));
 const ActivityFeed = lazy(() => import('./components/Sidebars').then((m) => ({ default: m.ActivityFeed })));
 
@@ -30,7 +31,9 @@ function PageLoading() {
 import { SubscribeModal } from './components/SubscribeModal';
 import { Sidebar } from './components/shell/Sidebar';
 import { TopBar } from './components/shell/TopBar';
-import { NowPlaying, NowPlayingPanel, PlayerBar, usePanelOpen } from './components/shell/Player';
+import { SettingsPage } from './pages/Settings';
+import { ConnectionBanner } from './components/music/Offline';
+import { NowPlaying, NowPlayingPanel, PlayerBar, usePanelOpen, type NpTab } from './components/shell/Player';
 import { MobileTabs } from './components/shell/MobileTabs';
 import { DiscoverPage } from './pages/Discover';
 import { ChartsPage, GenrePage, GenresPage, NotFound, TrendingPage } from './pages/Browse';
@@ -136,7 +139,7 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
   const [filter, setFilter] = useState<Filter>('all');
   const [detailId, setDetailId] = useState<string | null>(null);
   const [statsOpen, setStatsOpen] = useState(false);
-  const [npOpen, setNpOpen] = useState(false);
+  const [npTab, setNpTab] = useState<NpTab | null>(null);
   const [panelOpen, setPanelOpen] = usePanelOpen();
   const hasPlayer = useSyncExternalStore(player.subscribe, () => !!player.getState().current);
   const [subscribeOpen, setSubscribeOpen] = useState(false);
@@ -278,6 +281,12 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
     case 'upload':
       page = <UploadPage />;
       break;
+    case 'settings':
+      page = <SettingsPage />;
+      break;
+    case 'studio':
+      page = <StudioPage artistId={route.artistId} />;
+      break;
     case 'daily':
       page = <DailyPage day={route.day} />;
       break;
@@ -332,6 +341,7 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
           <div className="app__main">
             <div id="page-tint-root" aria-hidden />
             <TopBar theme={theme} onToggleTheme={toggleTheme} onSubscribe={() => setSubscribeOpen(true)} />
+            <ConnectionBanner />
             <main id="content" className="content" tabIndex={-1} key={route.page === 'leaderboard' ? 'lb' : hash}>
               <ErrorBoundary resetKey={hash}>
                 <Suspense fallback={<PageLoading />}>{page}</Suspense>
@@ -339,11 +349,11 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
             </main>
             <Footer showStats={route.page === 'leaderboard'} />
           </div>
-          <PlayerBar onExpand={() => setNpOpen(true)} panelOpen={panelOpen} onTogglePanel={() => setPanelOpen(!panelOpen)} />
-          {panelOpen && hasPlayer && <NowPlayingPanel onClose={() => setPanelOpen(false)} />}
+          <PlayerBar onExpand={() => setNpTab('wave')} onLyrics={() => setNpTab('lyrics')} panelOpen={panelOpen} onTogglePanel={() => setPanelOpen(!panelOpen)} />
+          {panelOpen && hasPlayer && <NowPlayingPanel onClose={() => setPanelOpen(false)} onLyrics={() => setNpTab('lyrics')} />}
           <MobileTabs />
         </div>
-        {npOpen && <NowPlaying onClose={() => setNpOpen(false)} />}
+        {npTab && <NowPlaying initialTab={npTab} onClose={() => setNpTab(null)} />}
 
         <Suspense fallback={null}>
         {checkout && (

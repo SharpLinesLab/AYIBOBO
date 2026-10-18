@@ -18,6 +18,8 @@ export type Route =
   | { page: 'library'; tab: string }
   | { page: 'search'; q: string }
   | { page: 'upload' }
+  | { page: 'settings' }
+  | { page: 'studio'; artistId?: string }
   | { page: 'leaderboard' }
   | { page: 'daily'; day?: string }
   | { page: 'categories' }
@@ -59,6 +61,10 @@ export function parseRoute(hash: string): Route {
       return { page: 'search', q: a ?? '' };
     case 'upload':
       return { page: 'upload' };
+    case 'settings':
+      return { page: 'settings' };
+    case 'studio':
+      return { page: 'studio', artistId: a };
     case 'leaderboard':
     case 'boost':
       return { page: 'leaderboard' };

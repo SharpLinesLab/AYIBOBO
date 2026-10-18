@@ -20,6 +20,9 @@ import { Cover, Eq, LikeButton } from '../music/bits';
 import { useArtPalette } from '../../catalog/color';
 import type { CoverSpec } from '../../catalog/types';
 import { Waveform } from '../music/Waveform';
+import { LyricsView, hasLyrics } from '../music/Lyrics';
+
+export type NpTab = 'wave' | 'lyrics' | 'queue';
 
 /** Thin seek bar used in the player bar. */
 function SeekBar() {
@@ -206,12 +209,12 @@ function Visualizer() {
   return <canvas className="viz" ref={canvas} aria-hidden />;
 }
 
-export function NowPlaying({ onClose }: { onClose: () => void }) {
+export function NowPlaying({ onClose, initialTab = 'wave' }: { onClose: () => void; initialTab?: NpTab }) {
   const s = usePlayerState();
   const m = useMusic();
   const cur = s.current;
   const track = cur ? m.track(cur.id) : undefined;
-  const [tab, setTab] = useState<'wave' | 'queue'>('wave');
+  const [tab, setTab] = useState<NpTab>(initialTab);
   const closeBtn = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);
@@ -243,7 +246,7 @@ export function NowPlaying({ onClose }: { onClose: () => void }) {
   }, []);
   if (!cur) return null;
   return (
-    <div className="np" role="dialog" aria-modal="true" aria-label="Now playing" ref={dialog}>
+    <div className={`np np--${tab}`} role="dialog" aria-modal="true" aria-label="Now playing" ref={dialog}>
       <MeshBackdrop spec={track?.cover} />
       <div className="np__inner">
         <header className="np__head">
@@ -254,6 +257,9 @@ export function NowPlaying({ onClose }: { onClose: () => void }) {
           <div className="segmented np__tabs">
             <button className={tab === 'wave' ? 'is-active' : ''} onClick={() => setTab('wave')}>
               Player
+            </button>
+            <button className={tab === 'lyrics' ? 'is-active' : ''} onClick={() => setTab('lyrics')}>
+              Lyrics
             </button>
             <button className={tab === 'queue' ? 'is-active' : ''} onClick={() => setTab('queue')}>
               Queue
@@ -283,6 +289,20 @@ export function NowPlaying({ onClose }: { onClose: () => void }) {
                   <SleepTimer />
                 </div>
                 <VolumeControl />
+              </>
+            ) : tab === 'lyrics' ? (
+              <>
+                <div className="np__titles np__titles--sm">
+                  <h2>{cur.title}</h2>
+                  <span className="np__artist">{cur.subtitle}</span>
+                </div>
+                {track ? <LyricsView track={track} variant="full" /> : <p className="muted">No lyrics for previews.</p>}
+                <SeekBar />
+                <div className="np__controls">
+                  {track && <LikeButton id={track.id} />}
+                  <Transport />
+                  <SleepTimer />
+                </div>
               </>
             ) : (
               <QueueList />
@@ -332,7 +352,7 @@ export function usePanelOpen(): [boolean, (v: boolean) => void] {
 }
 
 /** Spotify-style "Now playing" side panel: artwork, artist card, next up. Wide screens only. */
-export function NowPlayingPanel({ onClose }: { onClose: () => void }) {
+export function NowPlayingPanel({ onClose, onLyrics }: { onClose: () => void; onLyrics: () => void }) {
   const s = usePlayerState();
   const m = useMusic();
   const cur = s.current;
@@ -363,6 +383,17 @@ export function NowPlayingPanel({ onClose }: { onClose: () => void }) {
         </div>
         {track && <LikeButton id={track.id} />}
       </div>
+      {track && hasLyrics(track) && (
+        <section className="npp__lyrics">
+          <div className="npp__next-head">
+            <b>Lyrics</b>
+            <button className="link-btn" onClick={onLyrics}>
+              Show lyrics
+            </button>
+          </div>
+          <LyricsView track={track} variant="card" />
+        </section>
+      )}
       {artist && (
         <section className="npp__artist">
           <div className="npp__artist-img">
@@ -401,7 +432,17 @@ export function NowPlayingPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function PlayerBar({ onExpand, panelOpen, onTogglePanel }: { onExpand: () => void; panelOpen: boolean; onTogglePanel: () => void }) {
+export function PlayerBar({
+  onExpand,
+  onLyrics,
+  panelOpen,
+  onTogglePanel,
+}: {
+  onExpand: () => void;
+  onLyrics: () => void;
+  panelOpen: boolean;
+  onTogglePanel: () => void;
+}) {
   const s = usePlayerState();
   const m = useMusic();
   const [queueOpen, setQueueOpen] = useState(false);
@@ -435,6 +476,9 @@ export function PlayerBar({ onExpand, panelOpen, onTogglePanel }: { onExpand: ()
         <SeekBar />
       </div>
       <div className="pbar__right">
+        <button className="tbtn" onClick={onLyrics} aria-label="Lyrics" disabled={!track || !hasLyrics(track)}>
+          <MicIcon />
+        </button>
         <SleepTimer />
         <button className={`tbtn${queueOpen ? ' is-on' : ''}`} onClick={() => setQueueOpen((o) => !o)} aria-label="Queue" aria-expanded={queueOpen}>
           <QueueIcon />
@@ -462,6 +506,15 @@ export function PlayerBar({ onExpand, panelOpen, onTogglePanel }: { onExpand: ()
 function MobileProgress() {
   const { position, duration } = usePosition();
   return <span style={{ width: `${duration ? (position / duration) * 100 : 0}%` }} />;
+}
+
+function MicIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+    </svg>
+  );
 }
 
 function PanelIcon() {

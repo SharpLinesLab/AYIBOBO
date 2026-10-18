@@ -12,6 +12,9 @@ import type { Album, Artist, Catalog, Playlist, Track } from './catalog/types';
 import { deleteAudio, loadAudio } from './catalog/uploads';
 import { getPosition, getState, onPlay, playQueue, subscribe, subscribePosition, toggleItem, type Playable, type PlayerState } from './player/engine';
 import { synthPeaks } from './player/synth';
+import { isStreamed, removeFromOffline, saveForOffline } from './offline';
+
+export const dayKey = (t: number) => new Date(t).toISOString().slice(0, 10);
 
 export interface Comment {
   id: string;
@@ -34,6 +37,10 @@ export interface Library {
   comments: Record<string, Comment[]>;
   uploads: Track[];
   displayName: string;
+  /** Track ids saved for offline listening. */
+  downloads: string[];
+  /** Your plays per day (`YYYY-MM-DD` → track id → count), for the artist dashboard. */
+  daily: Record<string, Record<string, number>>;
 }
 
 const LIB_KEY = 'asf:library';
@@ -49,6 +56,8 @@ const EMPTY: Library = {
   comments: {},
   uploads: [],
   displayName: '',
+  downloads: [],
+  daily: {},
 };
 
 function readLibrary(): Library {
@@ -83,7 +92,7 @@ export interface MusicContextValue {
   artistTracks: (artistId: string) => Track[];
   artistNames: (t: Track) => string;
   toPlayable: (t: Track) => Playable;
-  play: (tracks: Track[], start?: number) => void;
+  play: (tracks: Track[], start?: number, from?: number) => void;
   /** Toggle play/pause for `t`, using `context` as the queue when starting. */
   toggle: (t: Track, context?: Track[]) => void;
   peaks: (t: Track) => number[];
@@ -103,6 +112,14 @@ export interface MusicContextValue {
   addUpload: (t: Track) => void;
   deleteUpload: (id: string) => Promise<void>;
   setDisplayName: (n: string) => void;
+  /** Lyrics (plain text or LRC) for one of your uploads. */
+  setLyrics: (trackId: string, text: string) => void;
+  isDownloaded: (id: string) => boolean;
+  /** Can this track play with no connection? (synthesized, uploaded or downloaded) */
+  availableOffline: (t: Track) => boolean;
+  /** Save tracks for offline (fetches streamed audio + artwork). */
+  download: (tracks: Track[], onProgress?: (done: number, total: number) => void) => Promise<void>;
+  removeDownloads: (ids: string[]) => Promise<void>;
 }
 
 const Ctx = createContext<MusicContextValue | null>(null);
@@ -213,11 +230,20 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
     () =>
       onPlay((p) => {
         if (p.preview) return;
-        update((l) => ({
-          ...l,
-          plays: { ...l.plays, [p.id]: (l.plays[p.id] ?? 0) + 1 },
-          recents: [p.id, ...l.recents.filter((x) => x !== p.id)].slice(0, 50),
-        }));
+        update((l) => {
+          const day = dayKey(Date.now());
+          const today = l.daily[day] ?? {};
+          // Keep about a year of daily history.
+          const days = Object.keys(l.daily).sort().slice(-400);
+          const daily = Object.fromEntries(days.map((d) => [d, l.daily[d]]));
+          daily[day] = { ...today, [p.id]: (today[p.id] ?? 0) + 1 };
+          return {
+            ...l,
+            plays: { ...l.plays, [p.id]: (l.plays[p.id] ?? 0) + 1 },
+            recents: [p.id, ...l.recents.filter((x) => x !== p.id)].slice(0, 50),
+            daily,
+          };
+        });
       }),
     [update],
   );
@@ -236,7 +262,7 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
       artistTracks: (artistId) => catalog.tracks.filter((t) => t.artistId === artistId || t.featuring?.includes(artistId)),
       artistNames,
       toPlayable,
-      play: (tracks, start = 0) => playQueue(tracks.map(toPlayable), start),
+      play: (tracks, start = 0, from = 0) => playQueue(tracks.map(toPlayable), start, from),
       toggle: (t, context) => {
         const q = (context ?? [t]).map(toPlayable);
         toggleItem(toPlayable(t), q);
@@ -286,6 +312,26 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
         update((l) => ({ ...l, uploads: l.uploads.filter((t) => t.id !== id), likes: l.likes.filter((x) => x !== id) }));
       },
       setDisplayName: (n) => update((l) => ({ ...l, displayName: n.trim().slice(0, 40) })),
+      isDownloaded: (id) => library.downloads.includes(id),
+      availableOffline: (t) => !isStreamed(t.audioUrl) || library.downloads.includes(t.id),
+      download: async (tracks, onProgress) => {
+        const streamed = tracks.filter((t) => isStreamed(t.audioUrl));
+        const art = tracks.map((t) => t.cover.imageUrl).filter((u): u is string => !!u);
+        await saveForOffline(
+          streamed.map((t) => t.audioUrl!),
+          [...new Set(art)],
+          onProgress,
+        );
+        const ids = tracks.map((t) => t.id);
+        update((l) => ({ ...l, downloads: [...ids.filter((id) => !l.downloads.includes(id)), ...l.downloads] }));
+      },
+      removeDownloads: async (ids) => {
+        const urls = ids.map((id) => maps.tracks.get(id)?.audioUrl).filter(isStreamed);
+        await removeFromOffline(urls);
+        update((l) => ({ ...l, downloads: l.downloads.filter((x) => !ids.includes(x)) }));
+      },
+      setLyrics: (tid, text) =>
+        update((l) => ({ ...l, uploads: l.uploads.map((t) => (t.id === tid ? { ...t, lyrics: text.trim().slice(0, 20_000) || undefined } : t)) })),
     };
   }, [catalog, maps, now, library, artistNames, toPlayable, update]);
 

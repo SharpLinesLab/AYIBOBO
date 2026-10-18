@@ -3,6 +3,8 @@ import { compact, fmtTime, useMusic } from '../../music';
 import { PauseIcon, PlayIcon } from '../icons';
 import { Cover, Eq, ExplicitBadge, LikeButton, useIsCurrent } from './bits';
 import { TrackMenu } from './TrackMenu';
+import { DownloadedMark } from './Offline';
+import { useOnline } from '../../offline';
 
 export interface TrackRowProps {
   track: Track;
@@ -44,9 +46,12 @@ export function TrackRow({ track, context, index, showCover = true, plays, chang
   const m = useMusic();
   const { current, playing } = useIsCurrent([track.id]);
   const album = showAlbum && track.albumId ? m.album(track.albumId) : undefined;
+  const online = useOnline();
+  const unavailable = !online && !m.availableOffline(track);
   return (
     <div
-      className={`trow${current ? ' is-current' : ''}`}
+      className={`trow${current ? ' is-current' : ''}${unavailable ? ' is-unavailable' : ''}`}
+      title={unavailable ? 'Not downloaded — needs a connection' : undefined}
       role="listitem"
       onDoubleClick={() => m.toggle(track, context)}
     >
@@ -68,6 +73,7 @@ export function TrackRow({ track, context, index, showCover = true, plays, chang
           {track.explicit && <ExplicitBadge />}
         </a>
         <span className="trow__sub">
+          {m.isDownloaded(track.id) && <DownloadedMark />}
           <ArtistLinks track={track} />
           {album && (
             <>

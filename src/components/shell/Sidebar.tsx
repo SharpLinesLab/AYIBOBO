@@ -1,6 +1,6 @@
 import { useMusic } from '../../music';
 import { useApp } from '../../store';
-import { AsfLogo, ChartIcon, ClockIcon, FlameIcon, GridIcon, HeartLine, HomeIcon, ListIcon, TrophyIcon, UploadIcon, UsersIcon } from '../icons';
+import { AsfLogo, ChartIcon, ClockIcon, DownloadIcon, FlameIcon, GearIcon, GridIcon, HeartLine, HomeIcon, ListIcon, StudioIcon, TrophyIcon, UploadIcon, UsersIcon } from '../icons';
 import { Cover } from '../music/bits';
 
 export const MAIN_NAV = [
@@ -16,6 +16,7 @@ const LIB_NAV = [
   { href: '#/library/playlists', label: 'Playlists', tab: 'playlists', Icon: ListIcon },
   { href: '#/library/following', label: 'Following', tab: 'following', Icon: UsersIcon },
   { href: '#/library/recent', label: 'Recently played', tab: 'recent', Icon: ClockIcon },
+  { href: '#/library/downloads', label: 'Downloads', tab: 'downloads', Icon: DownloadIcon },
   { href: '#/library/uploads', label: 'My uploads', tab: 'uploads', Icon: UploadIcon },
 ] as const;
 
@@ -41,7 +42,7 @@ export function Sidebar() {
       <nav className="side__group" aria-label="Your library">
         {LIB_NAV.map(({ href, label, tab, Icon }) => {
           const on = route.page === 'library' && route.tab === tab;
-          const count = tab === 'likes' ? m.library.likes.length : tab === 'uploads' ? m.library.uploads.length : 0;
+          const count = tab === 'likes' ? m.library.likes.length : tab === 'uploads' ? m.library.uploads.length : tab === 'downloads' ? m.library.downloads.length : 0;
           return (
             <a key={href} href={href} className={`side__link${on ? ' is-active' : ''}`}>
               <Icon />
@@ -64,6 +65,17 @@ export function Sidebar() {
           </nav>
         </>
       )}
+      <div className="side__label">Creators</div>
+      <nav className="side__group" aria-label="Creators">
+        <a href="#/studio" className={`side__link${route.page === 'studio' ? ' is-active' : ''}`} aria-current={route.page === 'studio' ? 'page' : undefined}>
+          <StudioIcon />
+          <span>Artist Studio</span>
+        </a>
+        <a href="#/settings" className={`side__link${route.page === 'settings' ? ' is-active' : ''}`} aria-current={route.page === 'settings' ? 'page' : undefined}>
+          <GearIcon />
+          <span>Settings</span>
+        </a>
+      </nav>
       <a className="side__upload" href="#/upload">
         <UploadIcon /> Upload music
       </a>

@@ -1,3 +1,4 @@
+import { DownloadButton } from '../components/music/Offline';
 import { useEffect, useMemo, useState } from 'react';
 import { PALETTES, TEMPLATES, makeCover } from '../catalog/covers';
 import { GENRES } from '../catalog/genres';
@@ -19,6 +20,7 @@ const TABS = [
   { id: 'playlists', label: 'Playlists & albums' },
   { id: 'following', label: 'Following' },
   { id: 'recent', label: 'Recently played' },
+  { id: 'downloads', label: 'Downloads' },
   { id: 'uploads', label: 'My uploads' },
 ];
 
@@ -29,6 +31,7 @@ export function LibraryPage({ tab }: { tab: string }) {
   const lib = m.library;
   const liked = m.tracksOf(lib.likes);
   const recent = m.tracksOf(lib.recents);
+  const downloaded = m.tracksOf(lib.downloads);
   const uploads = m.catalog.tracks.filter((t) => t.uploaded);
   const followed = m.catalog.artists.filter((a) => lib.follows.includes(a.id));
   const savedAlbums = m.catalog.albums.filter((a) => lib.likedAlbums.includes(a.id));
@@ -46,6 +49,14 @@ export function LibraryPage({ tab }: { tab: string }) {
   return (
     <div className="page-music">
       <PageHead kicker="Your library" title={TABS.find((t) => t.id === tab)?.label ?? 'Library'} sub="Saved on this device — no account needed." />
+      <nav className="lib-links" aria-label="More">
+        <a className="btn-glass btn-sm" href="#/studio">
+          Artist Studio
+        </a>
+        <a className="btn-glass btn-sm" href="#/settings">
+          Settings
+        </a>
+      </nav>
       <div className="chips" role="tablist">
         {TABS.map((t) => (
           <a key={t.id} href={`#/library/${t.id}`} role="tab" aria-selected={tab === t.id} className={`chip2${tab === t.id ? ' is-active' : ''}`}>
@@ -59,6 +70,7 @@ export function LibraryPage({ tab }: { tab: string }) {
           <section className="card-panel">
             <div className="phead__actions" style={{ marginBottom: 12 }}>
               <PlayAll tracks={liked} label="Play liked songs" />
+              <DownloadButton tracks={liked} label="Liked songs" />
               <span className="muted">{liked.length} songs</span>
             </div>
             <TrackList tracks={liked} showAlbum />
@@ -110,6 +122,26 @@ export function LibraryPage({ tab }: { tab: string }) {
           </div>
         ) : (
           empty('Follow artists you love', 'Their new releases will be easy to find here.', '#/genres', 'Browse genres')
+        ))}
+
+      {tab === 'downloads' &&
+        (downloaded.length ? (
+          <section className="card-panel">
+            <div className="phead__actions" style={{ marginBottom: 12 }}>
+              <PlayAll tracks={downloaded} label="Play downloads" />
+              <span className="muted">
+                {downloaded.length} songs on this device · <a href="#/settings">Manage storage</a>
+              </span>
+            </div>
+            <TrackList tracks={downloaded} showAlbum />
+          </section>
+        ) : (
+          empty(
+            'Listen without a connection',
+            'Tap Download on any song, album or playlist and it plays even when you’re offline — on the bus, on a flight, or when the signal drops.',
+            '#/',
+            'Find music to download',
+          )
         ))}
 
       {tab === 'recent' &&
@@ -279,6 +311,7 @@ export function UploadPage() {
   const [title, setTitle] = useState('');
   const [genre, setGenre] = useState<GenreId>('kompa');
   const [description, setDescription] = useState('');
+  const [lyrics, setLyrics] = useState('');
   const [explicit, setExplicit] = useState(false);
   const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e6));
   const [template, setTemplate] = useState(TEMPLATES[0]);
@@ -343,6 +376,7 @@ export function UploadPage() {
       cover,
       explicit,
       description: description.trim().slice(0, 400) || 'Uploaded on ASF.',
+      lyrics: lyrics.trim().slice(0, 20_000) || undefined,
       uploaded: true,
       peaks: info.peaks,
     };
@@ -406,6 +440,10 @@ export function UploadPage() {
           <label className="field">
             Description
             <textarea className="input" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={400} placeholder="Credits, story behind the song…" />
+          </label>
+          <label className="field">
+            Lyrics <span className="muted">(optional — plain text or an LRC file’s contents; you can sync them to the song later)</span>
+            <textarea className="input" rows={4} value={lyrics} onChange={(e) => setLyrics(e.target.value)} maxLength={20_000} placeholder={'One line per row'} />
           </label>
           <label className="check">
             <input type="checkbox" checked={explicit} onChange={(e) => setExplicit(e.target.checked)} /> Explicit lyrics

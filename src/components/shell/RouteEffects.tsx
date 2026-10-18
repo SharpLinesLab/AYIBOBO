@@ -35,6 +35,12 @@ function titleFor(route: Route, m: ReturnType<typeof useMusic>): string {
       return route.q ? `Search: ${route.q}` : 'Search';
     case 'upload':
       return 'Upload music';
+    case 'settings':
+      return 'Settings';
+    case 'studio': {
+      const a = route.artistId ? m.artist(route.artistId) : undefined;
+      return a ? `${a.name} · Artist Studio` : 'Artist Studio';
+    }
     case 'leaderboard':
       return 'Boost Board';
     case 'daily':

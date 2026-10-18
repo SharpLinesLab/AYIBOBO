@@ -306,7 +306,17 @@ export function createApp(cfg: AppConfig) {
 
   if (cfg.staticDir && existsSync(cfg.staticDir)) {
     const dir = cfg.staticDir;
-    app.use(express.static(dir, { index: false, maxAge: '1h', setHeaders: (res, path) => /\/assets\//.test(path) && res.setHeader('Cache-Control', 'public, max-age=31536000, immutable') }));
+    app.use(
+      express.static(dir, {
+        index: false,
+        maxAge: '1h',
+        setHeaders: (res, path) => {
+          if (/\/assets\//.test(path)) res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+          // The service worker must revalidate so updates roll out promptly.
+          else if (/sw\.js$/.test(path)) res.setHeader('Cache-Control', 'no-cache');
+        },
+      }),
+    );
     // The HTML shell must always revalidate so a new deploy is picked up immediately.
     app.get(/.*/, (_req, res) => {
       res.setHeader('Cache-Control', 'no-cache');

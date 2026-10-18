@@ -12,6 +12,8 @@ import { Cover, ExplicitBadge, HeartIcon, LikeButton, PlayAll, RepostIcon, Shelf
 import { AlbumCard, ArtistCard, TrackCard, Verified } from '../components/music/Cards';
 import { TrackMenu } from '../components/music/TrackMenu';
 import { ArtistLinks, TrackList } from '../components/music/TrackRow';
+import { LyricsEditor, LyricsView, hasLyrics } from '../components/music/Lyrics';
+import { DownloadButton } from '../components/music/Offline';
 import { Waveform } from '../components/music/Waveform';
 import { ShuffleIcon } from '../components/icons';
 import { NotFound } from './Browse';
@@ -91,6 +93,36 @@ function seedComments(t: Track, now: number): Comment[] {
   })).sort((a, b) => b.at - a.at);
 }
 
+function SongLyrics({ track }: { track: Track }) {
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const has = hasLyrics(track);
+  if (!has && !track.uploaded) return null;
+  return (
+    <section className={`card-panel song-lyrics${open ? ' is-open' : ''}`} aria-labelledby="lyrics-title">
+      <div className="song-lyrics__head">
+        <h2 className="panel-title" id="lyrics-title">
+          Lyrics
+        </h2>
+        {track.uploaded && (
+          <button className="btn-glass btn-sm" onClick={() => setEditing(true)}>
+            {has ? 'Edit lyrics' : 'Add lyrics'}
+          </button>
+        )}
+      </div>
+      <div className="song-lyrics__body">
+        <LyricsView track={track} variant="page" />
+      </div>
+      {has && (
+        <button className="link-btn song-lyrics__more" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+          {open ? 'Show less' : 'Show all lyrics'}
+        </button>
+      )}
+      {editing && <LyricsEditor track={track} onClose={() => setEditing(false)} />}
+    </section>
+  );
+}
+
 export function SongPage({ id }: { id: string }) {
   const m = useMusic();
   const { toast } = useApp();
@@ -144,6 +176,7 @@ export function SongPage({ id }: { id: string }) {
           <button className={`btn-glass${reposted ? ' is-on' : ''}`} onClick={() => (m.toggleRepost(t.id), toast(reposted ? 'Repost removed' : 'Reposted'))}>
             <RepostIcon /> {reposted ? 'Reposted' : 'Repost'}
           </button>
+          <DownloadButton tracks={[t]} label={t.title} />
           <TrackMenu track={t} />
         </div>
       </DetailHero>
@@ -151,6 +184,8 @@ export function SongPage({ id }: { id: string }) {
       <section className="card-panel">
         <Waveform track={t} context={[t, ...more]} height={96} />
       </section>
+
+      <SongLyrics track={t} />
 
       <div className="two-col">
         <section className="card-panel">
@@ -245,6 +280,7 @@ export function AlbumPage({ id }: { id: string }) {
           <button className={`btn-glass${saved ? ' is-on' : ''}`} onClick={() => m.toggleLikeAlbum(a.id)}>
             <HeartIcon filled={saved} /> {saved ? 'Saved' : 'Save'}
           </button>
+          <DownloadButton tracks={tracks} label={a.title} />
         </div>
       </DetailHero>
       <section className="card-panel">
@@ -301,6 +337,7 @@ export function PlaylistPage({ id }: { id: string }) {
               <HeartIcon filled={saved} /> {saved ? 'Following' : 'Follow'}
             </button>
           )}
+          {tracks.length > 0 && <DownloadButton tracks={tracks} label={p.title} />}
         </div>
       </DetailHero>
       <section className="card-panel">

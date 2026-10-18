@@ -40,6 +40,8 @@ export interface PlayerState {
   repeat: RepeatMode;
   /** Minutes until the sleep timer pauses playback, or null. */
   sleepAt: number | null;
+  /** Seconds the end of a song overlaps the start of the next (0 = off, gapless). */
+  crossfade: number;
 }
 
 type Listener = (s: PlayerState) => void;
@@ -47,7 +49,11 @@ type PosListener = (position: number, duration: number) => void;
 
 const PREFS_KEY = 'asf:player';
 
-function loadPrefs(): Pick<PlayerState, 'volume' | 'muted' | 'shuffle' | 'repeat'> {
+type Prefs = Pick<PlayerState, 'volume' | 'muted' | 'shuffle' | 'repeat' | 'crossfade'>;
+const PREF_KEYS = ['volume', 'muted', 'shuffle', 'repeat', 'crossfade'] as const;
+export const MAX_CROSSFADE = 12;
+
+function loadPrefs(): Prefs {
   try {
     const p = JSON.parse(localStorage.getItem(PREFS_KEY) ?? '{}');
     return {
@@ -55,9 +61,10 @@ function loadPrefs(): Pick<PlayerState, 'volume' | 'muted' | 'shuffle' | 'repeat
       muted: !!p.muted,
       shuffle: !!p.shuffle,
       repeat: p.repeat === 'all' || p.repeat === 'one' ? p.repeat : 'off',
+      crossfade: typeof p.crossfade === 'number' ? Math.min(MAX_CROSSFADE, Math.max(0, Math.round(p.crossfade))) : 0,
     };
   } catch {
-    return { volume: 0.85, muted: false, shuffle: false, repeat: 'off' };
+    return { volume: 0.85, muted: false, shuffle: false, repeat: 'off', crossfade: 0 };
   }
 }
 
@@ -69,28 +76,49 @@ const playListeners = new Set<(p: Playable) => void>();
 let ac: AudioContext | null = null;
 let master: GainNode | null = null;
 let analyser: AnalyserNode | null = null;
-let bus: GainNode | null = null;
-let audioEl: HTMLAudioElement | null = null;
-let elSource: MediaElementAudioSourceNode | null = null;
-let scheduler = 0;
 let raf = 0;
+let watchTimer = 0;
 let sleepTimer = 0;
-/** Synth timeline: AudioContext time at which position 0 would have played. */
+/** Synth timeline of the current voice: AudioContext time at which position 0 would have played. */
 let trackT0 = 0;
-let nextBar = 0;
-let totalBars = 0;
-/** Position while paused / for files. */
+/** Position while paused. */
 let pausedAt = 0;
 /** Shuffle order (indices into queue), current item first. */
 let order: number[] = [];
 let token = 0;
+/** Token of the start that already handed over to the next item (guards double advance). */
+let advancedFor = -1;
 
+/**
+ * Something making sound: a synth track's bar scheduler or an audio element, each behind its own
+ * gain so the outgoing song can fade out while the next one fades in (crossfade).
+ */
+interface Voice {
+  gain: GainNode;
+  timer: number;
+  slot?: ElSlot;
+  done?: number;
+}
+interface ElSlot {
+  el: HTMLAudioElement;
+  gain: GainNode;
+  voice: Voice | null;
+}
+let voice: Voice | null = null;
+const fading = new Set<Voice>();
+const slots: ElSlot[] = [];
+/** Optional mapping from a stream URL to a local (downloaded) copy. */
+let resolveUrl: (url: string) => Promise<string> = async (u) => u;
+
+export function setUrlResolver(fn: (url: string) => Promise<string>) {
+  resolveUrl = fn;
+}
 function emit(patch: Partial<PlayerState>) {
   state = { ...state, ...patch };
   listeners.forEach((l) => l(state));
-  if ('volume' in patch || 'muted' in patch || 'shuffle' in patch || 'repeat' in patch) {
+  if (PREF_KEYS.some((k) => k in patch)) {
     try {
-      localStorage.setItem(PREFS_KEY, JSON.stringify({ volume: state.volume, muted: state.muted, shuffle: state.shuffle, repeat: state.repeat }));
+      localStorage.setItem(PREFS_KEY, JSON.stringify(Object.fromEntries(PREF_KEYS.map((k) => [k, state[k]]))));
     } catch {
       /* ignore */
     }
@@ -141,8 +169,8 @@ function ensureContext(): AudioContext {
 export function getPosition(): number {
   const cur = state.current;
   if (!cur) return 0;
-  if (cur.source.kind === 'file') return audioEl?.currentTime ?? pausedAt;
-  if (!state.playing || !ac) return pausedAt;
+  if (!state.playing || !ac || !voice) return pausedAt;
+  if (voice.slot) return voice.slot.el.currentTime;
   return Math.min(cur.duration, Math.max(0, ac.currentTime - trackT0));
 }
 
@@ -151,69 +179,130 @@ function tickPosition() {
   const loop = () => {
     const cur = state.current;
     if (!cur) return;
-    const pos = getPosition();
-    posListeners.forEach((l) => l(pos, cur.duration));
-    if (cur.source.kind === 'synth' && state.playing && pos >= cur.duration - 0.02) {
-      handleEnded();
-      return;
-    }
+    posListeners.forEach((l) => l(getPosition(), cur.duration));
     if (state.playing) raf = requestAnimationFrame(loop);
   };
   raf = requestAnimationFrame(loop);
 }
 
-function stopOutput() {
-  clearInterval(scheduler);
-  scheduler = 0;
-  if (bus && ac) {
-    const b = bus;
-    b.gain.cancelScheduledValues(ac.currentTime);
-    b.gain.setTargetAtTime(0, ac.currentTime, 0.03);
-    setTimeout(() => b.disconnect(), 250);
-    bus = null;
-  }
-  if (audioEl) audioEl.pause();
+/** Whether finishing the current item would continue into another one. */
+function hasAutoNext(): boolean {
+  if (state.repeat === 'one') return false;
+  return orderPos() < order.length - 1 || (state.repeat === 'all' && order.length > 1);
 }
 
-function startSynth(recipe: SynthRecipe, duration: number, from: number) {
+/**
+ * End-of-track watch. Runs on a timer rather than animation frames so songs still advance in
+ * background tabs; with crossfade on it hands over `crossfade` seconds before the end.
+ */
+function watchEnd() {
+  clearInterval(watchTimer);
+  const my = token;
+  watchTimer = window.setInterval(() => {
+    const cur = state.current;
+    if (my !== token || !cur || !state.playing) return;
+    const pos = getPosition();
+    const xf = state.crossfade;
+    if (xf > 0 && cur.duration > xf * 2 + 2 && hasAutoNext() && pos >= cur.duration - xf) handleEnded(xf);
+    else if (!voice?.slot && pos >= cur.duration - 0.02) handleEnded(0);
+  }, 200);
+}
+
+/** Fade a voice out over `fade` seconds (0 = quick declick) and free it afterwards. */
+function release(v: Voice, fade = 0) {
+  const ctx = ac!;
+  const g = v.gain.gain;
+  const t = ctx.currentTime;
+  g.cancelScheduledValues(t);
+  g.setValueAtTime(g.value, t);
+  if (fade > 0.1) g.linearRampToValueAtTime(0, t + fade);
+  else g.setTargetAtTime(0, t, 0.03);
+  fading.add(v);
+  clearTimeout(v.done);
+  v.done = window.setTimeout(() => {
+    clearInterval(v.timer);
+    fading.delete(v);
+    if (v.slot) {
+      if (v.slot.voice === v) {
+        v.slot.el.pause();
+        v.slot.voice = null;
+      }
+    } else v.gain.disconnect();
+  }, (fade > 0.1 ? fade : 0.2) * 1000 + 80);
+}
+
+function stopOutput(fade = 0) {
+  clearInterval(watchTimer);
+  if (voice && ac) release(voice, fade);
+  voice = null;
+}
+
+/** Fade in a new voice's gain (a few ms to avoid clicks, or the crossfade length). */
+function fadeIn(g: GainNode, fade: number) {
+  const t = ac!.currentTime;
+  g.gain.cancelScheduledValues(t);
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(1, t + Math.max(0.02, fade));
+}
+
+function startSynth(recipe: SynthRecipe, duration: number, from: number, fade: number) {
   const ctx = ensureContext();
-  bus = ctx.createGain();
-  bus.connect(master!);
+  const gain = ctx.createGain();
+  gain.connect(master!);
+  fadeIn(gain, fade);
   const barDur = barSeconds(recipe);
-  totalBars = barCount(recipe, duration);
+  const total = barCount(recipe, duration);
   const startAt = ctx.currentTime + 0.06;
-  trackT0 = startAt - from;
-  nextBar = Math.floor(from / barDur);
-  const myBus = bus;
+  const t0 = startAt - from;
+  trackT0 = t0;
+  let nextBar = Math.floor(from / barDur);
+  const v: Voice = { gain, timer: 0 };
   const schedule = () => {
-    if (bus !== myBus || !ac) return;
+    if (!ac) return;
     // Background tabs throttle timers to ~1s, so schedule further ahead while hidden.
     const horizon = ac.currentTime + (document.hidden ? 3 : 0.8);
-    while (nextBar < totalBars && trackT0 + nextBar * barDur < horizon) {
-      const t = trackT0 + nextBar * barDur;
-      renderBar(ac, myBus, recipe, nextBar, totalBars, t, startAt);
+    while (nextBar < total && t0 + nextBar * barDur < horizon) {
+      renderBar(ac, gain, recipe, nextBar, total, t0 + nextBar * barDur, startAt);
       nextBar++;
     }
   };
   schedule();
-  scheduler = window.setInterval(schedule, 120);
+  v.timer = window.setInterval(schedule, 120);
+  voice = v;
 }
 
-async function startFile(url: string, from: number, my: number) {
-  const ctx = ensureContext();
-  if (!audioEl) {
-    audioEl = new Audio();
-    audioEl.preload = 'auto';
-    audioEl.crossOrigin = 'anonymous';
-    elSource = ctx.createMediaElementSource(audioEl);
-    elSource.connect(master!);
-    audioEl.addEventListener('ended', () => handleEnded());
+function slotFor(ctx: AudioContext): ElSlot {
+  let slot = slots.find((s) => !s.voice);
+  if (!slot) {
+    const el = new Audio();
+    el.preload = 'auto';
+    el.crossOrigin = 'anonymous';
+    const gain = ctx.createGain();
+    ctx.createMediaElementSource(el).connect(gain).connect(master!);
+    slot = { el, gain, voice: null };
+    const s = slot;
+    el.addEventListener('ended', () => {
+      if (voice && s.voice === voice) handleEnded(0);
+    });
+    slots.push(slot);
   }
-  if (audioEl.src !== url) audioEl.src = url;
-  audioEl.currentTime = from;
+  return slot;
+}
+
+async function startFile(url: string, from: number, my: number, fade: number) {
+  const ctx = ensureContext();
+  const slot = slotFor(ctx);
+  const v: Voice = { gain: slot.gain, timer: 0, slot };
+  slot.voice = v;
+  voice = v;
+  fadeIn(slot.gain, fade);
   emit({ loading: true });
   try {
-    await audioEl.play();
+    const src = await resolveUrl(url);
+    if (my !== token) return;
+    if (slot.el.src !== src) slot.el.src = src;
+    slot.el.currentTime = from;
+    await slot.el.play();
   } catch {
     if (my === token) emit({ playing: false });
   } finally {
@@ -221,20 +310,22 @@ async function startFile(url: string, from: number, my: number) {
   }
 }
 
-async function startCurrent(from = 0) {
+async function startCurrent(from = 0, fade = 0) {
   const cur = state.current;
   if (!cur) return;
   const my = ++token;
-  stopOutput();
+  stopOutput(fade);
   const ctx = ensureContext();
   if (ctx.state === 'suspended') await ctx.resume();
   if (my !== token) return;
   pausedAt = from;
-  if (cur.source.kind === 'synth') startSynth(cur.source.recipe, cur.duration, from);
-  else await startFile(cur.source.url, from, my);
   emit({ playing: true });
+  if (cur.source.kind === 'synth') startSynth(cur.source.recipe, cur.duration, from, fade);
+  else await startFile(cur.source.url, from, my, fade);
+  if (my !== token) return;
   updateMediaSession();
   tickPosition();
+  watchEnd();
 }
 
 function setCurrent(index: number) {
@@ -254,13 +345,13 @@ function buildOrder(start: number) {
   order = state.shuffle ? [start, ...idx] : state.queue.map((_, i) => i);
 }
 
-/** Replace the queue and start playing `items[start]`. */
-export function playQueue(items: Playable[], start = 0) {
+/** Replace the queue and start playing `items[start]` (optionally `from` seconds in). */
+export function playQueue(items: Playable[], start = 0, from = 0) {
   if (!items.length) return;
   emit({ queue: items });
   buildOrder(start);
   setCurrent(start);
-  void startCurrent(0);
+  void startCurrent(Math.max(0, Math.min(from, items[start].duration - 0.5)));
 }
 
 /** Play/pause toggle for a single item; plays it (as a one-item queue) if it isn't current. */
@@ -284,6 +375,7 @@ export function pause() {
   pausedAt = getPosition();
   token++;
   stopOutput();
+  fading.forEach((v) => release(v));
   emit({ playing: false });
   cancelAnimationFrame(raf);
   posListeners.forEach((l) => l(pausedAt, state.current!.duration));
@@ -299,10 +391,12 @@ export function seek(seconds: number) {
   const cur = state.current;
   if (!cur) return;
   const to = Math.max(0, Math.min(cur.duration - 0.25, seconds));
-  if (state.playing) void startCurrent(to);
+  if (state.playing && voice?.slot) {
+    voice.slot.el.currentTime = to;
+    posListeners.forEach((l) => l(to, cur.duration));
+  } else if (state.playing) void startCurrent(to);
   else {
     pausedAt = to;
-    if (cur.source.kind === 'file' && audioEl) audioEl.currentTime = to;
     posListeners.forEach((l) => l(to, cur.duration));
   }
 }
@@ -311,18 +405,18 @@ function orderPos(): number {
   return order.indexOf(state.index);
 }
 
-export function next(auto = false) {
+export function next(auto = false, fade = 0) {
   if (!state.queue.length) return;
   const p = orderPos();
   if (p < order.length - 1) {
     setCurrent(order[p + 1]);
-    void startCurrent(0);
+    void startCurrent(0, fade);
     return;
   }
   // End of the queue.
   if (state.repeat === 'all' || (!auto && order.length > 1)) {
     setCurrent(order[0]);
-    void startCurrent(0);
+    void startCurrent(0, fade);
   } else if (!auto) {
     seek(0);
   } else {
@@ -346,12 +440,18 @@ export function prev() {
   } else seek(0);
 }
 
-function handleEnded() {
+function handleEnded(fade: number) {
+  if (advancedFor === token) return;
+  advancedFor = token;
   if (state.repeat === 'one') {
     void startCurrent(0);
     return;
   }
-  next(true);
+  next(true, fade);
+}
+
+export function setCrossfade(seconds: number) {
+  emit({ crossfade: Math.min(MAX_CROSSFADE, Math.max(0, Math.round(seconds))) });
 }
 
 export function setVolume(v: number) {

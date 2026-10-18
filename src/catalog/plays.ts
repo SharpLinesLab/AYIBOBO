@@ -96,3 +96,20 @@ export function trending(tracks: Track[], now: number): Track[] {
     .sort((x, y) => y.score - x.score)
     .map((x) => x.t);
 }
+
+/**
+ * Daily plays for the last `days` days, oldest first (the last entry is today so far).
+ * Uploaded tracks have no synthetic history (all zeros).
+ */
+export function dailyPlays(t: Track, now: number, days: number): number[] {
+  if (t.uploaded) return new Array(days).fill(0);
+  const today = startOfDay(now);
+  const s = series(t, today);
+  const frac = (now - today) / DAY;
+  const out: number[] = [];
+  for (let d = days - 1; d >= 0; d--) {
+    const v = d < s.length ? s[s.length - 1 - d] : 0;
+    out.push(Math.round(d === 0 ? v * frac : v));
+  }
+  return out;
+}

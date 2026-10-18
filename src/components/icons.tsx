@@ -164,6 +164,12 @@ export const ExpandIcon = line(['M15 3h6v6', 'M9 21H3v-6', 'M21 3l-7 7', 'M3 21l
 export const CollapseIcon = line('m6 9 6 6 6-6');
 export const MoonSleepIcon = line(['M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z', 'M16 3h4l-4 4h4']);
 export const VolumeIcon = line(['M11 5 6 9H2v6h4l5 4V5Z', 'M15.5 8.5a5 5 0 0 1 0 7', 'M19 5a10 10 0 0 1 0 14']);
+export const DownloadIcon = line(['M12 4v11', 'M7 10l5 5 5-5', 'M5 20h14']);
+export const GearIcon = line([
+  'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
+  'M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z',
+]);
+export const StudioIcon = line(['M3 3v18h18', 'M7 15l4-4 3 3 6-7']);
 export const MuteIcon = line(['M11 5 6 9H2v6h4l5 4V5Z', 'M23 9l-6 6', 'M17 9l6 6']);
 
 export const PrevIcon = (p: SVGProps<SVGSVGElement>) => (

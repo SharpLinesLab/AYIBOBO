@@ -1,0 +1,890 @@
+/* =============================================================================================
+   Feature layer: synced lyrics, settings (crossfade / offline), downloads and the artist studio.
+   ============================================================================================= */
+
+/* --- lyrics -------------------------------------------------------------------------------- */
+
+.lyr {
+  position: relative;
+  outline: none;
+}
+
+.lyr__line {
+  margin: 0;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  transition: color 0.35s, opacity 0.35s, transform 0.35s;
+  transform-origin: left center;
+}
+
+.lyr__line.is-clickable {
+  cursor: pointer;
+}
+
+.lyr__note,
+.lyr__credit {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+
+.lyr__credit {
+  margin: 18px 0 0;
+}
+
+.lyr__dots {
+  display: inline-flex;
+  gap: 7px;
+  vertical-align: middle;
+}
+
+.lyr__dots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
+}
+
+.lyr__line--gap.is-active .lyr__dots i {
+  animation: lyrdot 1.4s ease-in-out infinite;
+}
+
+.lyr__line--gap.is-active .lyr__dots i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.lyr__line--gap.is-active .lyr__dots i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes lyrdot {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+/* Full screen (Now Playing → Lyrics) */
+.lyr--full {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 18vh 4px 30vh;
+  mask-image: linear-gradient(180deg, transparent, #000 14%, #000 78%, transparent);
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 14%, #000 78%, transparent);
+}
+
+.lyr--full::-webkit-scrollbar {
+  display: none;
+}
+
+.lyr--full .lyr__line {
+  font-family: var(--font-display);
+  font-size: clamp(24px, 3.2vw, 38px);
+  line-height: 1.22;
+  padding: 10px 0;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.lyr--full.is-live .lyr__line {
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.lyr--full.is-live .lyr__line.is-past {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.lyr--full .lyr__line.is-active {
+  color: #fff;
+  transform: scale(1.02);
+  text-shadow: 0 0 28px rgba(255, 255, 255, 0.28);
+}
+
+.lyr--full .lyr__line.is-clickable:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.lyr--full .lyr__note {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.np--lyrics .np__side {
+  height: min(78vh, 760px);
+  gap: 14px;
+}
+
+.np__titles--sm h2 {
+  font-size: clamp(22px, 2.6vw, 30px) !important;
+}
+
+@media (max-width: 959px) {
+  .np--lyrics .np__art {
+    display: none;
+  }
+  .np--lyrics .np__body {
+    margin-top: 12px;
+    align-items: stretch;
+  }
+  .np--lyrics .np__side {
+    height: calc(100dvh - 110px);
+  }
+}
+
+/* Side-panel card */
+.npp__lyrics {
+  border-radius: 14px;
+  padding: 12px 12px 4px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 22%, var(--surface-2)), var(--surface-2) 70%);
+}
+
+.npp__lyrics .npp__next-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lyr--card {
+  max-height: 230px;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 6px 4px 60px;
+  mask-image: linear-gradient(180deg, #000 70%, transparent);
+  -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent);
+}
+
+.lyr--card .lyr__line {
+  font-size: 18px;
+  line-height: 1.3;
+  padding: 5px 0;
+  color: var(--text);
+}
+
+.lyr--card.is-live .lyr__line {
+  color: var(--muted);
+}
+
+.lyr--card .lyr__line.is-active {
+  color: var(--text);
+}
+
+/* Song page */
+.song-lyrics__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.song-lyrics__body {
+  max-height: 360px;
+  overflow: hidden;
+  mask-image: linear-gradient(180deg, #000 72%, transparent);
+  -webkit-mask-image: linear-gradient(180deg, #000 72%, transparent);
+}
+
+.song-lyrics.is-open .song-lyrics__body {
+  max-height: none;
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+.lyr--page .lyr__line {
+  font-size: 19px;
+  line-height: 1.35;
+  padding: 4px 0;
+  color: var(--text);
+}
+
+.lyr--page.is-live .lyr__line {
+  color: var(--muted);
+}
+
+.lyr--page .lyr__line.is-active {
+  color: var(--accent);
+}
+
+.lyr--page .lyr__line.is-clickable:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 5px;
+}
+
+.lyr--page .lyr__line--gap {
+  color: var(--faint);
+  font-size: 14px;
+}
+
+.song-lyrics__more {
+  margin-top: 8px;
+  font-weight: 700;
+}
+
+.lyr--empty p {
+  margin: 0;
+}
+
+/* Lyrics editor */
+.lyred {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lyred h2 {
+  margin: 0;
+  font-family: var(--font-display);
+}
+
+.lyred p {
+  margin: 0;
+}
+
+.lyred__text {
+  width: 100%;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 14px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.lyred__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.lyred__actions .grow {
+  flex: 1;
+}
+
+.lyred__lines {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+  max-height: 46vh;
+  overflow-y: auto;
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.lyred__lines li {
+  padding: 8px 14px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.lyred__lines li .num {
+  display: inline-block;
+  width: 48px;
+  color: var(--faint);
+  font-size: 13px;
+}
+
+.lyred__lines li.is-next {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.lyred__lines li.is-done {
+  color: var(--text);
+}
+
+@media (max-width: 520px) {
+  .np__label {
+    display: none;
+  }
+}
+
+/* --- connection / update banner ------------------------------------------------------------ */
+
+.conn {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin: 8px clamp(16px, 3vw, 32px) 0;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+}
+
+.conn--update {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+}
+
+/* --- downloads ----------------------------------------------------------------------------- */
+
+.dl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dl-btn__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+}
+
+.dl-btn.is-on .dl-btn__icon {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink, #04130a);
+}
+
+.dl-btn.is-busy .dl-btn__icon {
+  border-color: color-mix(in srgb, currentColor 30%, transparent);
+  border-top-color: var(--accent);
+  animation: dlspin 0.9s linear infinite;
+}
+
+.dl-btn.is-busy .dl-btn__icon svg {
+  animation: dlspin 0.9s linear infinite reverse;
+}
+
+@keyframes dlspin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.dl-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  margin-right: 6px;
+  border-radius: 50%;
+  vertical-align: -2px;
+  background: var(--accent);
+  color: var(--accent-ink, #04130a);
+}
+
+.trow.is-unavailable {
+  opacity: 0.45;
+}
+
+/* --- settings -------------------------------------------------------------------------------- */
+
+.settings .set-group {
+  display: flex;
+  flex-direction: column;
+  max-width: 860px;
+}
+
+.set-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+}
+
+.set-group .panel-title + .set-row {
+  border-top: 0;
+  padding-top: 4px;
+}
+
+.set-row__text {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.set-row__text p {
+  margin: 4px 0 0;
+  font-size: 14px;
+}
+
+.set-row__title {
+  font-weight: 700;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.set-row__control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.set-slider {
+  min-width: 260px;
+}
+
+.set-slider input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--accent) var(--v), color-mix(in srgb, var(--text) 16%, transparent) var(--v));
+  cursor: pointer;
+}
+
+.set-slider input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.set-slider input[type='range']::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.set-slider output {
+  width: 44px;
+  text-align: right;
+  font-weight: 700;
+}
+
+.set-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--faint);
+}
+
+.set-dot.is-on {
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.pill2 {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.pill2.is-ok {
+  color: var(--accent);
+}
+
+.pill2.is-warn {
+  color: var(--warn);
+}
+
+/* --- artist studio ------------------------------------------------------------------------- */
+
+.studio__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 20px;
+  margin: 8px 0 18px;
+}
+
+.studio__head img {
+  flex: none;
+}
+
+.studio__me {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  flex: none;
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--accent-ink, #04130a);
+  background: linear-gradient(135deg, var(--accent), #0ea5e9);
+}
+
+.studio__titles {
+  flex: 1 1 260px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.studio__titles h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4vw, 44px);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.studio__titles a {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.studio__pick {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.studio__pick select {
+  min-width: 240px;
+  max-width: 100%;
+}
+
+.studio__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.studio__asof {
+  font-size: 13px;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 900px) {
+  .kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 !important;
+  min-width: 0;
+}
+
+.kpi__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.kpi__value {
+  font-family: var(--font-ui);
+  font-size: clamp(26px, 3.2vw, 36px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.kpi__delta {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.kpi__delta.is-up,
+.studio__col-change.is-up {
+  color: var(--green);
+}
+
+.kpi__delta.is-down,
+.studio__col-change.is-down {
+  color: var(--danger);
+}
+
+.kpi__delta .muted {
+  font-weight: 500;
+}
+
+/* chart */
+.schart__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.schart__bar .panel-title {
+  margin: 0;
+}
+
+.schart__plot {
+  position: relative;
+  width: 100%;
+  min-height: 260px;
+}
+
+.schart__plot svg {
+  display: block;
+  outline: none;
+  touch-action: pan-y;
+}
+
+.schart__plot svg:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+.schart__grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.schart__tick {
+  fill: var(--muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.schart__line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.schart__area {
+  fill: var(--accent);
+  opacity: 0.1;
+}
+
+.schart__dot {
+  fill: var(--accent);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.schart__cross {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+
+.schart__tip {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  pointer-events: none;
+  white-space: nowrap;
+  font-size: 12.5px;
+  background: var(--surface-top-solid, var(--surface));
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.schart__tip span {
+  color: var(--muted);
+}
+
+.schart__table,
+.studio__table {
+  overflow-x: auto;
+}
+
+.schart__table {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.schart__table table,
+.studio__table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.schart__table th,
+.schart__table td,
+.studio__table th,
+.studio__table td {
+  padding: 9px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.schart__table th,
+.studio__table th {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.schart__table .num,
+.studio__table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.studio__song {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.studio__song > span {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.studio__song b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.studio__song:hover b {
+  text-decoration: underline;
+}
+
+.studio__share {
+  display: block;
+  height: 4px;
+  max-width: 220px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+}
+
+.studio__share i {
+  display: block;
+  height: 100%;
+  border-radius: 0 2px 2px 0;
+  background: var(--accent);
+}
+
+.spark polyline {
+  fill: none;
+  stroke: var(--faint);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.spark circle {
+  fill: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .studio__col-trend,
+  .studio__col-change {
+    display: none;
+  }
+  .studio__table th,
+  .studio__table td {
+    padding: 9px 6px;
+  }
+}
+
+.barlist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.barlist li {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.barlist__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barlist__track {
+  height: 10px;
+}
+
+.barlist__track i {
+  display: block;
+  height: 100%;
+  min-width: 4px;
+  border-radius: 0 4px 4px 0;
+  background: var(--accent);
+}
+
+.barlist__value {
+  text-align: right;
+  font-weight: 700;
+}
+
+.studio__aud {
+  align-items: start;
+}
+
+.studio__note {
+  font-size: 13px;
+  max-width: 760px;
+}
+
+.lib-links {
+  display: flex;
+  gap: 8px;
+  margin: -6px 0 14px;
+}
+
+@media (min-width: 1024px) {
+  .lib-links {
+    display: none;
+  }
+}
+
+.studio__filters .segmented {
+  margin: 0;
+}
+
+.page-music .phead__actions .muted a {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
