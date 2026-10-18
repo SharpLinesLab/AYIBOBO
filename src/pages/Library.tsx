@@ -5,14 +5,11 @@ import { GENRES } from '../catalog/genres';
 import { searchCatalog } from '../catalog/search';
 import type { CoverSpec, GenreId, Track } from '../catalog/types';
 import { analyzeAudio, saveAudio } from '../catalog/uploads';
-import { searchListings } from '../lib/search';
-import { usd } from '../lib/format';
 import { fmtTime, useMusic } from '../music';
 import { useApp } from '../store';
 import { Cover, PlayAll, Shelf } from '../components/music/bits';
 import { AlbumCard, ArtistCard, GenreTile, PlaylistCard, TrackCard } from '../components/music/Cards';
 import { TrackList } from '../components/music/TrackRow';
-import { Thumb } from '../components/Thumb';
 import { PageHead } from './Browse';
 import { fmtNumber, plural, t, type Key } from '../i18n';
 
@@ -200,10 +197,8 @@ export function LibraryPage({ tab }: { tab: string }) {
 
 export function SearchPage({ q }: { q: string }) {
   const m = useMusic();
-  const { boards, snapshot, openDetail } = useApp();
   const res = useMemo(() => searchCatalog(m.catalog, q, 24), [m.catalog, q]);
-  const listings = useMemo(() => (q.trim() ? searchListings(snapshot.state.listings, boards.all, q, 6) : []), [q, snapshot.state.listings, boards.all]);
-  const total = res.tracks.length + res.artists.length + res.albums.length + res.playlists.length + listings.length;
+  const total = res.tracks.length + res.artists.length + res.albums.length + res.playlists.length;
   if (!q.trim()) {
     return (
       <div className="page-music">
@@ -272,26 +267,6 @@ export function SearchPage({ q }: { q: string }) {
             <PlaylistCard key={p.id} playlist={p} />
           ))}
         </Shelf>
-      )}
-      {listings.length > 0 && (
-        <section className="card-panel">
-          <h2 className="panel-title">{t('pages.search.onBoostBoard')}</h2>
-          <ul className="mini-list">
-            {listings.map((h) => (
-              <li key={h.listing.id}>
-                <button className="mini-row" onClick={() => openDetail(h.listing.id)}>
-                  <span className="mini-row__rank">{h.entry ? `#${h.entry.rank}` : '—'}</span>
-                  <Thumb art={h.listing.artwork} size="sm" />
-                  <span className="mini-row__title">
-                    {h.listing.title}
-                    <span className="mini-row__sub">{h.listing.display}</span>
-                  </span>
-                  <span className="mini-row__amt">{h.entry ? usd(h.entry.total) : ''}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
       )}
     </div>
   );

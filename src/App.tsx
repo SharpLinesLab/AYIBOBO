@@ -1,26 +1,11 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
-import { createBackend, createLocalBackend, type Backend, type Snapshot } from './backend';
-import { stopPreview } from './lib/audio';
-import type { BoardId } from './lib/types';
 import { MusicProvider } from './music';
 import * as player from './player/engine';
-import { AppProvider, parseRoute, useBoards, useNow, type AppContextValue, type Filter, type HeroPrefill } from './store';
-import { CategoryBar, Footer } from './components/Chrome';
-import type { CheckoutRequestState } from './components/CheckoutModal';
+import { AppProvider, parseRoute, useNow, type AppContextValue } from './store';
+import { Footer } from './components/shell/Footer';
 
-// The Boost Board and its dialogs are split into their own chunks; the music app loads without them.
-const CheckoutModal = lazy(() => import('./components/CheckoutModal').then((m) => ({ default: m.CheckoutModal })));
-const DetailDrawer = lazy(() => import('./components/DetailDrawer').then((m) => ({ default: m.DetailDrawer })));
-const StatsModal = lazy(() => import('./components/StatsModal').then((m) => ({ default: m.StatsModal })));
-const LeaderboardHome = lazy(() => import('./components/Pages').then((m) => ({ default: m.HomePage })));
-const DailyPage = lazy(() => import('./components/Pages').then((m) => ({ default: m.DailyPage })));
-const CategoriesPage = lazy(() => import('./components/Pages').then((m) => ({ default: m.CategoriesPage })));
-const AboutPage = lazy(() => import('./components/Pages').then((m) => ({ default: m.AboutPage })));
-const RulesPage = lazy(() => import('./components/Pages').then((m) => ({ default: m.RulesPage })));
 const NowPlaying = lazy(() => import('./components/shell/NowPlaying').then((m) => ({ default: m.NowPlaying })));
 const StudioPage = lazy(() => import('./pages/Studio').then((m) => ({ default: m.StudioPage })));
-const TodayWidget = lazy(() => import('./components/Sidebars').then((m) => ({ default: m.TodayWidget })));
-const ActivityFeed = lazy(() => import('./components/Sidebars').then((m) => ({ default: m.ActivityFeed })));
 
 function PageLoading() {
   return (
@@ -75,78 +60,15 @@ function useHashRoute() {
 
 export function App() {
   const lang = useLang();
-  const [backend, setBackend] = useState<Backend | null>(null);
-  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let unsub: (() => void) | undefined;
-    let cancelled = false;
-    (async () => {
-      try {
-        let b = await createBackend();
-        let s: Snapshot;
-        try {
-          s = await b.load();
-        } catch (err) {
-          // The API is down: keep the app (and all the music) working on the local demo backend.
-          console.warn('Boost Board API unavailable, using local mode', err);
-          b = createLocalBackend();
-          s = await b.load();
-        }
-        if (cancelled) return;
-        setBackend(b);
-        setSnapshot(s);
-        unsub = b.subscribe(setSnapshot);
-      } catch (e) {
-        if (!cancelled) setLoadError((e as Error).message || t('player.app.loadFailed'));
-      }
-    })();
-    return () => {
-      cancelled = true;
-      unsub?.();
-    };
-  }, []);
-
-  if (loadError) {
-    return (
-      <div className="page">
-        <div className="empty" style={{ marginTop: 80 }}>
-          <b>{t('player.app.loadError')}</b>
-          {loadError}
-        </div>
-      </div>
-    );
-  }
-  if (!backend || !snapshot) return <LoadingShell />;
   // Switching language re-renders the whole interface with the new strings (playback carries on).
-  return <Shell key={lang} backend={backend} snapshot={snapshot} setSnapshot={setSnapshot} />;
+  return <Shell key={lang} />;
 }
 
-function LoadingShell() {
-  return (
-    <div className="page" aria-busy="true">
-      <div style={{ maxWidth: 680, margin: '120px auto 0' }} className="stack">
-        <span className="skeleton" style={{ height: 44, width: '70%', margin: '0 auto' }} />
-        <span className="skeleton" style={{ height: 54, borderRadius: 999 }} />
-        {Array.from({ length: 4 }, (_, i) => (
-          <span key={i} className="skeleton" style={{ height: 110, borderRadius: 18 }} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot: Snapshot; setSnapshot: (s: Snapshot) => void }) {
+function Shell() {
   const [theme, toggleTheme] = useTheme();
   const hash = useHashRoute();
   const route = useMemo(() => parseRoute(hash), [hash]);
-  const now = useNow(snapshot.offset);
-  const boards = useBoards(snapshot, now);
-  const [board, setBoard] = useState<BoardId>('all');
-  const [filter, setFilter] = useState<Filter>('all');
-  const [detailId, setDetailId] = useState<string | null>(null);
-  const [statsOpen, setStatsOpen] = useState(false);
+  const now = useNow();
   const [npTab, setNpTab] = useState<NpTab | null>(null);
   const [panelOpen, setPanelOpen] = usePanelOpen();
   const hasPlayer = useSyncExternalStore(player.subscribe, () => !!player.getState().current);
@@ -155,12 +77,7 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
     if (hasPlayer) void import('./components/shell/NowPlaying');
   }, [hasPlayer]);
   const [subscribeOpen, setSubscribeOpen] = useState(false);
-  const [checkout, setCheckout] = useState<CheckoutRequestState | null>(null);
-  const [heroPrefill, setHeroPrefill] = useState<HeroPrefill>({ nonce: 0 });
-  const [highlightId, setHighlightId] = useState<string | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [claimed, setClaimed] = useState<{ id: string; from: number | null } | null>(null);
-  const [highlightFrom, setHighlightFrom] = useState<number | null>(null);
 
   const navigate = useCallback((h: string) => {
     if (window.location.hash !== h) window.location.hash = h;
@@ -172,19 +89,6 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
     const t = window.setTimeout(() => setToastMsg(null), 3200);
     return () => clearTimeout(t);
   }, [toastMsg]);
-
-  // Stripe return: ?checkout=success|cancel
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const status = params.get('checkout');
-    if (!status) return;
-    toast(t(status === 'success' ? 'player.app.paid' : 'player.app.cancelled'));
-    params.delete('checkout');
-    params.delete('session_id');
-    const qs = params.toString();
-    window.history.replaceState(null, '', `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash}`);
-    if (status === 'success') void backend.load().then(setSnapshot);
-  }, [backend, setSnapshot, toast]);
 
   // Player keyboard shortcuts: Space play/pause, ←/→ seek, Shift+←/→ prev/next, M mute.
   useEffect(() => {
@@ -208,52 +112,7 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
     return () => window.removeEventListener('keydown', on);
   }, []);
 
-  useEffect(() => () => stopPreview(), []);
-
-  const value: AppContextValue = {
-    backend,
-    snapshot,
-    now,
-    boards,
-    board,
-    setBoard,
-    filter,
-    setFilter,
-    route,
-    navigate,
-    openDetail: setDetailId,
-    openStats: () => setStatsOpen(true),
-    openSearch: () => navigate('#/search'),
-    prefillHero: (p) => {
-      if (route.page !== 'leaderboard') navigate('#/leaderboard');
-      setHeroPrefill((prev) => ({ ...p, nonce: prev.nonce + 1 }));
-    },
-    heroPrefill,
-    openCheckout: (req) => setCheckout(req),
-    highlightId,
-    highlightFrom,
-    setHighlightId,
-    setSnapshot,
-    toast,
-  };
-
-  const closeCheckout = () => {
-    setCheckout(null);
-    if (claimed) {
-      // Reveal the freshly claimed listing on the board it was bought on.
-      setFilter('all');
-      navigate('#/leaderboard');
-      const { id, from } = claimed;
-      setClaimed(null);
-      // Scroll first (measured without transforms), then start the climb animation.
-      window.setTimeout(() => {
-        document.querySelector(`[data-id="${id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setHighlightFrom(from);
-        setHighlightId(id);
-      }, 80);
-      window.setTimeout(() => setHighlightId((h) => (h === id ? null : h)), 3200);
-    }
-  };
+  const value: AppContextValue = { now, route, navigate, toast };
 
   let page: ReactNode;
   switch (route.page) {
@@ -299,38 +158,8 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
     case 'studio':
       page = <StudioPage artistId={route.artistId} />;
       break;
-    case 'daily':
-      page = <DailyPage day={route.day} />;
-      break;
-    case 'categories':
-      page = <CategoriesPage />;
-      break;
-    case 'about':
-      page = <AboutPage />;
-      break;
-    case 'rules':
-      page = <RulesPage />;
-      break;
     case 'notfound':
       page = <NotFound what="page" />;
-      break;
-    case 'leaderboard':
-      page = (
-        <div className="lb">
-          <CategoryBar />
-          <div className="layout">
-            <aside className="sidebar sidebar--left" aria-label={t('player.app.today')}>
-              <TodayWidget />
-            </aside>
-            <div className="main">
-              <LeaderboardHome />
-            </div>
-            <aside className="sidebar sidebar--right" aria-label={t('player.app.activity')}>
-              <ActivityFeed />
-            </aside>
-          </div>
-        </div>
-      );
       break;
   }
 
@@ -354,12 +183,12 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
             <div id="page-tint-root" aria-hidden />
             <TopBar theme={theme} onToggleTheme={toggleTheme} onSubscribe={() => setSubscribeOpen(true)} />
             <ConnectionBanner />
-            <main id="content" className="content" tabIndex={-1} key={route.page === 'leaderboard' ? 'lb' : hash}>
+            <main id="content" className="content" tabIndex={-1} key={hash}>
               <ErrorBoundary resetKey={hash}>
                 <Suspense fallback={<PageLoading />}>{page}</Suspense>
               </ErrorBoundary>
             </main>
-            <Footer showStats={route.page === 'leaderboard'} />
+            <Footer />
           </div>
           <PlayerBar onExpand={() => setNpTab('wave')} onLyrics={() => setNpTab('lyrics')} panelOpen={panelOpen} onTogglePanel={() => setPanelOpen(!panelOpen)} />
           {panelOpen && hasPlayer && <NowPlayingPanel onClose={() => setPanelOpen(false)} onLyrics={() => setNpTab('lyrics')} />}
@@ -373,20 +202,6 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
           </Suspense>
         )}
 
-        <Suspense fallback={null}>
-        {checkout && (
-          <CheckoutModal
-            req={checkout}
-            onClose={closeCheckout}
-            onClaimed={(id, b, from) => {
-              setClaimed({ id, from });
-              setBoard(b);
-            }}
-          />
-        )}
-        {detailId && <DetailDrawer listingId={detailId} onClose={() => setDetailId(null)} />}
-        {statsOpen && <StatsModal onClose={() => setStatsOpen(false)} />}
-        </Suspense>
         {subscribeOpen && <SubscribeModal onClose={() => setSubscribeOpen(false)} />}
         {toastMsg && (
           <div className="toast" role="status">

@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type P
 import { genreById } from '../catalog/genres';
 import { dailyPlays } from '../catalog/plays';
 import type { Artist, Track } from '../catalog/types';
-import { mulberry32 } from '../lib/metadata';
+import { mulberry32 } from '../lib/random';
 import { fmtDate, fmtNumber, t, type Key } from '../i18n';
 import { compact, dayKey, useMusic } from '../music';
 import { useApp } from '../store';
@@ -110,7 +110,6 @@ function audience(a: Artist) {
     ['player.studio.src.profile', 18 + r() * 10],
     ['player.studio.src.search', 10 + r() * 6],
     ['player.studio.src.library', 12 + r() * 8],
-    ['common.nav.boost', 4 + r() * 6],
     ['player.studio.src.other', 4 + r() * 4],
   ];
   const sources = src.map(([k, v]): [string, number] => [t(k), v]);

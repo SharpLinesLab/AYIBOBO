@@ -2,7 +2,7 @@
  * Generative cover art. Every release, artist and playlist gets a deterministic SVG built from a
  * curated palette and one of several editorial templates — no image assets required.
  */
-import { mulberry32 } from '../lib/metadata';
+import { mulberry32 } from '../lib/random';
 import { renderPortrait } from './poster';
 import type { CoverSpec, CoverTemplate } from './types';
 

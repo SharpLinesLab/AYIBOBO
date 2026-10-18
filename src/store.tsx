@@ -1,9 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { Backend, Snapshot } from './backend';
-import { getBoard } from './lib/ranking';
-import type { BoardId, CategoryId, RankedEntry } from './lib/types';
-
-export type Filter = 'all' | 'leaderboards' | 'explore' | CategoryId;
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
 export type Route =
   | { page: 'home' }
@@ -20,11 +15,6 @@ export type Route =
   | { page: 'upload' }
   | { page: 'settings' }
   | { page: 'studio'; artistId?: string }
-  | { page: 'leaderboard' }
-  | { page: 'daily'; day?: string }
-  | { page: 'categories' }
-  | { page: 'about' }
-  | { page: 'rules' }
   | { page: 'notfound' };
 
 export function parseRoute(hash: string): Route {
@@ -65,18 +55,6 @@ export function parseRoute(hash: string): Route {
       return { page: 'settings' };
     case 'studio':
       return { page: 'studio', artistId: a };
-    case 'leaderboard':
-    case 'boost':
-      return { page: 'leaderboard' };
-    case 'daily':
-      return { page: 'daily', day: /^\d{4}-\d{2}-\d{2}$/.test(a ?? '') ? a : undefined };
-    case 'categories':
-      return { page: 'categories' };
-    case 'about':
-      return { page: 'about' };
-    case 'rules':
-    case 'faq':
-      return { page: 'rules' };
     case undefined:
     case 'discover':
       return { page: 'home' };
@@ -85,37 +63,11 @@ export function parseRoute(hash: string): Route {
   }
 }
 
-export interface HeroPrefill {
-  input?: string;
-  amount?: number;
-  /** Bumped on every prefill so the hero reacts even to identical values. */
-  nonce: number;
-}
-
 export interface AppContextValue {
-  backend: Backend;
-  snapshot: Snapshot;
-  /** Source-of-truth time (server-corrected). Ticks every 15s. */
+  /** Current time, re-read every 15 s (drives "2 days ago" labels and charts). */
   now: number;
-  boards: Record<BoardId, RankedEntry[]>;
-  board: BoardId;
-  setBoard: (b: BoardId) => void;
-  filter: Filter;
-  setFilter: (f: Filter) => void;
   route: Route;
   navigate: (hash: string) => void;
-  openDetail: (listingId: string) => void;
-  openStats: () => void;
-  openSearch: () => void;
-  /** Pre-fill the hero widget (quick-bid / raise) and scroll to it. */
-  prefillHero: (p: Omit<HeroPrefill, 'nonce'>) => void;
-  heroPrefill: HeroPrefill;
-  openCheckout: (req: { input: string; amount: number; board: BoardId; category?: CategoryId }) => void;
-  highlightId: string | null;
-  /** Rank the highlighted listing held before its claim (null = new listing), for the climb animation. */
-  highlightFrom: number | null;
-  setHighlightId: (id: string | null) => void;
-  setSnapshot: (s: Snapshot) => void;
   toast: (msg: string) => void;
 }
 
@@ -131,22 +83,12 @@ export function AppProvider({ value, children }: { value: AppContextValue; child
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
-/** Clock corrected by the backend's offset, re-rendering every `interval` ms. */
-export function useNow(offset: number, interval = 15_000): number {
-  const [now, setNow] = useState(() => Date.now() + offset);
+/** Wall clock that re-renders every `interval` ms. */
+export function useNow(interval = 15_000): number {
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    setNow(Date.now() + offset);
-    const id = window.setInterval(() => setNow(Date.now() + offset), interval);
+    const id = window.setInterval(() => setNow(Date.now()), interval);
     return () => clearInterval(id);
-  }, [offset, interval]);
+  }, [interval]);
   return now;
-}
-
-export function useBoards(snapshot: Snapshot | null, now: number): Record<BoardId, RankedEntry[]> {
-  // Re-rank when data changes or the UTC day rolls over.
-  const day = Math.floor(now / 86_400_000);
-  return useMemo(() => {
-    if (!snapshot) return { all: [], today: [] };
-    return { all: getBoard(snapshot.state, 'all', now), today: getBoard(snapshot.state, 'today', now) };
-  }, [snapshot, day]);
 }

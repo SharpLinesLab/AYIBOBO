@@ -85,7 +85,7 @@ export const pages: { [K in keyof typeof En]: string } = {
   'pages.offline.updateReady': 'Gen yon nouvo vèsyon ASF ki pare.',
   'pages.offline.refresh': 'Rechaje',
   'pages.offline.youreOffline': 'Ou san entènèt.',
-  'pages.offline.offlineBody': 'Katalòg ASF la, mizik ou mete ak telechajman ou yo ap jwe toujou. Boost Board ak pataj bezwen koneksyon.',
+  'pages.offline.offlineBody': 'Katalòg ASF la, mizik ou mete ak telechajman ou yo ap jwe toujou. Pataj bezwen koneksyon.',
 
   // Share sheet
   'pages.share.kicker.song': 'Pataje chante a',
@@ -151,7 +151,6 @@ export const pages: { [K in keyof typeof En]: string } = {
   'pages.search.moreSongs': 'Plis chante',
   'pages.search.artists': 'Atis',
   'pages.search.albums': 'Albòm',
-  'pages.search.onBoostBoard': 'Sou Boost Board la',
 
   // Upload page
   'pages.upload.sub': 'Pataje yon chante ak kominote ASF la. Gratis, ou pa bezwen kont — mizik ou a rete nan navigatè sa a.',

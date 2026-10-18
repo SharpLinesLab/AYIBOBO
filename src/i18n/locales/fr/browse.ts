@@ -14,11 +14,6 @@ export const browse: { [K in keyof typeof En]: string } = {
   'browse.hero.playNow': 'Écouter',
   'browse.hero.slide': 'Diapo {n}',
 
-  // Discover: Boost Board spotlight
-  'browse.boost.title': 'Votre rang, c’est ce que vous payez.',
-  'browse.boost.body': 'Pas d’algorithme, pas de filtre. Placez votre site, votre sortie ou votre @pseudo sur le classement public — la 1re place coûte la 1re place actuelle plus {amount}.',
-  'browse.boost.cta': 'Prendre un rang',
-
   // Discover: shelves
   'browse.discover.jumpBack': 'Reprendre l’écoute',
   'browse.discover.trending': 'Tendances du moment',

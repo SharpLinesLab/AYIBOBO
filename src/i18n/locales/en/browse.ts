@@ -12,11 +12,6 @@ export const browse = {
   'browse.hero.playNow': 'Play now',
   'browse.hero.slide': 'Slide {n}',
 
-  // Discover: Boost Board spotlight
-  'browse.boost.title': 'Rank is strictly what you pay.',
-  'browse.boost.body': 'No algorithm, no gatekeepers. Put your site, release or @handle on the public board — #1 costs the current #1 plus {amount}.',
-  'browse.boost.cta': 'Claim a rank',
-
   // Discover: shelves
   'browse.discover.jumpBack': 'Jump back in',
   'browse.discover.trending': 'Trending now',

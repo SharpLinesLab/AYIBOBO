@@ -1,6 +1,6 @@
 /**
  * Global audio player. One engine for everything that makes sound: full synthesized tracks
- * (streamed bar-by-bar), uploaded audio files and the leaderboard's short previews.
+ * (streamed bar-by-bar) and uploaded audio files.
  *
  * Structural state (queue, current item, play/pause, modes) notifies `subscribe` listeners;
  * the play position notifies `subscribePosition` listeners on animation frames so only the

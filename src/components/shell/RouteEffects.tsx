@@ -7,7 +7,6 @@ import { useApp, type Route } from '../../store';
 const BRAND = 'ASF — Ayiti Sakap Fet';
 
 function titleFor(route: Route, m: ReturnType<typeof useMusic>): string {
-  const boost = t('common.nav.boost');
   switch (route.page) {
     case 'home':
       return `${BRAND} · ${t('player.title.music')}`;
@@ -43,16 +42,6 @@ function titleFor(route: Route, m: ReturnType<typeof useMusic>): string {
       const a = route.artistId ? m.artist(route.artistId) : undefined;
       return a ? `${a.name} · ${t('common.nav.studio')}` : t('common.nav.studio');
     }
-    case 'leaderboard':
-      return boost;
-    case 'daily':
-      return `${t('player.title.daily')} · ${boost}`;
-    case 'categories':
-      return `${t('player.title.categories')} · ${boost}`;
-    case 'about':
-      return t('player.title.about');
-    case 'rules':
-      return t('player.title.rules');
     case 'notfound':
       return t('player.title.pageNotFound');
   }
@@ -99,9 +88,7 @@ export function RouteEffects({ hash }: { hash: string }) {
       counter.current = Math.max(counter.current, ...positions.current.keys(), 0) + 1;
       history.replaceState({ ...(st ?? {}), asfIdx: counter.current }, '', location.href);
     }
-    if (hash.startsWith('#/faq')) {
-      window.setTimeout(() => document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' }), 30);
-    } else if (known) {
+    if (known) {
       const y = positions.current.get(st!.asfIdx!)!;
       // Wait for the page to lay out before restoring.
       requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: y, behavior: 'instant' })));

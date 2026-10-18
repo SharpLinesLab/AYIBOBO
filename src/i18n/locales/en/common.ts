@@ -6,8 +6,6 @@ export const common = {
   'common.nav.charts': 'Top Charts',
   'common.nav.chartsShort': 'Charts',
   'common.nav.genres': 'Genres',
-  'common.nav.boost': 'Boost Board',
-  'common.nav.boostShort': 'Boost',
   'common.nav.library': 'Library',
   'common.nav.yourLibrary': 'Your library',
   'common.nav.likes': 'Liked songs',
@@ -30,9 +28,6 @@ export const common = {
   'common.nav.back': 'Back',
   'common.nav.forward': 'Forward',
   'common.nav.skip': 'Skip to content',
-  'common.promo.title': 'Boost your release',
-  'common.promo.body': 'Claim a rank on the public Boost Board — rank is strictly what you pay.',
-  'common.promo.cta': 'Open Boost Board →',
 
   // Top bar & search
   'common.top.upload': 'Upload',
@@ -133,6 +128,19 @@ export const common = {
   'common.genreBlurb.gospel': 'Praise, choirs and organ.',
   'common.genreBlurb.rara': 'Street processions, vaksin and kata.',
   'common.genreBlurb.electronic': 'Club cuts and future sounds.',
+
+  // Newsletter & footer
+  'common.subscribe.title': 'Stay in the mix',
+  'common.subscribe.body': 'New releases, playlists and {brand} news — straight to your inbox. No spam.',
+  'common.subscribe.email': 'Email',
+  'common.subscribe.placeholder': 'you@example.com',
+  'common.subscribe.invalid': 'Enter a valid email address.',
+  'common.subscribe.error': 'Something went wrong. Try again.',
+  'common.subscribe.welcome': 'You’re subscribed to {brand} — welcome!',
+  'common.footer.nav': 'Footer',
+  'common.footer.socialOn': '{brand} on {network}',
+  'common.footer.contact': 'Contact',
+  'common.footer.rights': '© {year} {short} — {name}. All rights reserved. The music catalog shown in this demo is fictional.',
 
   // Language
   'common.lang.label': 'Language',

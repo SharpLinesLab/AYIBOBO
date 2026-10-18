@@ -5,7 +5,7 @@
  *
  * Text is intentionally NOT drawn here — names are overlaid in HTML so they use the site's fonts.
  */
-import { mulberry32 } from '../lib/metadata';
+import { mulberry32 } from '../lib/random';
 
 export type PortraitCrop = 'poster' | 'portrait' | 'stage' | 'cover';
 

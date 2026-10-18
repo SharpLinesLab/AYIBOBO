@@ -106,10 +106,6 @@ export const player: { [K in keyof typeof En]: string } = {
   'player.title.artistNotFound': 'Artiste introuvable',
   'player.title.playlistNotFound': 'Playlist introuvable',
   'player.title.search': 'Recherche : {q}',
-  'player.title.daily': 'Archives du jour',
-  'player.title.categories': 'Catégories',
-  'player.title.about': 'À propos',
-  'player.title.rules': 'Règles et FAQ',
   'player.title.pageNotFound': 'Page introuvable',
 
   // Crash screen
@@ -119,12 +115,6 @@ export const player: { [K in keyof typeof En]: string } = {
 
   // App shell
   'player.app.loading': 'Chargement…',
-  'player.app.loadFailed': 'Impossible de charger le classement.',
-  'player.app.loadError': 'Nous n’avons pas pu charger le classement',
-  'player.app.paid': 'Paiement reçu — votre rang sera mis à jour dès que Stripe l’aura confirmé.',
-  'player.app.cancelled': 'Paiement annulé — rien n’a été débité.',
-  'player.app.today': 'Aujourd’hui',
-  'player.app.activity': 'Activité',
   'player.music.myPlaylist': 'Ma playlist',
 
   // Artist Studio

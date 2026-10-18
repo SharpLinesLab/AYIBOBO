@@ -4,7 +4,7 @@
  * anywhere, and sound like their genre (kompa cowbell & guitar, amapiano log drums, drill slides…).
  */
 import type { GenreId, SynthRecipe } from '../catalog/types';
-import { mulberry32 } from '../lib/metadata';
+import { mulberry32 } from '../lib/random';
 
 type Steps = string; // 16 steps, 'x' = hit, '.' = rest
 

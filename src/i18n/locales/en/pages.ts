@@ -84,7 +84,7 @@ export const pages = {
   'pages.offline.updateReady': 'A new version of ASF is ready.',
   'pages.offline.refresh': 'Refresh',
   'pages.offline.youreOffline': 'You’re offline.',
-  'pages.offline.offlineBody': 'The ASF catalog, your uploads and your downloads still play. Boost Board and sharing need a connection.',
+  'pages.offline.offlineBody': 'The ASF catalog, your uploads and your downloads still play. Sharing needs a connection.',
 
   // Share sheet
   'pages.share.kicker.song': 'Share song',
@@ -150,7 +150,6 @@ export const pages = {
   'pages.search.moreSongs': 'More songs',
   'pages.search.artists': 'Artists',
   'pages.search.albums': 'Albums',
-  'pages.search.onBoostBoard': 'On the Boost Board',
 
   // Upload page
   'pages.upload.sub': 'Share a song with the ASF community. Free, no account needed — your upload is stored in this browser.',

@@ -164,18 +164,12 @@ body {
   color: var(--accent);
 }
 
-.side__pill,
 .side__count {
   margin-left: auto;
   font-size: 11px;
   font-weight: 800;
   padding: 1px 7px;
   border-radius: 999px;
-}
-
-.side__pill {
-  background: color-mix(in srgb, var(--gold) 20%, transparent);
-  color: var(--gold);
 }
 
 .side__count {
@@ -232,31 +226,6 @@ body {
 .side__upload:hover {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 8%, transparent);
-}
-
-.side__promo {
-  margin-top: 14px;
-  padding: 14px;
-  border-radius: 14px;
-  background:
-    radial-gradient(120% 120% at 100% 0%, color-mix(in srgb, var(--gold) 22%, transparent), transparent 60%),
-    var(--surface-2);
-  border: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 12.5px;
-  color: var(--muted);
-}
-
-.side__promo b {
-  color: var(--text);
-  font-size: 14px;
-}
-
-.side__promo a {
-  color: var(--gold);
-  font-weight: 700;
 }
 
 /* --- top bar ------------------------------------------------------------------------------- */
@@ -2062,101 +2031,6 @@ a.tag:hover {
   min-width: 0;
 }
 
-/* boost spotlight */
-.boost-spot {
-  display: grid;
-  gap: 24px;
-  padding: 28px;
-  border-radius: 24px;
-  background:
-    radial-gradient(70% 120% at 100% 0%, color-mix(in srgb, var(--gold) 20%, transparent), transparent 60%),
-    radial-gradient(60% 100% at 0% 100%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%),
-    var(--surface);
-  border: 1px solid var(--border);
-}
-
-@media (min-width: 960px) {
-  .boost-spot {
-    grid-template-columns: 1fr 1.1fr;
-    align-items: center;
-  }
-}
-
-.badge-gold {
-  display: inline-block;
-  padding: 4px 11px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--gold) 18%, transparent);
-  color: var(--gold);
-  font-size: 11.5px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.boost-spot h2 {
-  margin: 12px 0 8px;
-  font-family: var(--font-display);
-  font-size: clamp(24px, 3vw, 34px);
-  letter-spacing: -0.02em;
-}
-
-.boost-spot p {
-  margin: 0 0 18px;
-  color: var(--muted);
-  max-width: 460px;
-}
-
-.boost-spot__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.boost-spot__list button {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--bg) 60%, transparent);
-  border: 1px solid var(--border);
-  text-align: left;
-  transition: border-color 0.15s, transform 0.15s;
-}
-
-.boost-spot__list button:hover {
-  border-color: color-mix(in srgb, var(--gold) 50%, transparent);
-  transform: translateX(3px);
-}
-
-.boost-spot__rank {
-  font-family: var(--font-mono);
-  font-weight: 800;
-  color: var(--gold);
-  width: 30px;
-}
-
-.boost-spot__name {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.boost-spot__name small {
-  color: var(--muted);
-}
-
-.boost-spot__amt {
-  font-weight: 800;
-  color: var(--accent);
-}
-
 /* --- waveform ------------------------------------------------------------------------------ */
 
 .wave {
@@ -3280,45 +3154,7 @@ a.tag:hover {
   background: var(--bg);
 }
 
-/* --- Boost Board (leaderboard) inside the shell -------------------------------------------- */
-
-.lb {
-  container: lb / inline-size;
-}
-
-.lb .filter-bar {
-  padding: 0;
-  margin-top: 0;
-}
-
-.lb .layout {
-  max-width: 1120px;
-  margin: 20px auto 0;
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.lb .sidebar {
-  position: static;
-}
-
-@container lb (min-width: 980px) {
-  .lb .layout {
-    grid-template-columns: minmax(0, 1fr) 300px;
-    grid-template-areas:
-      'main left'
-      'main right';
-    align-items: start;
-  }
-  .lb .main {
-    grid-area: main;
-  }
-  .lb .sidebar--left {
-    grid-area: left;
-  }
-  .lb .sidebar--right {
-    grid-area: right;
-  }
-}
+/* --- footer & toast inside the shell ------------------------------------------------------- */
 
 .footer {
   margin-top: 48px;

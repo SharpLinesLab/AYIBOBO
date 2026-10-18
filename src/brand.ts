@@ -2,8 +2,6 @@
 export const BRAND = {
   short: 'ASF',
   name: 'Ayiti Sakap Fet',
-  product: 'ASF Charts',
-  tagline: 'No algorithms, no playlist gatekeepers, no ad networks. Claim a rank on the public music leaderboard — rank is strictly what you pay.',
   contactEmail: '',
   social: {
     facebook: '',

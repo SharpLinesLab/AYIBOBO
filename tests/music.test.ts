@@ -86,7 +86,7 @@ describe('song structure', () => {
 });
 
 describe('routes', () => {
-  it('parses music and leaderboard routes', () => {
+  it('parses music routes', () => {
     expect(parseRoute('')).toEqual({ page: 'home' });
     expect(parseRoute('#/song/tr-x')).toEqual({ page: 'song', id: 'tr-x' });
     expect(parseRoute('#/charts/albums/month')).toEqual({ page: 'charts', kind: 'albums', window: 'month' });
@@ -94,7 +94,7 @@ describe('routes', () => {
     expect(parseRoute('#/genres/kompa')).toEqual({ page: 'genre', id: 'kompa' });
     expect(parseRoute('#/search/ayiti%20ch%C3%A9rie')).toEqual({ page: 'search', q: 'ayiti chérie' });
     expect(parseRoute('#/library')).toEqual({ page: 'library', tab: 'likes' });
-    expect(parseRoute('#/leaderboard')).toEqual({ page: 'leaderboard' });
-    expect(parseRoute('#/daily/2026-10-16')).toEqual({ page: 'daily', day: '2026-10-16' });
+    // The retired Boost Board pages now show "page not found".
+    for (const old of ['#/leaderboard', '#/daily/2026-10-16', '#/categories', '#/about', '#/rules']) expect(parseRoute(old)).toEqual({ page: 'notfound' });
   });
 });

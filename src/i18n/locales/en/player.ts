@@ -105,10 +105,6 @@ export const player = {
   'player.title.artistNotFound': 'Artist not found',
   'player.title.playlistNotFound': 'Playlist not found',
   'player.title.search': 'Search: {q}',
-  'player.title.daily': 'Daily archive',
-  'player.title.categories': 'Categories',
-  'player.title.about': 'About',
-  'player.title.rules': 'Rules & FAQ',
   'player.title.pageNotFound': 'Page not found',
 
   // Crash screen
@@ -118,12 +114,6 @@ export const player = {
 
   // App shell
   'player.app.loading': 'Loading…',
-  'player.app.loadFailed': 'Failed to load the leaderboard.',
-  'player.app.loadError': 'We couldn’t load the leaderboard',
-  'player.app.paid': 'Payment received — your rank updates as soon as Stripe confirms it.',
-  'player.app.cancelled': 'Checkout cancelled — nothing was charged.',
-  'player.app.today': 'Today',
-  'player.app.activity': 'Activity',
   'player.music.myPlaylist': 'My playlist',
 
   // Artist Studio

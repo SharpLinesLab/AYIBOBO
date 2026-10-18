@@ -86,7 +86,7 @@ export const pages: { [K in keyof typeof En]: string } = {
   'pages.offline.updateReady': 'Une nouvelle version d’ASF est prête.',
   'pages.offline.refresh': 'Actualiser',
   'pages.offline.youreOffline': 'Vous êtes hors ligne.',
-  'pages.offline.offlineBody': 'Le catalogue ASF, vos titres mis en ligne et vos téléchargements restent disponibles. Le Boost Board et le partage nécessitent une connexion.',
+  'pages.offline.offlineBody': 'Le catalogue ASF, vos titres mis en ligne et vos téléchargements restent disponibles. Le partage nécessite une connexion.',
 
   // Share sheet
   'pages.share.kicker.song': 'Partager le titre',
@@ -152,7 +152,6 @@ export const pages: { [K in keyof typeof En]: string } = {
   'pages.search.moreSongs': 'Plus de titres',
   'pages.search.artists': 'Artistes',
   'pages.search.albums': 'Albums',
-  'pages.search.onBoostBoard': 'Sur le Boost Board',
 
   // Upload page
   'pages.upload.sub': 'Partagez un titre avec la communauté ASF. Gratuit, sans compte — votre titre est stocké dans ce navigateur.',

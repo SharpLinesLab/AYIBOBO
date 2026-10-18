@@ -106,10 +106,6 @@ export const player: { [K in keyof typeof En]: string } = {
   'player.title.artistNotFound': 'Nou pa jwenn atis la',
   'player.title.playlistNotFound': 'Nou pa jwenn playlist la',
   'player.title.search': 'Chèche: {q}',
-  'player.title.daily': 'Achiv chak jou',
-  'player.title.categories': 'Kategori',
-  'player.title.about': 'Konsènan',
-  'player.title.rules': 'Règ ak FAQ',
   'player.title.pageNotFound': 'Nou pa jwenn paj la',
 
   // Crash screen
@@ -119,12 +115,6 @@ export const player: { [K in keyof typeof En]: string } = {
 
   // App shell
   'player.app.loading': 'N ap chaje…',
-  'player.app.loadFailed': 'Nou pa t ka chaje klasman an.',
-  'player.app.loadError': 'Nou pa t ka chaje klasman an',
-  'player.app.paid': 'Nou resevwa peman an — plas ou ap mete ajou depi Stripe konfime l.',
-  'player.app.cancelled': 'Peman an anile — yo pa retire okenn kòb.',
-  'player.app.today': 'Jodi a',
-  'player.app.activity': 'Aktivite',
   'player.music.myPlaylist': 'Playlist mwen',
 
   // Artist Studio

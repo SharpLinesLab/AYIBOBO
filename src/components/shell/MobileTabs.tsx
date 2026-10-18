@@ -1,12 +1,12 @@
 import { t } from '../../i18n';
 import { useApp } from '../../store';
-import { ChartIcon, FlameIcon, HomeIcon, LibraryIcon, TrophyIcon } from '../icons';
+import { ChartIcon, FlameIcon, GridIcon, HomeIcon, LibraryIcon } from '../icons';
 
 const TABS = [
-  { href: '#/', label: 'common.nav.discover', pages: ['home', 'genres', 'genre'], Icon: HomeIcon },
+  { href: '#/', label: 'common.nav.discover', pages: ['home'], Icon: HomeIcon },
   { href: '#/trending', label: 'common.nav.trending', pages: ['trending'], Icon: FlameIcon },
   { href: '#/charts', label: 'common.nav.chartsShort', pages: ['charts'], Icon: ChartIcon },
-  { href: '#/leaderboard', label: 'common.nav.boostShort', pages: ['leaderboard', 'daily'], Icon: TrophyIcon },
+  { href: '#/genres', label: 'common.nav.genres', pages: ['genres', 'genre'], Icon: GridIcon },
   { href: '#/library/likes', label: 'common.nav.library', pages: ['library', 'upload', 'settings', 'studio'], Icon: LibraryIcon },
 ] as const;
 

@@ -33,8 +33,6 @@ const ROUTES = [
   '#/upload',
   '#/settings',
   '#/studio/ar-tiga-blaze',
-  '#/leaderboard',
-  '#/rules',
 ];
 
 for (const lang of ['fr', 'ht'] as const) {

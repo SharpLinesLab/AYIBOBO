@@ -3,7 +3,7 @@ import { coverUrl } from '../catalog/covers';
 import { genreById } from '../catalog/genres';
 import { trending } from '../catalog/plays';
 import type { CoverSpec, Track } from '../catalog/types';
-import { hashString, mulberry32 } from '../lib/metadata';
+import { hashString, mulberry32 } from '../lib/random';
 import { compact, fmtTime, useMusic, usePlayerState, type Comment } from '../music';
 import { getPosition, toggleShuffle, getState } from '../player/engine';
 import { useApp } from '../store';

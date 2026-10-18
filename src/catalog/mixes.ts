@@ -1,6 +1,6 @@
 import { GENRES, genreById } from './genres';
 import type { Artist, GenreId, Playlist, Track } from './types';
-import { hashString, mulberry32 } from '../lib/metadata';
+import { hashString, mulberry32 } from '../lib/random';
 import { t } from '../i18n';
 
 /**

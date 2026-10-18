@@ -40,7 +40,6 @@ body {
 .ghead h1,
 .np__titles h2,
 .empty-state h2,
-.boost-spot h2,
 .genre-card h2 {
   font-family: var(--font-display);
   font-weight: 800;
@@ -540,8 +539,7 @@ body {
 }
 
 .two-col > *,
-.upload > *,
-.layout > * {
+.upload > * {
   min-width: 0;
 }
 
@@ -563,26 +561,22 @@ body {
 }
 
 /* Touch targets: carousel dots keep their slim look but get a 24px hit area */
-.hero2__dots button,
-.featured__dots button {
+.hero2__dots button {
   overflow: visible;
 }
 
-.hero2__dots button::before,
-.featured__dots button::before {
+.hero2__dots button::before {
   content: '';
   position: absolute;
   inset: -10px -3px;
 }
 
-.hero2__dots span,
-.featured__dot-fill {
+.hero2__dots span {
   border-radius: 3px;
   overflow: hidden;
 }
 
-.hero2__dots button.is-active,
-.featured__dots button.is-active {
+.hero2__dots button.is-active {
   overflow: hidden;
 }
 

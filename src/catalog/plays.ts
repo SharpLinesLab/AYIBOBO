@@ -2,7 +2,7 @@
  * Play history. Seeded tracks get a deterministic daily play curve (rise after release, slow decay,
  * weekly rhythm, a few viral spikes); local plays are added on top. Charts are sums over windows.
  */
-import { mulberry32 } from '../lib/metadata';
+import { mulberry32 } from '../lib/random';
 import type { Track } from './types';
 
 const DAY = 86_400_000;

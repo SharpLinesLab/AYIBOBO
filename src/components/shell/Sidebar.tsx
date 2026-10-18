@@ -1,7 +1,7 @@
 import { t } from '../../i18n';
 import { useMusic } from '../../music';
 import { useApp } from '../../store';
-import { AsfLogo, ChartIcon, ClockIcon, DownloadIcon, FlameIcon, GearIcon, GridIcon, HeartLine, HomeIcon, ListIcon, StudioIcon, TrophyIcon, UploadIcon, UsersIcon } from '../icons';
+import { AsfLogo, ChartIcon, ClockIcon, DownloadIcon, FlameIcon, GearIcon, GridIcon, HeartLine, HomeIcon, ListIcon, StudioIcon, UploadIcon, UsersIcon } from '../icons';
 import { Cover } from '../music/bits';
 
 export const MAIN_NAV = [
@@ -9,7 +9,6 @@ export const MAIN_NAV = [
   { href: '#/trending', label: 'common.nav.trending', page: 'trending', Icon: FlameIcon },
   { href: '#/charts', label: 'common.nav.charts', page: 'charts', Icon: ChartIcon },
   { href: '#/genres', label: 'common.nav.genres', page: 'genres', Icon: GridIcon },
-  { href: '#/leaderboard', label: 'common.nav.boost', page: 'leaderboard', Icon: TrophyIcon },
 ] as const;
 
 const LIB_NAV = [
@@ -36,7 +35,6 @@ export function Sidebar() {
           <a key={href} href={href} className={`side__link${active(page) ? ' is-active' : ''}`} aria-current={active(page) ? 'page' : undefined}>
             <Icon />
             <span>{t(label)}</span>
-            {page === 'leaderboard' && <span className="side__pill">$</span>}
           </a>
         ))}
       </nav>
@@ -81,11 +79,6 @@ export function Sidebar() {
       <a className="side__upload" href="#/upload">
         <UploadIcon /> {t('common.nav.uploadMusic')}
       </a>
-      <div className="side__promo">
-        <b>{t('common.promo.title')}</b>
-        <span>{t('common.promo.body')}</span>
-        <a href="#/leaderboard">{t('common.promo.cta')}</a>
-      </div>
     </aside>
   );
 }

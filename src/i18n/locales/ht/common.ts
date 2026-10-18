@@ -7,8 +7,6 @@ export const common: { [K in keyof typeof En]: string } = {
   'common.nav.charts': 'Klasman',
   'common.nav.chartsShort': 'Klasman',
   'common.nav.genres': 'Estil mizik',
-  'common.nav.boost': 'Boost Board',
-  'common.nav.boostShort': 'Boost',
   'common.nav.library': 'Bibliyotèk',
   'common.nav.yourLibrary': 'Bibliyotèk ou',
   'common.nav.likes': 'Chante ou renmen',
@@ -31,9 +29,6 @@ export const common: { [K in keyof typeof En]: string } = {
   'common.nav.back': 'Retounen',
   'common.nav.forward': 'Avanse',
   'common.nav.skip': 'Ale nan kontni an',
-  'common.promo.title': 'Bay sòti w la yon pouse',
-  'common.promo.body': 'Pran yon plas sou Boost Board piblik la — se sa w peye sèlman ki deside klasman w.',
-  'common.promo.cta': 'Louvri Boost Board →',
 
   // Top bar & search
   'common.top.upload': 'Mete mizik',
@@ -134,6 +129,19 @@ export const common: { [K in keyof typeof En]: string } = {
   'common.genreBlurb.gospel': 'Louwanj, koral ak òg.',
   'common.genreBlurb.rara': 'Bann nan lari, vaksin ak kata.',
   'common.genreBlurb.electronic': 'Son klib ak son lavni.',
+
+  // Newsletter & footer
+  'common.subscribe.title': 'Rete nan mouvman an',
+  'common.subscribe.body': 'Nouvo sòti, playlist ak nouvèl {brand}, dirèkteman nan imèl ou. Pa gen spam.',
+  'common.subscribe.email': 'Imèl',
+  'common.subscribe.placeholder': 'ou@egzanp.com',
+  'common.subscribe.invalid': 'Mete yon adrès imèl ki bon.',
+  'common.subscribe.error': 'Gen yon bagay ki pa mache. Eseye ankò.',
+  'common.subscribe.welcome': 'Ou abòne nan {brand}. Byenveni!',
+  'common.footer.nav': 'Pye paj',
+  'common.footer.socialOn': '{brand} sou {network}',
+  'common.footer.contact': 'Kontak',
+  'common.footer.rights': '© {year} {short} — {name}. Tout dwa rezève. Katalòg mizik ki nan demo sa a pa reyèl.',
 
   // Language
   'common.lang.label': 'Lang',

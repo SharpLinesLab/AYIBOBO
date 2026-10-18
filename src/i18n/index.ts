@@ -3,7 +3,7 @@
  *
  * - English is the source of truth (`locales/en`); French and Kreyòl dictionaries must have exactly
  *   the same keys — TypeScript fails the build if one is missing.
- * - Strings live in namespaces (`common`, `browse`, `pages`, `player`, `boost`); keys are
+ * - Strings live in namespaces (`common`, `browse`, `pages`, `player`); keys are
  *   `namespace.name`. `{name}` placeholders are filled from `vars`.
  * - Plurals: keys ending in `_one` / `_other` (plus `_many` where French needs it), picked with
  *   `plural(base, n)`.
@@ -123,10 +123,6 @@ export function fmtCompact(n: number): string {
     return String(n);
   }
   return new Intl.NumberFormat('fr-FR', { notation: 'compact', maximumFractionDigits: n >= 1e4 && n < 1e6 ? 0 : 1 }).format(n);
-}
-
-export function fmtUsd(n: number): string {
-  return lang === 'en' ? `$${fmtNumber(Math.round(n))}` : `${fmtNumber(Math.round(n))} $`;
 }
 
 const HT_MONTHS = ['janvye', 'fevriye', 'mas', 'avril', 'me', 'jen', 'jiyè', 'out', 'septanm', 'oktòb', 'novanm', 'desanm'];

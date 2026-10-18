@@ -13,11 +13,6 @@ export const browse: { [K in keyof typeof En]: string } = {
   'browse.hero.playNow': 'Jwe l kounye a',
   'browse.hero.slide': 'Imaj {n}',
 
-  // Discover: Boost Board spotlight
-  'browse.boost.title': 'Se sa w peye ki bay ou plas ou.',
-  'browse.boost.body': 'Pa gen algoritm, pa gen moun k ap bloke w. Mete sit ou, sòti w oswa @non w sou tablo piblik la — plas #1 lan koute sa #1 aktyèl la peye plis {amount}.',
-  'browse.boost.cta': 'Pran yon plas',
-
   // Discover: shelves
   'browse.discover.jumpBack': 'Kontinye koute',
   'browse.discover.trending': 'Sa k cho kounye a',

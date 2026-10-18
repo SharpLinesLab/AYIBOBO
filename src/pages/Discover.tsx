@@ -6,14 +6,11 @@ import { PageTint, QuickPicks, StreamCard } from '../components/music/premium';
 import { coverUrl } from '../catalog/covers';
 import { compact, useMusic, usePlayerState } from '../music';
 import { pause, resume } from '../player/engine';
-import { useApp } from '../store';
-import { usd } from '../lib/format';
 import { plural, t } from '../i18n';
 import { PauseIcon, PlayIcon } from '../components/icons';
 import { Cover, HeartIcon, Shelf } from '../components/music/bits';
 import { AlbumCard, ArtistCard, GenreTile, PlaylistCard, PosterCard, TrackCard, Verified } from '../components/music/Cards';
 import { TrackRow } from '../components/music/TrackRow';
-import { Thumb } from '../components/Thumb';
 
 type Feature = { kind: 'album'; album: Album; tracks: Track[] } | { kind: 'single'; track: Track; tracks: Track[] };
 
@@ -93,39 +90,6 @@ function HeroCarousel({ items }: { items: Feature[] }) {
           </button>
         ))}
       </div>
-    </section>
-  );
-}
-
-function BoostSpotlight() {
-  const { boards, openDetail } = useApp();
-  const top = boards.all.slice(0, 3);
-  if (!top.length) return null;
-  return (
-    <section className="boost-spot">
-      <div className="boost-spot__copy">
-        <span className="badge-gold">Boost Board</span>
-        <h2>{t('browse.boost.title')}</h2>
-        <p>{t('browse.boost.body', { amount: usd(5) })}</p>
-        <a className="btn-accent" href="#/leaderboard">
-          {t('browse.boost.cta')}
-        </a>
-      </div>
-      <ol className="boost-spot__list">
-        {top.map((e) => (
-          <li key={e.listing.id}>
-            <button onClick={() => openDetail(e.listing.id)}>
-              <span className="boost-spot__rank">#{e.rank}</span>
-              <Thumb art={e.listing.artwork} size="sm" />
-              <span className="boost-spot__name">
-                <b>{e.listing.title}</b>
-                <small>{e.listing.display}</small>
-              </span>
-              <span className="boost-spot__amt num">{usd(e.total)}</span>
-            </button>
-          </li>
-        ))}
-      </ol>
     </section>
   );
 }
@@ -259,8 +223,6 @@ export function DiscoverPage() {
             <PlaylistCard key={p.id} playlist={p} />
           ))}
       </Shelf>
-
-      <BoostSpotlight />
 
       <Shelf title={t('browse.discover.toWatch')} subtitle={t('browse.discover.toWatchSub')}>
         {data.rising.map((a) => (

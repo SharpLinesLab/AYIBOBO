@@ -7,8 +7,6 @@ export const common: { [K in keyof typeof En]: string } = {
   'common.nav.charts': 'Classements',
   'common.nav.chartsShort': 'Classements',
   'common.nav.genres': 'Genres',
-  'common.nav.boost': 'Boost Board',
-  'common.nav.boostShort': 'Boost',
   'common.nav.library': 'Bibliothèque',
   'common.nav.yourLibrary': 'Votre bibliothèque',
   'common.nav.likes': 'Titres aimés',
@@ -31,9 +29,6 @@ export const common: { [K in keyof typeof En]: string } = {
   'common.nav.back': 'Retour',
   'common.nav.forward': 'Suivant',
   'common.nav.skip': 'Aller au contenu',
-  'common.promo.title': 'Boostez votre sortie',
-  'common.promo.body': 'Prenez une place sur le Boost Board public — le classement dépend uniquement du montant payé.',
-  'common.promo.cta': 'Ouvrir le Boost Board →',
 
   // Top bar & search
   'common.top.upload': 'Mettre en ligne',
@@ -134,6 +129,19 @@ export const common: { [K in keyof typeof En]: string } = {
   'common.genreBlurb.gospel': 'Louanges, chorales et orgue.',
   'common.genreBlurb.rara': 'Défilés de rue, vaksin et kata.',
   'common.genreBlurb.electronic': 'Sons de club et sons du futur.',
+
+  // Newsletter & footer
+  'common.subscribe.title': 'Restez dans le mix',
+  'common.subscribe.body': 'Nouvelles sorties, playlists et actus {brand}, directement dans votre boîte mail. Pas de spam.',
+  'common.subscribe.email': 'E-mail',
+  'common.subscribe.placeholder': 'vous@exemple.com',
+  'common.subscribe.invalid': 'Saisissez une adresse e-mail valide.',
+  'common.subscribe.error': 'Une erreur s’est produite. Réessayez.',
+  'common.subscribe.welcome': 'Vous êtes abonné à {brand}. Bienvenue !',
+  'common.footer.nav': 'Pied de page',
+  'common.footer.socialOn': '{brand} sur {network}',
+  'common.footer.contact': 'Contact',
+  'common.footer.rights': '© {year} {short} — {name}. Tous droits réservés. Le catalogue musical présenté dans cette démo est fictif.',
 
   // Language
   'common.lang.label': 'Langue',

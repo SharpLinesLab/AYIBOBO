@@ -2,7 +2,7 @@
  * Lyrics: LRC parsing (the timed format artists and lyric services export), plain text, and
  * demo lyrics for the seed catalog timed to each song's form (verse / hook sections).
  */
-import { mulberry32 } from '../lib/metadata';
+import { mulberry32 } from '../lib/random';
 import { barCount, barSeconds, sectionOf } from '../player/synth';
 import type { GenreId, Track } from './types';
 

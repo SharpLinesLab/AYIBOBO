@@ -2,7 +2,7 @@
  * Demo catalog. Every artist, release and playlist here is fictional; audio is synthesized live
  * from each track's recipe, and artwork is generated (see covers.ts).
  */
-import { hashString, mulberry32 } from '../lib/metadata';
+import { hashString, mulberry32 } from '../lib/random';
 import { applyArtwork } from './artwork';
 import { PALETTES, makeCover } from './covers';
 import { STAGE_PALETTES } from './poster';

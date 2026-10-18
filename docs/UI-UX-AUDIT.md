@@ -1,5 +1,7 @@
 # UI/UX production audit — ASF Music
 
+> **Update:** the pay-to-rank Boost Board has since been removed from the site. Items below that mention it are kept as a record of the original audit.
+
 **Scope:**
 
 - **Pages:** 21 routes, covering every music page, the Boost Board, the not-found page and the empty states.
@@ -50,7 +52,6 @@
 - **Scroll position.** New pages open at the top instantly instead of smooth-scrolling up. Back/Forward restores the previous scroll position.
 - **Unknown URLs.** These now show a proper not-found page instead of silently showing Discover.
 - **Error boundary.** A crash in one page shows a recoverable error screen instead of a blank app.
-- **API outage.** If the Boost Board API responds to its health check but then fails, the app falls back to local mode instead of blocking the music app.
 - **Background playback.** Hidden tabs throttle timers, so the synth now schedules 3 s ahead instead of 0.8 s and audio doesn't stutter.
 
 **Production readiness**
@@ -83,16 +84,15 @@ These run on top of the earlier end-to-end flows, which still pass:
 - **Library:** like, add to a playlist, and follow.
 - **Search:** typing shows suggestions.
 - **Uploads:** upload a real audio file, play it, and it survives a reload.
-- **Boost Board:** claim a rank and top up a listing.
 
 ## Known, acceptable
 
-- **Short inline links.** A few text links inside sentences (artist names in metadata lines, the Boost Board "see details" link) are under 24 px tall. WCAG 2.5.8 exempts inline links.
+- **Short inline links.** A few text links inside sentences (artist names in metadata lines) are under 24 px tall. WCAG 2.5.8 exempts inline links.
 
 ## Launch blockers outside the UI (must be decided before going public)
 
 1. **Accounts and server storage.** Likes, playlists, follows, comments and uploads are stored per browser. Public uploads need user accounts plus server-side audio and image storage (e.g. S3 or R2) with moderation.
-2. **Legal pages.** A streaming service with uploads needs a Privacy Policy, Terms of Service and a copyright / DMCA takedown policy. They should be written or reviewed by counsel. The footer currently links to the Boost Board rules.
+2. **Legal pages.** A streaming service with uploads needs a Privacy Policy, Terms of Service and a copyright / DMCA takedown policy. They should be written or reviewed by counsel. The footer has no legal links yet.
 3. **Content.** The catalog is fictional and synthesized. Replace it with licensed music and artwork; artwork drops into `src/assets/artwork/`.
-4. **Configuration.** Set the Stripe keys (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`), `PUBLIC_URL`, the social URLs in `src/brand.ts`, and `SEED_DEMO=false`.
+4. **Configuration.** Set the social URLs and contact email in `src/brand.ts`. Payments (MonCash, Natcash) are a separate, upcoming feature.
 5. **Observability.** Add error reporting (e.g. Sentry) and privacy-friendly analytics.

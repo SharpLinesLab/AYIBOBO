@@ -4,7 +4,7 @@ import { t } from '../../i18n';
 import { useMusic } from '../../music';
 import { LanguageMenu } from '../LanguagePicker';
 import { useApp } from '../../store';
-import { SocialLinks } from '../Chrome';
+import { SocialLinks } from './Footer';
 import { AsfLogo, ChevronLeft, ChevronRight, MoonIcon, SearchIcon, SunIcon, UploadIcon } from '../icons';
 import { Cover } from '../music/bits';
 

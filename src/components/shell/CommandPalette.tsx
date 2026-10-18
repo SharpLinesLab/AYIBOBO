@@ -94,7 +94,6 @@ export function CommandPalette({
     { id: 'downloads', group: 'goto', label: t('common.nav.downloads'), keywords: 'downloads offline', run: () => go('#/library/downloads') },
     { id: 'studio', group: 'goto', label: t('common.nav.studio'), keywords: 'artist studio stats analytics dashboard', run: () => go('#/studio') },
     { id: 'upload', group: 'goto', label: t('common.nav.uploadMusic'), keywords: 'upload music', run: () => go('#/upload') },
-    { id: 'boost', group: 'goto', label: t('common.nav.boost'), keywords: 'boost board leaderboard rank', run: () => go('#/leaderboard') },
     { id: 'settings', group: 'app', label: t('common.nav.settings'), keywords: 'settings crossfade equalizer sound preferences', run: () => go('#/settings') },
     { id: 'theme', group: 'app', label: t('player.cmd.theme'), keywords: 'switch light dark theme mode appearance', run: onToggleTheme },
     // Language names stay in their own language.
