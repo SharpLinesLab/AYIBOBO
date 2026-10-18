@@ -48,6 +48,38 @@ describe('legal pages', () => {
     }
   });
 
+  it('render every legal string somewhere, in every language', async () => {
+    for (const [lang, d] of LANGS) {
+      await setLang(lang, false);
+      const html = PAGES.map(([, Page]) => renderToStaticMarkup(createElement(Page))).join('');
+      for (const k of Object.keys(d).filter((x) => x.startsWith('legal.'))) expect(html, `${lang} ${k} is never shown`).toContain(escape(lang, k));
+    }
+  });
+
+  it('describe the accounts that now exist, with no leftover "no accounts" claims', () => {
+    for (const [lang, d] of LANGS) {
+      const all = Object.entries(d)
+        .filter(([k]) => k.startsWith('legal.privacy.') || k.startsWith('legal.terms.'))
+        .map(([, v]) => v)
+        .join('\n');
+      // The pre-accounts drafts said these; they are false now.
+      for (const stale of ['has no sign-up', 'only personal information we store is your email address', 'uploads are stored only in your own browser', 'n’a pas d’inscription', 'ne demande aucune inscription', 'Pa gen enskripsyon sou ASF']) expect(all, `${lang}: ${stale}`).not.toContain(stale);
+      expect(all, lang).toContain('bcrypt');
+      expect(all, lang).toContain('[CONTACT EMAIL]');
+      expect(all, lang).toContain('[COMPANY NAME]');
+      expect(all, lang).toMatch(/\b13\b/);
+      expect(all, lang).toMatch(/\b30\b/); // the sign-in cookie's lifetime
+    }
+    // Every topic has its own section on the page.
+    for (const k of ['account', 'sync', 'reset', 'uploads', 'rights']) expect(en[`legal.privacy.${k}.h` as keyof typeof en], k).toBeTruthy();
+    for (const k of ['account', 'security', 'uploads']) expect(en[`legal.terms.${k}.h` as keyof typeof en], k).toBeTruthy();
+    expect(en['legal.privacy.reset.p']).toMatch(/once.*1 hour.*hashed.*every device/s);
+    expect(en['legal.privacy.uploads.p2']).toMatch(/only moderators/);
+    expect(en['legal.privacy.rights.p2']).toMatch(/email address, display name and password hash.*synced library.*every song/s);
+    expect(en['legal.terms.uploads.p3']).toMatch(/non-exclusive, worldwide, royalty-free licence to host, store, copy, stream and display/);
+    expect(en['legal.terms.uploads.p3']).toMatch(/keep ownership/);
+  });
+
   for (const [lang] of LANGS) {
     it(`render in ${lang} with no missing keys`, async () => {
       await setLang(lang, false);

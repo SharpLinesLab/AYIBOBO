@@ -7,13 +7,34 @@ import { LegalPage, type LegalSection } from './LegalPage';
 
 const SECTIONS: LegalSection[] = [
   { id: 'age', title: 'legal.terms.age.h', blocks: [{ p: 'legal.terms.age.p' }] },
+  {
+    id: 'account',
+    title: 'legal.terms.account.h',
+    blocks: [
+      { p: 'legal.terms.account.p' },
+      { ul: ['legal.terms.account.li1', 'legal.terms.account.li2', 'legal.terms.account.li3', 'legal.terms.account.li4'] },
+      { p: 'legal.terms.account.p2' },
+    ],
+  },
+  { id: 'security', title: 'legal.terms.security.h', blocks: [{ p: 'legal.terms.security.p' }, { p: 'legal.terms.security.p2' }] },
   { id: 'use', title: 'legal.terms.use.h', blocks: [{ p: 'legal.terms.use.p' }] },
   {
     id: 'rules',
     title: 'legal.terms.rules.h',
     blocks: [{ p: 'legal.terms.rules.p' }, { ul: ['legal.terms.rules.li1', 'legal.terms.rules.li2', 'legal.terms.rules.li3', 'legal.terms.rules.li4', 'legal.terms.rules.li5'] }],
   },
-  { id: 'uploads', title: 'legal.terms.uploads.h', blocks: [{ p: 'legal.terms.uploads.p' }, { p: 'legal.terms.uploads.p2' }, { p: 'legal.terms.uploads.p3' }] },
+  {
+    id: 'uploads',
+    title: 'legal.terms.uploads.h',
+    blocks: [
+      { p: 'legal.terms.uploads.p' },
+      { p: 'legal.terms.uploads.p2' },
+      { p: 'legal.terms.uploads.p3' },
+      { p: 'legal.terms.uploads.p4' },
+      { p: 'legal.terms.uploads.p5' },
+      { p: 'legal.terms.uploads.p6' },
+    ],
+  },
   { id: 'ours', title: 'legal.terms.ours.h', blocks: [{ p: 'legal.terms.ours.p' }] },
   { id: 'as-is', title: 'legal.terms.asIs.h', blocks: [{ p: 'legal.terms.asIs.p' }] },
   { id: 'liability', title: 'legal.terms.liability.h', blocks: [{ p: 'legal.terms.liability.p' }] },
