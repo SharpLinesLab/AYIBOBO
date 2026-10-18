@@ -3,7 +3,9 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { attachUser, clearSessionCookie, createAuth, currentUser, readCookie, sameOrigin, SESSION_COOKIE, sessionCookie } from './auth';
 import type { Db } from './db';
+import { logResetLink, resetLink, type ResetLinkSender } from './mail';
 import type { Storage } from './storage';
+import { registerLibraryRoutes } from './library';
 import { registerUploadRoutes, type UploadLimits } from './uploads';
 
 export interface AppConfig {
@@ -15,6 +17,10 @@ export interface AppConfig {
   bcryptRounds?: number;
   /** Where uploaded audio and covers are kept. */
   storage: Storage;
+  /** The site's public address, used in password-reset links (default http://localhost). */
+  publicUrl?: string;
+  /** Delivers password-reset links (default: write them to the server log). */
+  sendResetLink?: ResetLinkSender;
   /** Upload size caps in bytes (defaults: 50 MB audio, 8 MB cover). */
   uploadLimits?: Partial<UploadLimits>;
 }
@@ -78,6 +84,8 @@ export function createApp(cfg: AppConfig) {
     next();
   });
 
+  // A whole library is sent once per device when it's first linked to an account.
+  app.use('/api/library', express.json({ limit: '1mb' }));
   app.use(express.json({ limit: '32kb' }));
   app.use('/api', attachUser(auth));
 
@@ -140,6 +148,30 @@ export function createApp(cfg: AppConfig) {
     res.json({ ok: true });
   });
 
+  // Always the same answer, whether or not there's an account for this email (no enumeration).
+  // The link is sent after the response, so a slow mail provider can't reveal it by timing either.
+  app.post('/api/auth/reset-request', rateLimit('reset-request', 5, 60 * 60_000), sameOrigin, (req, res) => {
+    const reset = auth.createResetToken(req.body?.email);
+    res.json({ ok: true });
+    if (reset) {
+      const send = cfg.sendResetLink ?? logResetLink;
+      void Promise.resolve()
+        .then(() => send(reset.user.email, resetLink(cfg.publicUrl ?? 'http://localhost', reset.token)))
+        .catch((e) => console.error('password reset delivery failed', e));
+    }
+  });
+
+  app.post('/api/auth/reset', rateLimit('reset', 10, 60 * 60_000), sameOrigin, async (req, res) => {
+    const out = await auth.resetPassword(req.body?.token, req.body?.password);
+    if (typeof out === 'string') {
+      res.status(400).json({ ok: false, code: out });
+      return;
+    }
+    // Every session of the account was signed out, this browser's included.
+    res.setHeader('Set-Cookie', clearSessionCookie());
+    res.json({ ok: true });
+  });
+
   // 200 with user: null when signed out, so the app can ask on every load without an error.
   app.get('/api/auth/me', (_req, res) => {
     res.setHeader('Cache-Control', 'no-store');
@@ -149,6 +181,10 @@ export function createApp(cfg: AppConfig) {
   // --- artist uploads ----------------------------------------------------------------------------
 
   registerUploadRoutes(app, { db, storage: cfg.storage, limits: cfg.uploadLimits, rateLimit });
+
+  // --- library sync ------------------------------------------------------------------------------
+
+  registerLibraryRoutes(app, { db, rateLimit });
 
   app.use('/api', (_req, res) => {
     res.status(404).json({ ok: false, error: 'Not found' });

@@ -84,4 +84,22 @@ export const account: { [K in keyof typeof En]: string } = {
   'admin.preview': 'Koute yon ti moso {title}',
   'admin.coverOf': 'Pochèt {title}',
   'admin.link': 'Revize chante yo voye',
+
+  // Library sync
+  'account.sync.note': 'Chante ou renmen yo, playlist ou yo, moun ou swiv yo ak sa w te koute yo anrejistre nan kont ou, epi yo swiv ou sou chak aparèy kote ou konekte.',
+  'account.sync.signOutNote': 'Si w dekonekte, yon kopi rete sou aparèy sa a, men chanjman ou fè pandan w dekonekte rete la a, yo pa rive nan kont ou.',
+
+  // Password reset
+  'account.forgot.link': 'Ou bliye modpas ou?',
+  'account.forgot.title': 'Chanje modpas ou',
+  'account.forgot.intro': 'Mete imèl kont ou epi n ap voye yon lyen ba ou pou w chwazi yon nouvo modpas.',
+  'account.forgot.submit': 'Voye lyen an',
+  'account.forgot.sent': 'Si gen yon kont pou {email}, n ap voye yon lyen pou chanje modpas la. Lyen an mache yon sèl fwa, pandan yon èdtan.',
+  'account.forgot.back': 'Retounen pou konekte',
+  'account.reset.title': 'Chwazi yon nouvo modpas',
+  'account.reset.password': 'Nouvo modpas',
+  'account.reset.submit': 'Anrejistre nouvo modpas la',
+  'account.reset.done': 'Modpas la chanje. Konekte ak nouvo modpas ou.',
+  'account.reset.invalid': 'Lyen sa a pa mache ankò: yo te deja sèvi avè l, li ekspire, oswa yo pa t kopye l nèt.',
+  'account.reset.newLink': 'Mande yon nouvo lyen',
 };

@@ -55,6 +55,52 @@ const MIGRATIONS: string[] = [
    );
    CREATE INDEX uploads_status ON uploads(status, created_at);
    CREATE INDEX uploads_user ON uploads(user_id);`,
+  // 4: each account's library (likes, follows, playlists, play history), synced across devices
+  `CREATE TABLE library_likes (
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     kind TEXT NOT NULL CHECK (kind IN ('track', 'album', 'playlist')),
+     item_id TEXT NOT NULL,
+     created_at INTEGER NOT NULL,
+     PRIMARY KEY (user_id, kind, item_id)
+   );
+   CREATE TABLE library_follows (
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     artist_id TEXT NOT NULL,
+     created_at INTEGER NOT NULL,
+     PRIMARY KEY (user_id, artist_id)
+   );
+   CREATE TABLE library_playlists (
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     id TEXT NOT NULL,
+     title TEXT NOT NULL,
+     curator TEXT NOT NULL,
+     track_ids TEXT NOT NULL,
+     cover TEXT NOT NULL,
+     created_at INTEGER NOT NULL,
+     updated_at INTEGER NOT NULL,
+     PRIMARY KEY (user_id, id)
+   );
+   CREATE TABLE library_plays (
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     track_id TEXT NOT NULL,
+     count INTEGER NOT NULL,
+     last_played INTEGER NOT NULL,
+     PRIMARY KEY (user_id, track_id)
+   );
+   CREATE TABLE library_merges (
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     merge_id TEXT NOT NULL,
+     merged_at INTEGER NOT NULL,
+     PRIMARY KEY (user_id, merge_id)
+   );`,
+  // 5: password reset tokens (only a SHA-256 hash is stored; one live token per account)
+  `CREATE TABLE password_resets (
+     token_hash TEXT PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     created_at INTEGER NOT NULL,
+     expires_at INTEGER NOT NULL
+   );
+   CREATE INDEX password_resets_user ON password_resets(user_id);`,
 ];
 
 export interface DbOptions {

@@ -85,4 +85,22 @@ export const account: { [K in keyof typeof En]: string } = {
   'admin.preview': 'Écouter un extrait de {title}',
   'admin.coverOf': 'Pochette de {title}',
   'admin.link': 'Vérifier les envois',
+
+  // Library sync
+  'account.sync.note': 'Vos j’aime, playlists, abonnements et votre historique d’écoute sont enregistrés dans votre compte et vous suivent sur chaque appareil où vous vous connectez.',
+  'account.sync.signOutNote': 'Si vous vous déconnectez, une copie reste sur cet appareil, mais les changements faits hors connexion restent ici et n’atteignent pas votre compte.',
+
+  // Password reset
+  'account.forgot.link': 'Mot de passe oublié ?',
+  'account.forgot.title': 'Réinitialiser votre mot de passe',
+  'account.forgot.intro': 'Saisissez l’e-mail de votre compte et nous vous enverrons un lien pour choisir un nouveau mot de passe.',
+  'account.forgot.submit': 'Envoyer le lien',
+  'account.forgot.sent': 'S’il existe un compte pour {email}, nous lui enverrons un lien de réinitialisation. Le lien ne fonctionne qu’une fois, pendant 1 heure.',
+  'account.forgot.back': 'Retour à la connexion',
+  'account.reset.title': 'Choisissez un nouveau mot de passe',
+  'account.reset.password': 'Nouveau mot de passe',
+  'account.reset.submit': 'Enregistrer le mot de passe',
+  'account.reset.done': 'Mot de passe modifié. Connectez-vous avec votre nouveau mot de passe.',
+  'account.reset.invalid': 'Ce lien de réinitialisation ne fonctionne plus : il a déjà servi, il a expiré, ou il n’a pas été copié en entier.',
+  'account.reset.newLink': 'Demander un nouveau lien',
 };

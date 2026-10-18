@@ -20,6 +20,12 @@ let sessionSecret = env.SESSION_SECRET ?? '';
 if (isProd && sessionSecret.length < 32) {
   fail('SESSION_SECRET must be set to a random string of at least 32 characters in production (e.g. `openssl rand -base64 48`). Without it, sign-in sessions could be forged.');
 }
+// Password-reset links point here. Taking it from the request instead would let a forged Host
+// header send people to someone else's site.
+const publicUrl = (env.PUBLIC_URL ?? '').replace(/\/$/, '');
+if (isProd && !/^https?:\/\/[^\s/]+/.test(publicUrl)) {
+  fail('PUBLIC_URL must be set in production to the site\'s public address, e.g. https://asf.example (used in password-reset links).');
+}
 if (!sessionSecret) {
   sessionSecret = randomBytes(32).toString('hex');
   console.warn('⚠️  SESSION_SECRET is not set — using a random one, so everyone is signed out when the server restarts.');
@@ -40,6 +46,7 @@ try {
 const app = createApp({
   db,
   storage,
+  publicUrl: publicUrl || `http://localhost:${port}`,
   sessionSecret,
   // dist-server/index.js -> ../dist ; server/index.ts (tsx) -> ../dist
   staticDir: resolve(here, '../dist'),

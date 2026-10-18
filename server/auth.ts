@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { createHmac, randomBytes, randomUUID } from 'node:crypto';
+import { createHash, createHmac, randomBytes, randomUUID } from 'node:crypto';
 import type { NextFunction, Request, Response } from 'express';
 import type { Db } from './db';
 
@@ -24,7 +24,10 @@ export interface AuthConfig {
 }
 
 /** Machine-readable error codes; the browser shows them in the visitor's language. */
-export type AuthError = 'invalid_email' | 'weak_password' | 'long_password' | 'invalid_name' | 'invalid_role' | 'email_taken' | 'invalid_credentials';
+export type AuthError = 'invalid_email' | 'weak_password' | 'long_password' | 'invalid_name' | 'invalid_role' | 'email_taken' | 'invalid_credentials' | 'invalid_token';
+
+/** Password reset links work for an hour. */
+export const RESET_TTL_MS = 60 * 60_000;
 
 export const SESSION_COOKIE = 'asf_session';
 const DAY = 86_400_000;
@@ -42,6 +45,13 @@ interface UserRow {
 }
 
 const toUser = (r: UserRow): User => ({ id: r.id, email: r.email, role: r.role, displayName: r.display_name, createdAt: r.created_at });
+
+/** Why a new password can't be used, or null if it's fine. */
+function passwordProblem(password: string): 'weak_password' | 'long_password' | null {
+  if (password.length < 8) return 'weak_password';
+  if (Buffer.byteLength(password) > MAX_PASSWORD_BYTES) return 'long_password';
+  return null;
+}
 
 export const normalizeEmail = (v: unknown): string => (typeof v === 'string' ? v.trim().toLowerCase().slice(0, 254) : '');
 
@@ -63,8 +73,8 @@ export function createAuth(db: Db, cfg: AuthConfig) {
     const email = normalizeEmail(input.email);
     if (!EMAIL.test(email)) return 'invalid_email';
     const password = typeof input.password === 'string' ? input.password : '';
-    if (password.length < 8) return 'weak_password';
-    if (Buffer.byteLength(password) > MAX_PASSWORD_BYTES) return 'long_password';
+    const weak = passwordProblem(password);
+    if (weak) return weak;
     const role = input.role ?? 'listener';
     // Anyone can sign up as a listener or an artist (artist uploads are moderated); admins are
     // only ever made with the server's `set-role` command.
@@ -113,13 +123,61 @@ export function createAuth(db: Db, cfg: AuthConfig) {
     if (token) db.sql.prepare('DELETE FROM sessions WHERE id_hash = ?').run(sign(token));
   }
 
+  // --- password reset ---------------------------------------------------------------------------
+
+  /** Reset tokens are 32 random bytes, so a plain SHA-256 is enough to store them safely. */
+  const resetHash = (token: string) => createHash('sha256').update(token).digest('hex');
+
+  /**
+   * A fresh single-use reset token for this email, or null if there's no such account. Any
+   * earlier token for the account stops working. The caller must answer the same either way.
+   */
+  function createResetToken(emailIn: unknown, now = Date.now()): { token: string; user: User } | null {
+    const row = byEmail(normalizeEmail(emailIn));
+    if (!row) return null;
+    const token = randomBytes(32).toString('base64url');
+    db.transaction(() => {
+      db.sql.prepare('DELETE FROM password_resets WHERE user_id = ? OR expires_at <= ?').run(row.id, now);
+      db.sql.prepare('INSERT INTO password_resets (token_hash, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)').run(resetHash(token), row.id, now, now + RESET_TTL_MS);
+    });
+    return { token, user: toUser(row) };
+  }
+
+  /**
+   * Set a new password with a reset token. The token is deleted once used (and expired ones are
+   * swept), and every session of the account is signed out. A too-short password is refused
+   * without using up the token, so the person can try again.
+   */
+  async function resetPassword(tokenIn: unknown, passwordIn: unknown): Promise<User | AuthError> {
+    const now = Date.now();
+    db.sql.prepare('DELETE FROM password_resets WHERE expires_at <= ?').run(now);
+    const token = typeof tokenIn === 'string' && tokenIn.length <= 200 ? tokenIn : '';
+    const reset = token ? (db.sql.prepare('SELECT user_id FROM password_resets WHERE token_hash = ? AND expires_at > ?').get(resetHash(token), now) as { user_id: string } | undefined) : undefined;
+    if (!reset) return 'invalid_token';
+    const password = typeof passwordIn === 'string' ? passwordIn : '';
+    const weak = passwordProblem(password);
+    if (weak) return weak;
+    const hash = await bcrypt.hash(password, rounds);
+    const used = db.transaction(() => {
+      // Delete first: if two requests race with the same token, only one gets to use it.
+      const del = db.sql.prepare('DELETE FROM password_resets WHERE token_hash = ?').run(resetHash(token));
+      if (del.changes === 0) return false;
+      db.sql.prepare('DELETE FROM password_resets WHERE user_id = ?').run(reset.user_id);
+      db.sql.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, reset.user_id);
+      db.sql.prepare('DELETE FROM sessions WHERE user_id = ?').run(reset.user_id);
+      return true;
+    });
+    if (!used) return 'invalid_token';
+    return userById(reset.user_id)!;
+  }
+
   function setRole(email: string, role: Role): User | null {
     db.sql.prepare('UPDATE users SET role = ? WHERE email = ?').run(role, normalizeEmail(email));
     const r = byEmail(normalizeEmail(email));
     return r ? toUser(r) : null;
   }
 
-  return { signup, login, createSession, userForToken, destroySession, userById, setRole, ttl };
+  return { signup, login, createSession, userForToken, destroySession, userById, setRole, createResetToken, resetPassword, ttl };
 }
 
 export type Auth = ReturnType<typeof createAuth>;

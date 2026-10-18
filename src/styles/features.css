@@ -1780,3 +1780,8 @@
     flex-direction: column;
   }
 }
+
+.account__forgot {
+  align-self: flex-start;
+  font-size: 13.5px;
+}

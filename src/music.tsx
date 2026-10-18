@@ -1,12 +1,15 @@
 /**
  * Music app state: the catalog (seed + your uploads), your library (likes, follows, playlists,
  * reposts, recently played, comments) and helpers to turn tracks into playable queue items.
- * Library data is stored per browser in localStorage; uploaded audio in IndexedDB.
+ * Library data is stored per browser in localStorage; uploaded audio in IndexedDB. While you're
+ * signed in, likes, follows, playlists and play history also sync to your account (lib/librarySync).
  */
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { coverUrl, makeCover } from './catalog/covers';
 import { lifetimePlays } from './catalog/plays';
 import { CATALOG_CHANGED, fetchPublished, toCatalog, type PublishedTrack } from './lib/serverCatalog';
+import { useAccount } from './lib/account';
+import { librarySync } from './lib/librarySync';
 import { createMixes } from './catalog/mixes';
 import { createCatalog } from './catalog/seed';
 import type { Album, Artist, Catalog, Playlist, Track } from './catalog/types';
@@ -144,6 +147,43 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
       writeLibrary(next);
       return next;
     });
+  }, []);
+
+  // Account sync. Changes are diffed after each render; the account's copy, when it arrives,
+  // replaces the synced part of the library without being sent back.
+  const libRef = useRef(library);
+  const prevLib = useRef(library);
+  const fromServer = useRef(new WeakSet<Library>());
+  useEffect(() => {
+    librarySync.attach({
+      get: () => libRef.current,
+      replace: (next) => {
+        fromServer.current.add(next);
+        libRef.current = next;
+        writeLibrary(next);
+        setLibrary(next);
+      },
+    });
+  }, []);
+  useEffect(() => {
+    if (!fromServer.current.has(library)) librarySync.record(prevLib.current, library);
+    prevLib.current = library;
+    libRef.current = library;
+  }, [library]);
+  const account = useAccount();
+  const userId = account.user?.id;
+  useEffect(() => {
+    if (userId) void librarySync.start(userId);
+    else if (account.status === 'ready') librarySync.stop();
+  }, [userId, account.status]);
+  useEffect(() => {
+    const resume = () => document.visibilityState === 'visible' && void librarySync.resume();
+    document.addEventListener('visibilitychange', resume);
+    window.addEventListener('online', resume);
+    return () => {
+      document.removeEventListener('visibilitychange', resume);
+      window.removeEventListener('online', resume);
+    };
   }, []);
 
   // Rehydrate uploaded audio from IndexedDB into object URLs (created once per upload, revoked on delete).

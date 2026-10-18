@@ -24,9 +24,15 @@ describe('production fail-fast', () => {
       expect(r.stderr).toContain('SESSION_SECRET');
     }
   }, 200_000);
+
+  it('refuses to start without PUBLIC_URL (password-reset links must not trust the Host header)', () => {
+    const r = boot({ NODE_ENV: 'production', SESSION_SECRET: 'a-strong-enough-secret-0123456789abcdef' });
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('PUBLIC_URL');
+  }, 200_000);
 });
 
-describe('manage set-role', () => {
+describe('manage command', () => {
   it('makes an existing account an admin', async () => {
     const { Db } = await import('../server/db');
     const { createAuth } = await import('../server/auth');
@@ -40,6 +46,15 @@ describe('manage set-role', () => {
     expect(run('set-role', 'Owner@example.com', 'admin').stdout).toContain('owner@example.com is now admin');
     expect(run('set-role', 'ghost@example.com', 'admin').status).toBe(1);
     expect(run('set-role', 'owner@example.com', 'superuser').status).toBe(2);
+    // reset-link prints a working single-use link for the account.
+    const link = spawnSync(process.execPath, ['--disable-warning=ExperimentalWarning', '--import', 'tsx', 'server/manage.ts', 'reset-link', 'owner@example.com'], {
+      env: { PATH: process.env.PATH ?? '', DATABASE_FILE: file, PUBLIC_URL: 'https://asf.example' },
+      encoding: 'utf8',
+      timeout: 90_000,
+    });
+    expect(link.stdout.trim()).toMatch(/^https:\/\/asf\.example\/#\/reset\/[\w-]{43}$/);
+    expect(run('reset-link', 'ghost@example.com').status).toBe(1);
+    expect(run('help').stdout).toContain('email service');
     const again = new Db(file);
     await again.init();
     expect(again.sql.prepare("SELECT role FROM users WHERE email = 'owner@example.com'").get()).toMatchObject({ role: 'admin' });

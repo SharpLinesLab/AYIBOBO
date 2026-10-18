@@ -1,13 +1,68 @@
 import { useState, type ReactNode } from 'react';
 import { t, type Key } from '../i18n';
-import { signIn, signOut, signUp, useAccount, type AccountError } from '../lib/account';
+import { requestPasswordReset, signIn, signOut, signUp, useAccount, type AccountError } from '../lib/account';
 import { useApp } from '../store';
 import { ArtistUploads } from './ArtistUploads';
 import { PageHead } from './Browse';
 
+/** "Forgot password?": ask for a reset link. The answer never says whether the account exists. */
+function ForgotForm({ initialEmail, onBack }: { initialEmail: string; onBack: () => void }) {
+  const [email, setEmail] = useState(initialEmail);
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [error, setError] = useState<AccountError | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    setBusy(true);
+    setError(null);
+    const r = await requestPasswordReset(email.trim());
+    setBusy(false);
+    if (r.ok) setSentTo(email.trim());
+    else setError(r.error);
+  };
+
+  return (
+    <section className="card-panel account__panel" aria-labelledby="account-forgot-title">
+      <h2 className="panel-title" id="account-forgot-title">
+        {t('account.forgot.title')}
+      </h2>
+      {sentTo ? (
+        <p className="notice" role="status">
+          {t('account.forgot.sent', { email: sentTo })}
+        </p>
+      ) : (
+        <form
+          className="stack"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void submit();
+          }}
+        >
+          <p className="muted">{t('account.forgot.intro')}</p>
+          <label className="field">
+            {t('account.email')}
+            <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
+          </label>
+          {error && (
+            <div className="notice notice--error" role="alert">
+              {t(`account.error.${error}` as Key)}
+            </div>
+          )}
+          <button className="cta cta--solid" type="submit" disabled={busy}>
+            {busy ? t('account.busy') : t('account.forgot.submit')}
+          </button>
+        </form>
+      )}
+      <button className="link-btn account__switch" onClick={onBack}>
+        {t('account.forgot.back')}
+      </button>
+    </section>
+  );
+}
+
 function SignInForm() {
   const { toast } = useApp();
-  const [mode, setMode] = useState<'signIn' | 'signUp'>('signIn');
+  const [mode, setMode] = useState<'signIn' | 'signUp' | 'forgot'>('signIn');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -24,6 +79,8 @@ function SignInForm() {
     if (r.ok) toast(t('account.welcome', { name: r.user.displayName }));
     else setError(r.error);
   };
+
+  if (mode === 'forgot') return <ForgotForm initialEmail={email} onBack={() => setMode('signIn')} />;
 
   return (
     <section className="card-panel account__panel" aria-labelledby="account-form-title">
@@ -65,6 +122,18 @@ function SignInForm() {
             </small>
           )}
         </label>
+        {!signingUp && (
+          <button
+            type="button"
+            className="link-btn account__forgot"
+            onClick={() => {
+              setMode('forgot');
+              setError(null);
+            }}
+          >
+            {t('account.forgot.link')}
+          </button>
+        )}
         {signingUp && (
           <fieldset className="account__type">
             <legend>{t('account.type')}</legend>
@@ -115,6 +184,8 @@ export function AccountPage() {
           </h2>
           <p className="muted">{t('account.signedInAs', { email: user.email })}</p>
           <p className="muted">{t('account.role', { role: t(`account.role.${user.role}`) })}</p>
+          <p className="muted">{t('account.sync.note')}</p>
+          <p className="muted account__fine">{t('account.sync.signOutNote')}</p>
           <div className="account__actions">
             {user.role === 'admin' && (
               <a className="btn-accent" href="#/admin">

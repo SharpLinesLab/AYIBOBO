@@ -6,6 +6,9 @@ import { join } from 'node:path';
 import { Db } from '../server/db';
 import { LocalDiskStorage } from '../server/storage';
 
+/** The real fetch, so tests can stub the global one and still reach the server. */
+const nativeFetch = globalThis.fetch;
+
 export const TEST_SECRET = 'test-secret-0123456789abcdef0123456789';
 
 /** An API server on a random port with an in-memory database, plus a tiny cookie-keeping client. */
@@ -37,7 +40,7 @@ function client(base: string) {
     return r;
   };
   const req = (path: string, init: RequestInit = {}) =>
-    fetch(base + path, { ...init, headers: { ...(init.headers as Record<string, string>), ...(cookie ? { cookie } : {}) } }).then(keep);
+    nativeFetch(base + path, { ...init, headers: { ...(init.headers as Record<string, string>), ...(cookie ? { cookie } : {}) } }).then(keep);
   return {
     get: (path: string, headers: Record<string, string> = {}) => req(path, { headers }),
     post: (path: string, body?: unknown, headers: Record<string, string> = {}) =>

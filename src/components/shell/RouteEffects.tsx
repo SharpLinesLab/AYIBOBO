@@ -51,6 +51,8 @@ function titleFor(route: Route, m: ReturnType<typeof useMusic>, isAdmin: boolean
       return t('legal.copyright.title');
     case 'account':
       return t('account.title');
+    case 'reset':
+      return t('account.reset.title'); // never the token
     case 'admin':
       // Not even the title gives the page away to non-admins.
       return isAdmin ? t('admin.title') : t('player.title.pageNotFound');

@@ -20,6 +20,7 @@ export type Route =
   | { page: 'copyright' }
   | { page: 'account' }
   | { page: 'admin' }
+  | { page: 'reset'; token: string }
   | { page: 'notfound' };
 
 export function parseRoute(hash: string): Route {
@@ -70,6 +71,8 @@ export function parseRoute(hash: string): Route {
       return { page: 'account' };
     case 'admin':
       return { page: 'admin' };
+    case 'reset':
+      return a ? { page: 'reset', token: a } : { page: 'account' };
     case undefined:
     case 'discover':
       return { page: 'home' };

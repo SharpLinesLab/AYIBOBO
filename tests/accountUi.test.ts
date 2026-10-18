@@ -31,6 +31,8 @@ describe('account routes', () => {
   it('parse #/account and #/admin', () => {
     expect(parseRoute('#/account')).toEqual({ page: 'account' });
     expect(parseRoute('#/admin')).toEqual({ page: 'admin' });
+    expect(parseRoute('#/reset/abc-DEF_123')).toEqual({ page: 'reset', token: 'abc-DEF_123' });
+    expect(parseRoute('#/reset')).toEqual({ page: 'account' });
   });
 
   it('treats a missing API server as "accounts unavailable"', async () => {

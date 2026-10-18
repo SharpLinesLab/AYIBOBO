@@ -23,6 +23,7 @@ import { TermsPage } from './pages/legal/Terms';
 import { CopyrightPage } from './pages/legal/Copyright';
 import { AccountPage } from './pages/Account';
 import { AdminPage } from './pages/Admin';
+import { ResetPasswordPage } from './pages/ResetPassword';
 import { refreshAccount } from './lib/account';
 import { PaletteHost } from './components/shell/PaletteHost';
 import { t, useLang } from './i18n';
@@ -177,6 +178,9 @@ function Shell() {
       break;
     case 'admin':
       page = <AdminPage />;
+      break;
+    case 'reset':
+      page = <ResetPasswordPage token={route.token} />;
       break;
     case 'studio':
       page = <StudioPage artistId={route.artistId} />;

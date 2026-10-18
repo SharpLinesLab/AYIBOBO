@@ -4,6 +4,7 @@
  * status is `unavailable` and the rest of the app works as before.
  */
 import { useSyncExternalStore } from 'react';
+import { librarySync } from './librarySync';
 
 export type Role = 'listener' | 'artist' | 'admin';
 
@@ -93,6 +94,27 @@ export async function signIn(email: string, password: string): Promise<Result> {
 }
 
 export async function signOut(): Promise<void> {
+  // Send the last changes first; after this, the device keeps its copy but stops syncing.
+  await librarySync.flush();
   await post('/api/auth/logout', {});
   set({ status: 'ready', user: null });
+}
+
+/** Ask for a password-reset link. The server answers the same whether or not the account exists. */
+export async function requestPasswordReset(email: string): Promise<{ ok: true } | { ok: false; error: 'rate_limited' | 'unknown' }> {
+  const r = await post('/api/auth/reset-request', { email });
+  if (r?.status === 200) return { ok: true };
+  return { ok: false, error: r?.status === 429 ? 'rate_limited' : 'unknown' };
+}
+
+/** Set a new password with the token from a reset link. Everyone is signed out afterwards. */
+export async function resetPassword(token: string, password: string): Promise<{ ok: true } | { ok: false; error: 'invalid_token' | 'weak_password' | 'long_password' | 'rate_limited' | 'unknown' }> {
+  const r = await post('/api/auth/reset', { token, password });
+  if (r?.status === 200) {
+    set({ status: 'ready', user: null });
+    return { ok: true };
+  }
+  if (r?.status === 429) return { ok: false, error: 'rate_limited' };
+  const code = r?.body.code;
+  return { ok: false, error: code === 'invalid_token' || code === 'weak_password' || code === 'long_password' ? code : 'unknown' };
 }

@@ -83,4 +83,22 @@ export const account = {
   'admin.preview': 'Preview {title}',
   'admin.coverOf': 'Cover of {title}',
   'admin.link': 'Review uploads',
+
+  // Library sync
+  'account.sync.note': 'Your likes, playlists, follows and play history are saved to your account and follow you to every device where you sign in.',
+  'account.sync.signOutNote': 'Signing out keeps a copy on this device, but changes you make while signed out stay here and don’t reach your account.',
+
+  // Password reset
+  'account.forgot.link': 'Forgot password?',
+  'account.forgot.title': 'Reset your password',
+  'account.forgot.intro': 'Enter your account’s email and we’ll send you a link to choose a new password.',
+  'account.forgot.submit': 'Send reset link',
+  'account.forgot.sent': 'If there’s an account for {email}, we’ll send it a reset link. The link works once, for 1 hour.',
+  'account.forgot.back': 'Back to sign in',
+  'account.reset.title': 'Choose a new password',
+  'account.reset.password': 'New password',
+  'account.reset.submit': 'Save new password',
+  'account.reset.done': 'Password changed. Sign in with your new password.',
+  'account.reset.invalid': 'This reset link doesn’t work anymore: it was already used, it expired, or it wasn’t copied completely.',
+  'account.reset.newLink': 'Ask for a new link',
 };

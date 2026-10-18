@@ -22,6 +22,7 @@ const ROUTES = [
   '#/studio/ar-tiga-blaze',
   '#/account',
   '#/admin',
+  '#/reset/sample-token',
   '#/privacy',
   '#/terms',
   '#/copyright',
