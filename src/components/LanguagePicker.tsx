@@ -30,8 +30,10 @@ export function LanguageMenu() {
   }, [open]);
   return (
     <div className="langmenu" ref={wrap}>
-      <button className="round-btn langmenu__btn" onClick={() => setOpen((o) => !o)} aria-label={`${t('common.lang.switch')} (${LANGS.find((l) => l.id === lang)?.label})`} aria-expanded={open} aria-haspopup="menu">
+      <button className="round-btn langmenu__btn" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-haspopup="menu">
         <GlobeIcon />
+        {/* Name = hidden text + the visible code, so the accessible name contains what's on screen. */}
+        <span className="sr-only">{t('common.lang.switch')}: {LANGS.find((l) => l.id === lang)?.label}</span>
         <span className="langmenu__code" aria-hidden>
           {lang.toUpperCase()}
         </span>

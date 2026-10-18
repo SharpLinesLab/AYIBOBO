@@ -1432,7 +1432,7 @@
     display: block;
     align-self: stretch;
     height: 16px;
-    margin: -12px 0 4px;
+    margin: -14px 0 12px;
     touch-action: none;
     cursor: grab;
     position: relative;

@@ -1,20 +1,13 @@
-import { Fragment, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { BRAND, socialUrl } from '../brand';
 import { t } from '../i18n';
 import { CATEGORIES } from '../lib/categories';
-import { num, usd } from '../lib/format';
+import { num, rich, usd } from '../lib/format';
 import { totalRevenue } from '../lib/stats';
 import type { BoardId } from '../lib/types';
 import { useApp, type Filter } from '../store';
 import { AsfLogo, FacebookIcon, InstagramIcon, XIcon, YoutubeIcon } from './icons';
 
-/** Fill `{name}` placeholders in a translated string with React nodes (links, <code>, <strong>…). */
-export function rich(s: string, nodes: Record<string, ReactNode>): ReactNode[] {
-  return s.split(/(\{\w+\})/).map((part, i) => {
-    const m = /^\{(\w+)\}$/.exec(part);
-    return m && m[1] in nodes ? <Fragment key={i}>{nodes[m[1]]}</Fragment> : part;
-  });
-}
 
 export function SocialLinks({ size = 20 }: { size?: number }) {
   const items = [

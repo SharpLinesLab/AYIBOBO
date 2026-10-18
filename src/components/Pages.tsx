@@ -6,7 +6,9 @@ import { MAX_BID, MIN_BID, getArchiveBoard, getBoard, shiftDayKey, utcDayKey } f
 import type { CategoryId } from '../lib/types';
 import { useApp } from '../store';
 import { Board } from './Board';
-import { BoardToggle, LivePill, rich } from './Chrome';
+import { BRAND } from '../brand';
+import { rich } from '../lib/format';
+import { BoardToggle, LivePill } from './Chrome';
 import { FeaturedCarousel } from './FeaturedCarousel';
 import { HeroClaim } from './HeroClaim';
 import { ChevronLeft, ChevronRight } from './icons';
@@ -274,7 +276,7 @@ export function AboutPage() {
   return (
     <div className="prose">
       <h1>{t('boost.pages.about.title')}</h1>
-      <p>{rich(t('boost.pages.about.p1'), { site: <strong>soundbid.lol</strong> })}</p>
+      <p>{rich(t('boost.pages.about.p1'), { site: <strong>{BRAND.short}</strong> })}</p>
       <p>{rich(t('boost.pages.about.p2'), { rule: <strong>{t('boost.pages.about.rule')}</strong> })}</p>
       <h2>{t('boost.pages.about.howTitle')}</h2>
       <ol>

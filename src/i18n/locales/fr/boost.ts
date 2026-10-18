@@ -42,7 +42,7 @@ export const boost: { [K in keyof typeof En]: string } = {
   // Classements
   'boost.board.label': 'Classement',
   'boost.board.choose': 'Classement',
-  'boost.board.all': 'Global',
+  'boost.board.all': 'Tous les temps',
   'boost.board.today': 'Aujourd’hui',
 
   // Fiche

@@ -80,7 +80,7 @@ export const common: { [K in keyof typeof En]: string } = {
   'common.action.next': 'Pwochen',
   'common.action.previous': 'Anvan',
   'common.action.copy': 'Kopye',
-  'common.action.reset': 'Remete jan l te ye',
+  'common.action.reset': 'Remete',
   'common.action.tryAgain': 'Eseye ankò',
   'common.action.scrollLeft': 'Defile agoch',
   'common.action.scrollRight': 'Defile adwat',
