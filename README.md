@@ -72,7 +72,7 @@ Brand name, contact email and social profile URLs live in `src/brand.ts`. Social
 
 ## Payments
 
-There are no payments in the app right now. The earlier pay-to-rank Boost Board (and its Stripe checkout) has been removed; local Haitian payment methods (MonCash, Natcash) are planned as a separate feature.
+There are no payments in the app yet. Local Haitian payment methods (MonCash, Natcash) are planned as a separate feature.
 
 ## API
 

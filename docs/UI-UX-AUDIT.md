@@ -1,10 +1,8 @@
 # UI/UX production audit — ASF Music
 
-> **Update:** the pay-to-rank Boost Board has since been removed from the site. Items below that mention it are kept as a record of the original audit.
-
 **Scope:**
 
-- **Pages:** 21 routes, covering every music page, the Boost Board, the not-found page and the empty states.
+- **Pages:** every route in the app — Discover, Trending, Charts, Genres, song, album, artist and playlist pages, Library, Search, Upload, Settings, Artist Studio — plus the not-found page and the empty states.
 - **Variants:** dark and light themes, each at phone (375 px), tablet (820 px) and desktop (1440 px).
 - **Builds:** run against both the dev build and the production build served by `server/`.
 
@@ -14,7 +12,7 @@
 - **Layout:** horizontal overflow checks.
 - **Errors:** console and runtime error capture.
 - **Tap targets:** touch-target sizing.
-- **Behaviour:** scripted keyboard and behaviour tests (focus, Back/Forward, dialogs, reduced motion, API outage).
+- **Behaviour:** scripted keyboard and behaviour tests (focus, Back/Forward, dialogs, reduced motion).
 - **Code review:** a review of the UX-critical code paths.
 
 ## Result
@@ -25,9 +23,9 @@
 | Pages with horizontal overflow on phones | 3 (artist, search, upload) | 0 |
 | axe violations (serious) | 4 rules on 80+ page/theme/viewport combinations | 0 |
 | axe violations (moderate/minor) | 4 rules | 0 |
-| Distinct page titles | 1 (all pages identical) | 21 |
+| Distinct page titles | 1 (all pages identical) | one per page |
 | Behaviour checks (below) | — | 14 / 14 pass |
-| App JS (gzip) | 141 KB, single bundle | 60 KB app + 69 KB vendor (long-cached) + Boost Board loaded on demand |
+| App JS (gzip) | 141 KB, single bundle | ~70 KB app + 69 KB vendor (long-cached); Studio, queue, full-screen player and command palette load on demand |
 
 ## Issues found and fixed
 
@@ -58,7 +56,7 @@
 
 - **Install and sharing metadata.** Added a web app manifest with app icons (installable to the home screen), an Apple touch icon, a 1200×630 social share image, Twitter card tags, `color-scheme`, `robots.txt` and a `<noscript>` message.
 - **Caching.** `index.html` is served with `no-cache` so deploys take effect immediately. Hashed assets stay immutable.
-- **Code splitting.** The Boost Board pages and dialogs load on demand, and React has its own vendor chunk.
+- **Code splitting.** Artist Studio, the full-screen player, the drag-to-reorder queue and the command palette load on demand, and React has its own vendor chunk.
 - **Fonts.** Unused font weights were trimmed.
 
 ## Behaviour checks (all passing)

@@ -5,6 +5,10 @@ import { searchCatalog } from '../src/catalog/search';
 import { createCatalog } from '../src/catalog/seed';
 import { barCount, sectionOf, synthPeaks } from '../src/player/synth';
 import { parseRoute } from '../src/store';
+import { fmtCompact, setLang } from '../src/i18n';
+import { dict as en } from '../src/i18n/locales/en';
+import { dict as fr } from '../src/i18n/locales/fr';
+import { dict as ht } from '../src/i18n/locales/ht';
 
 const NOW = Date.parse('2026-10-17T15:00:00Z');
 const cat = createCatalog(NOW);
@@ -95,6 +99,50 @@ describe('routes', () => {
     expect(parseRoute('#/search/ayiti%20ch%C3%A9rie')).toEqual({ page: 'search', q: 'ayiti chérie' });
     expect(parseRoute('#/library')).toEqual({ page: 'library', tab: 'likes' });
     // The retired Boost Board pages now show "page not found".
-    for (const old of ['#/leaderboard', '#/daily/2026-10-16', '#/categories', '#/about', '#/rules']) expect(parseRoute(old)).toEqual({ page: 'notfound' });
+    for (const old of ['#/leaderboard', '#/boost', '#/daily/2026-10-16', '#/categories', '#/about', '#/rules', '#/faq']) expect(parseRoute(old)).toEqual({ page: 'notfound' });
+  });
+});
+
+describe('catalog copy', () => {
+  const copy = (c: typeof cat) => [
+    ...c.artists.map((a) => a.bio),
+    ...c.albums.map((a) => a.description),
+    ...c.tracks.map((t) => t.description),
+    ...c.playlists.flatMap((p) => [p.description, p.curator, p.cover.subtext ?? '']),
+  ];
+
+  it('resolves every bio and description to real text', () => {
+    for (const s of copy(cat)) expect(s).not.toMatch(/catalog\./);
+  });
+
+  it('is fully translated in French and Kreyòl', async () => {
+    // setLang marks <html lang>; the unit tests run without a DOM.
+    (globalThis as { document?: unknown }).document = { documentElement: {} };
+    const english = new Set(Object.entries(en).filter(([k]) => k.startsWith('catalog.')).map(([, v]) => v));
+    for (const [lang, d] of [['fr', fr], ['ht', ht]] as const) {
+      for (const [k, v] of Object.entries(d)) if (k.startsWith('catalog.')) expect(english.has(v), `${lang} ${k}`).toBe(false);
+      await setLang(lang, false);
+      const c = createCatalog(NOW);
+      expect(c.tracks.map((t) => t.id)).toEqual(cat.tracks.map((t) => t.id));
+      for (const s of copy(c)) expect(s.split(/(?<=\.) /).some((part) => english.has(part)), `${lang}: ${s}`).toBe(false);
+    }
+    await setLang('en', false);
+  });
+});
+
+describe('compact numbers', () => {
+  const cases = [5, 1_234, 9_999, 66_100, 661_000, 999_600, 2_400_000, 1_500_000_000];
+  it('never put a space before the suffix, in any language', async () => {
+    (globalThis as { document?: unknown }).document = { documentElement: {} };
+    const out: Record<string, string[]> = {};
+    for (const lang of ['en', 'fr', 'ht'] as const) {
+      await setLang(lang, false);
+      out[lang] = cases.map(fmtCompact);
+    }
+    await setLang('en', false);
+    expect(out.en).toEqual(['5', '1.2K', '10K', '66K', '661K', '1M', '2.4M', '1.5B']);
+    expect(out.fr).toEqual(['5', '1,2K', '10K', '66K', '661K', '1M', '2,4M', '1,5Md']);
+    expect(out.ht).toEqual(out.fr);
+    for (const s of Object.values(out).flat()) expect(s).not.toMatch(/\s/);
   });
 });

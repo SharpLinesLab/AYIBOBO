@@ -13,7 +13,6 @@ export const player = {
   'player.queue': 'Queue',
   'player.nowPlaying': 'Now playing',
   'player.openNowPlaying': 'Open now playing',
-  'player.nowPlayingView': 'Now playing view',
   'player.fullScreen': 'Full-screen player',
 
   // Sleep timer
@@ -23,11 +22,8 @@ export const player = {
   'player.sleep.off': 'Turn off',
 
   // "Now playing" side panel
-  'player.panel.hide': 'Hide now playing panel',
-  'player.panel.showLyrics': 'Show lyrics',
-  'player.panel.aboutArtist': 'About the artist',
-  'player.panel.followers': '{n} followers',
-  'player.panel.nextInQueue': 'Next in queue',
+  'player.panel.toggle': 'Up next panel',
+  'player.panel.hide': 'Hide up next panel',
 
   // Full-screen player
   'player.np.close': 'Close now playing',

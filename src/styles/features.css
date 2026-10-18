@@ -137,43 +137,6 @@
   }
 }
 
-/* Side-panel card */
-.npp__lyrics {
-  border-radius: 14px;
-  padding: 12px 12px 4px;
-  background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 22%, var(--surface-2)), var(--surface-2) 70%);
-}
-
-.npp__lyrics .npp__next-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.lyr--card {
-  max-height: 230px;
-  overflow-y: auto;
-  scrollbar-width: none;
-  padding: 6px 4px 60px;
-  mask-image: linear-gradient(180deg, #000 70%, transparent);
-  -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent);
-}
-
-.lyr--card .lyr__line {
-  font-size: 18px;
-  line-height: 1.3;
-  padding: 5px 0;
-  color: var(--text);
-}
-
-.lyr--card.is-live .lyr__line {
-  color: var(--muted);
-}
-
-.lyr--card .lyr__line.is-active {
-  color: var(--text);
-}
-
 /* Song page */
 .song-lyrics__head {
   display: flex;

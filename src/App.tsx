@@ -22,7 +22,7 @@ import { PaletteHost } from './components/shell/PaletteHost';
 import { t, useLang } from './i18n';
 import { ShareHost } from './components/music/Share';
 import { ConnectionBanner } from './components/music/Offline';
-import { NowPlayingPanel, PlayerBar, usePanelOpen, type NpTab } from './components/shell/Player';
+import { PlayerBar, UpNextPanel, usePanelOpen, type NpTab } from './components/shell/Player';
 import { MobileTabs } from './components/shell/MobileTabs';
 import { DiscoverPage } from './pages/Discover';
 import { ChartsPage, GenrePage, GenresPage, NotFound, TrendingPage } from './pages/Browse';
@@ -191,7 +191,7 @@ function Shell() {
             <Footer />
           </div>
           <PlayerBar onExpand={() => setNpTab('wave')} onLyrics={() => setNpTab('lyrics')} panelOpen={panelOpen} onTogglePanel={() => setPanelOpen(!panelOpen)} />
-          {panelOpen && hasPlayer && <NowPlayingPanel onClose={() => setPanelOpen(false)} onLyrics={() => setNpTab('lyrics')} />}
+          {panelOpen && hasPlayer && <UpNextPanel onClose={() => setPanelOpen(false)} />}
           <MobileTabs />
         </div>
         <ShareHost />

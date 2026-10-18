@@ -54,7 +54,8 @@ function DraggableRow({ p, index, count, onMove, onPick, onDrop }: { p: Playable
   );
 }
 
-export function QueueList({ onPick }: { onPick?: () => void }) {
+/** The play queue. `inPanel`: the side panel supplies the heading and the player bar shows the current song. */
+export function QueueList({ onPick, inPanel }: { onPick?: () => void; inPanel?: boolean }) {
   const s = usePlayerState();
   const upNext = getUpNext();
   const key = upNext.map((p) => p.id).join('|');
@@ -74,7 +75,7 @@ export function QueueList({ onPick }: { onPick?: () => void }) {
 
   return (
     <div className="queue">
-      {s.current && (
+      {s.current && !inPanel && (
         <>
           <h4>{t('player.nowPlaying')}</h4>
           <ul>
@@ -84,7 +85,11 @@ export function QueueList({ onPick }: { onPick?: () => void }) {
           </ul>
         </>
       )}
-      <h4>{t('player.queue.upNext')} {mine.length > 0 && <span className="muted">· {mine.length}</span>}</h4>
+      {!inPanel && (
+        <h4>
+          {t('player.queue.upNext')} {mine.length > 0 && <span className="muted">· {mine.length}</span>}
+        </h4>
+      )}
       {mine.length ? (
         <Reorder.Group axis="y" values={mine} onReorder={setMine} as="ul" className="queue__list">
           {mine.map((p, i) => (

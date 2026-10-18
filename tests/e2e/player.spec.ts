@@ -8,9 +8,9 @@ test('play an album, skip ahead and see synced lyrics', async ({ page, isMobile 
   if (isMobile) {
     // Phones skip from the full-screen player.
     await page.locator('.pbar__art').click();
-    await page.locator('.np').getByRole('button', { name: 'Next' }).click();
+    await page.locator('.np').getByRole('button', { name: 'Next', exact: true }).click();
     await page.getByRole('button', { name: 'Close now playing' }).click();
-  } else await page.locator('.pbar').getByRole('button', { name: 'Next' }).click();
+  } else await page.locator('.pbar').getByRole('button', { name: 'Next', exact: true }).click();
   await expect(page.locator('.pbar__title')).toHaveText('Soley Leve');
   await open(page, '#/song/tr-al-tiga-blaze-1-1');
   await page.locator('.lyr--page .lyr__line.is-clickable').nth(5).click();
@@ -26,10 +26,24 @@ test('queue can be reordered and Next follows the new order', async ({ page, isM
   const rows = page.locator('.pbar__queue .qrow--drag b');
   await expect(rows.first()).toBeVisible(); // the queue loads on demand
   const [first, second] = await rows.allTextContents();
-  await page.getByRole('button', { name: `Move ${first} down` }).click({ force: true });
+  await page.locator('.pbar__queue').getByRole('button', { name: `Move ${first} down` }).click({ force: true });
   await expect(rows.first()).toHaveText(second);
-  await page.locator('.pbar').getByRole('button', { name: 'Next' }).click();
+  await page.locator('.pbar').getByRole('button', { name: 'Next', exact: true }).click();
   await expect(page.locator('.pbar__title')).toHaveText(second);
+});
+
+test('the Up next panel lists the queue and jumps to a song', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'the side panel is for wide screens');
+  await playAlbum(page);
+  const panel = page.locator('.npp');
+  if (!(await panel.isVisible())) await page.getByRole('button', { name: 'Up next panel' }).click();
+  await expect(panel.getByRole('heading', { name: 'Up next' })).toBeVisible();
+  // The current song is in the player bar, not repeated in the panel; neither are lyrics.
+  await expect(panel.locator('.qrow b').first()).toHaveText('Soley Leve');
+  await expect(panel.locator('.lyr')).toHaveCount(0);
+  const third = (await panel.locator('.qrow b').nth(2).textContent())!;
+  await panel.locator('.qrow__main').nth(2).click();
+  await expect(page.locator('.pbar__title')).toHaveText(third);
 });
 
 test('autoplay continues with similar songs when the queue ends', async ({ page, isMobile }) => {

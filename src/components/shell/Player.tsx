@@ -3,11 +3,10 @@ import { Suspense, lazy, useEffect, useRef, useState, type PointerEvent as RPoin
 // The queue (drag-to-reorder) and full-screen player load on demand, with the motion library.
 const QueueList = lazy(() => import('./Queue').then((m) => ({ default: m.QueueList })));
 import { t } from '../../i18n';
-import { compact, fmtTime, useMusic, usePlayerState, usePosition } from '../../music';
+import { fmtTime, useMusic, usePlayerState, usePosition } from '../../music';
 import {
   cycleRepeat,
   getAnalyser,
-  jumpTo,
   next,
   prev,
   seek,
@@ -18,10 +17,10 @@ import {
   toggleShuffle,
 } from '../../player/engine';
 import { CloseIcon, ExpandIcon, MoonSleepIcon, MuteIcon, NextIcon, PauseIcon, PlayIcon, PrevIcon, QueueIcon, RepeatIcon, ShuffleIcon, VolumeIcon } from '../icons';
-import { Cover, LikeButton } from '../music/bits';
+import { LikeButton } from '../music/bits';
 import { useArtPalette } from '../../catalog/color';
 import type { CoverSpec } from '../../catalog/types';
-import { LyricsView, hasLyrics } from '../music/Lyrics';
+import { hasLyrics } from '../music/Lyrics';
 import { SoundButton } from '../music/SoundPanel';
 
 export type NpTab = 'wave' | 'lyrics' | 'queue';
@@ -214,83 +213,26 @@ export function usePanelOpen(): [boolean, (v: boolean) => void] {
   ];
 }
 
-/** Spotify-style "Now playing" side panel: artwork, artist card, next up. Wide screens only. */
-export function NowPlayingPanel({ onClose, onLyrics }: { onClose: () => void; onLyrics: () => void }) {
+/**
+ * "Up next" side panel: the real play queue, click a song to jump to it. The current song is
+ * already in the player bar (and its page), so it isn't repeated here. Wide screens only.
+ */
+export function UpNextPanel({ onClose }: { onClose: () => void }) {
   const s = usePlayerState();
-  const m = useMusic();
-  const cur = s.current;
-  if (!cur) return null;
-  const track = m.track(cur.id);
-  const artist = track ? m.artist(track.artistId) : undefined;
-  const next = s.queue[s.index + 1];
-  const following = artist ? m.library.follows.includes(artist.id) : false;
+  if (!s.current) return null;
   return (
-    <aside className="npp" aria-label={t('player.nowPlaying')}>
+    <aside className="npp" aria-labelledby="npp-title">
       <header className="npp__head">
-        <a href={cur.href} className="npp__ctx">
-          {track?.albumId ? m.album(track.albumId)?.title : t('player.nowPlaying')}
-        </a>
+        <h2 className="npp__heading" id="npp-title">
+          {t('player.queue.upNext')}
+        </h2>
         <button className="icon-toggle" onClick={onClose} aria-label={t('player.panel.hide')}>
           <CloseIcon width={16} height={16} />
         </button>
       </header>
-      <div className="npp__art">{cur.artwork && <img src={cur.artwork} alt="" />}</div>
-      <div className="npp__titles">
-        <div>
-          <a href={cur.href} className="npp__title">
-            {cur.title}
-          </a>
-          <a href={cur.subtitleHref} className="npp__sub">
-            {cur.subtitle}
-          </a>
-        </div>
-        {track && <LikeButton id={track.id} />}
-      </div>
-      {track && hasLyrics(track) && (
-        <section className="npp__lyrics">
-          <div className="npp__next-head">
-            <b>{t('player.lyrics')}</b>
-            <button className="link-btn" onClick={onLyrics}>
-              {t('player.panel.showLyrics')}
-            </button>
-          </div>
-          <LyricsView track={track} variant="card" />
-        </section>
-      )}
-      {artist && (
-        <section className="npp__artist">
-          <div className="npp__artist-img">
-            <Cover spec={artist.poster} />
-            <span>{t('player.panel.aboutArtist')}</span>
-          </div>
-          <div className="npp__artist-body">
-            <a href={`#/artist/${artist.id}`} className="npp__artist-name">
-              {artist.name}
-            </a>
-            <div className="npp__artist-row">
-              <span className="muted">{t('player.panel.followers', { n: compact(m.followerCount(artist)) })}</span>
-              <button className={`follow-btn${following ? ' is-on' : ''}`} onClick={() => m.toggleFollow(artist.id)}>
-                {t(following ? 'common.action.following' : 'common.action.follow')}
-              </button>
-            </div>
-            <p>{artist.bio}</p>
-          </div>
-        </section>
-      )}
-      {next && (
-        <section className="npp__next">
-          <div className="npp__next-head">
-            <b>{t('player.panel.nextInQueue')}</b>
-          </div>
-          <button className="qrow__main" onClick={() => jumpTo(next.id)}>
-            {next.artwork && <img src={next.artwork} alt="" width={40} height={40} />}
-            <span>
-              <b>{next.title}</b>
-              <small>{next.subtitle}</small>
-            </span>
-          </button>
-        </section>
-      )}
+      <Suspense fallback={null}>
+        <QueueList inPanel />
+      </Suspense>
     </aside>
   );
 }
@@ -347,7 +289,7 @@ export function PlayerBar({
         <button className={`tbtn${queueOpen ? ' is-on' : ''}`} onClick={() => setQueueOpen((o) => !o)} aria-label={t('player.queue')} aria-expanded={queueOpen}>
           <QueueIcon />
         </button>
-        <button className={`tbtn npp-toggle${panelOpen ? ' is-on' : ''}`} onClick={onTogglePanel} aria-label={t('player.nowPlayingView')} aria-pressed={panelOpen}>
+        <button className={`tbtn npp-toggle${panelOpen ? ' is-on' : ''}`} onClick={onTogglePanel} aria-label={t('player.panel.toggle')} aria-pressed={panelOpen}>
           <PanelIcon />
         </button>
         <VolumeControl />

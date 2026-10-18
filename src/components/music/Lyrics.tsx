@@ -37,10 +37,10 @@ function useActiveIndex(lines: LyricLine[], enabled: boolean): number {
 const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 /**
- * Time-synced lyrics. `full` (Now Playing) and `card` (side panel) scroll the sung line into view;
+ * Time-synced lyrics. `full` (Now Playing) scrolls the sung line into view;
  * `page` (song page) only highlights. Clicking a synced line plays from there.
  */
-export function LyricsView({ track, variant }: { track: Track; variant: 'full' | 'card' | 'page' }) {
+export function LyricsView({ track, variant }: { track: Track; variant: 'full' | 'page' }) {
   const m = useMusic();
   const s = usePlayerState();
   const lyrics = useMemo(() => lyricsFor(track), [track]);
@@ -55,7 +55,7 @@ export function LyricsView({ track, variant }: { track: Track; variant: 'full' |
     if (Date.now() - userScrolled.current < 3500) return;
     const el = box.current.querySelector<HTMLElement>(`[data-i="${idx}"]`);
     if (!el) return;
-    const top = el.offsetTop - box.current.clientHeight * (variant === 'card' ? 0.3 : 0.36);
+    const top = el.offsetTop - box.current.clientHeight * 0.36;
     box.current.scrollTo({ top, behavior: reducedMotion() ? 'auto' : 'smooth' });
   }, [idx, variant]);
 

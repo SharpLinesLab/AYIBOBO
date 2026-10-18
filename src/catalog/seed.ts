@@ -2,6 +2,7 @@
  * Demo catalog. Every artist, release and playlist here is fictional; audio is synthesized live
  * from each track's recipe, and artwork is generated (see covers.ts).
  */
+import { t, type Key } from '../i18n';
 import { hashString, mulberry32 } from '../lib/random';
 import { applyArtwork } from './artwork';
 import { PALETTES, makeCover } from './covers';
@@ -14,30 +15,29 @@ interface ArtistSeed {
   name: string;
   location: string;
   genres: GenreId[];
-  bio: string;
   verified?: boolean;
   followers: number;
 }
 
 const ARTISTS: ArtistSeed[] = [
-  { name: 'Lavi Soley', location: 'Port-au-Prince, HT', genres: ['kompa', 'zouk'], bio: 'Seven-piece kompa band known for marathon live sets and horn lines you hum for weeks.', verified: true, followers: 412_000 },
-  { name: 'Tiga Blaze', location: 'Cap-Haïtien, HT', genres: ['rap-kreyol', 'drill'], bio: 'Rap Kreyòl storyteller from Okap. Hard 808s, harder pen.', verified: true, followers: 655_000 },
-  { name: 'Nadège Fleur', location: 'Montréal, QC', genres: ['zouk', 'rnb'], bio: 'Velvet vocals and Caribbean romance, recorded between Montréal and Jacmel.', verified: true, followers: 288_000 },
-  { name: 'Kreyòl Kingz', location: 'Miami, FL', genres: ['rap-kreyol', 'hip-hop'], bio: 'Little Haiti collective of four MCs and two producers. Posse cuts only.', followers: 190_000 },
-  { name: 'Mano Jakmel', location: 'Jacmel, HT', genres: ['rara', 'afrobeats'], bio: 'Rara horns meet Afro grooves — Kanaval energy all year.', followers: 97_000 },
-  { name: 'Sisi Lune', location: 'Lagos ⇄ Brooklyn', genres: ['afrobeats', 'rnb'], bio: 'Afro-fusion singer-songwriter with a falsetto that floats over log drums.', verified: true, followers: 530_000 },
-  { name: 'DJ Bèlè', location: 'Brooklyn, NY', genres: ['amapiano', 'electronic'], bio: 'Selector and producer bridging amapiano, kompa edits and club music.', verified: true, followers: 341_000 },
-  { name: 'Port Lights', location: 'Pétion-Ville, HT', genres: ['electronic'], bio: 'Electronic duo making night-drive music with Caribbean percussion.', followers: 64_000 },
-  { name: 'Ti Pòl', location: 'Kingston ⇄ Delmas', genres: ['dancehall'], bio: 'Dancehall deejay with a Kreyòl twist. Riddims for days.', followers: 158_000 },
-  { name: 'Marlo Vibe', location: 'Boston, MA', genres: ['drill', 'hip-hop'], bio: 'Melodic drill with sliding 808s and late-night piano loops.', followers: 221_000 },
-  { name: 'Chœur Lumière', location: 'Les Cayes, HT', genres: ['gospel'], bio: 'Forty-voice choir and organ — Sunday morning, every day.', followers: 88_000 },
-  { name: 'Roots Lakay', location: 'Gonaïves, HT', genres: ['reggae'], bio: 'Roots reggae with Haitian rasin influences. One drop, one love.', followers: 73_000 },
-  { name: 'Azeline', location: 'Paris, FR', genres: ['rnb'], bio: 'Alt-R&B vocalist and producer. Minimal beats, maximal feeling.', verified: true, followers: 276_000 },
-  { name: 'Kalfou', location: 'Léogâne, HT', genres: ['rara', 'electronic'], bio: 'Rara-electronic project sampling street processions into club tools.', followers: 41_000 },
-  { name: 'Zenn & Saj', location: 'Accra ⇄ Miami', genres: ['afrobeats', 'amapiano'], bio: 'Producer-singer duo cooking Afro and piano hits.', followers: 145_000 },
-  { name: 'Okap Express', location: 'Cap-Haïtien, HT', genres: ['kompa'], bio: 'Old-school kompa direk revivalists with a new-school mix.', followers: 118_000 },
-  { name: 'Nova Dlo', location: 'Atlanta, GA', genres: ['rnb', 'hip-hop'], bio: 'Atlanta-raised, Haitian-rooted. Songs about water, distance and home.', followers: 66_000 },
-  { name: 'Laj Mizik', location: 'Santo Domingo ⇄ Hinche', genres: ['dancehall', 'electronic'], bio: 'Dembow and dancehall cross-border sound system.', followers: 52_000 },
+  { name: 'Lavi Soley', location: 'Port-au-Prince, HT', genres: ['kompa', 'zouk'], verified: true, followers: 412_000 },
+  { name: 'Tiga Blaze', location: 'Cap-Haïtien, HT', genres: ['rap-kreyol', 'drill'], verified: true, followers: 655_000 },
+  { name: 'Nadège Fleur', location: 'Montréal, QC', genres: ['zouk', 'rnb'], verified: true, followers: 288_000 },
+  { name: 'Kreyòl Kingz', location: 'Miami, FL', genres: ['rap-kreyol', 'hip-hop'], followers: 190_000 },
+  { name: 'Mano Jakmel', location: 'Jacmel, HT', genres: ['rara', 'afrobeats'], followers: 97_000 },
+  { name: 'Sisi Lune', location: 'Lagos ⇄ Brooklyn', genres: ['afrobeats', 'rnb'], verified: true, followers: 530_000 },
+  { name: 'DJ Bèlè', location: 'Brooklyn, NY', genres: ['amapiano', 'electronic'], verified: true, followers: 341_000 },
+  { name: 'Port Lights', location: 'Pétion-Ville, HT', genres: ['electronic'], followers: 64_000 },
+  { name: 'Ti Pòl', location: 'Kingston ⇄ Delmas', genres: ['dancehall'], followers: 158_000 },
+  { name: 'Marlo Vibe', location: 'Boston, MA', genres: ['drill', 'hip-hop'], followers: 221_000 },
+  { name: 'Chœur Lumière', location: 'Les Cayes, HT', genres: ['gospel'], followers: 88_000 },
+  { name: 'Roots Lakay', location: 'Gonaïves, HT', genres: ['reggae'], followers: 73_000 },
+  { name: 'Azeline', location: 'Paris, FR', genres: ['rnb'], verified: true, followers: 276_000 },
+  { name: 'Kalfou', location: 'Léogâne, HT', genres: ['rara', 'electronic'], followers: 41_000 },
+  { name: 'Zenn & Saj', location: 'Accra ⇄ Miami', genres: ['afrobeats', 'amapiano'], followers: 145_000 },
+  { name: 'Okap Express', location: 'Cap-Haïtien, HT', genres: ['kompa'], followers: 118_000 },
+  { name: 'Nova Dlo', location: 'Atlanta, GA', genres: ['rnb', 'hip-hop'], followers: 66_000 },
+  { name: 'Laj Mizik', location: 'Santo Domingo ⇄ Hinche', genres: ['dancehall', 'electronic'], followers: 52_000 },
 ];
 
 const TITLES = [
@@ -63,15 +63,9 @@ const ALBUM_NAMES = [
   'Water Signs', 'Frontera',
 ];
 
-const DESCRIPTIONS = [
-  'Recorded live to tape in one weekend.',
-  'Produced between Port-au-Prince and Brooklyn.',
-  'The lead single from the forthcoming project.',
-  'A summer anthem built for the block party.',
-  'Written on the Jacmel coast at sunrise.',
-  'A love letter to home, in Kreyòl.',
-  'Made for the late-night drive.',
-];
+/** Release blurbs, read in the interface language (`catalog.desc.N`). */
+const DESCRIPTIONS = 7;
+const description = (r: () => number) => t(`catalog.desc.${Math.floor(r() * DESCRIPTIONS)}` as Key);
 
 const SCALE_BY_GENRE: Record<GenreId, 'minor' | 'major'> = {
   kompa: 'major',
@@ -135,7 +129,7 @@ export function createCatalog(now: number): Catalog {
       id,
       name: a.name,
       handle: `@${slug(a.name).replace(/-/g, '')}`,
-      bio: a.bio,
+      bio: t(`catalog.bio.${slug(a.name)}` as Key),
       location: a.location,
       genres: a.genres,
       verified: !!a.verified,
@@ -172,7 +166,7 @@ export function createCatalog(now: number): Catalog {
         trackIds: ids,
         releasedAt: released,
         cover,
-        description: `${type === 'ep' ? 'EP' : type === 'mixtape' ? 'Mixtape' : 'Album'} by ${a.name}. ${DESCRIPTIONS[Math.floor(r() * DESCRIPTIONS.length)]}`,
+        description: `${t(`catalog.release.${type}`, { name: a.name })} ${description(r)}`,
       });
     }
     const singles = 1 + Math.floor(r() * 3);
@@ -228,19 +222,20 @@ function makeTrack(
     releasedAt,
     cover,
     explicit: (genre === 'rap-kreyol' || genre === 'drill' || genre === 'hip-hop') && r() < 0.7,
-    description: DESCRIPTIONS[Math.floor(r() * DESCRIPTIONS.length)],
+    description: description(r),
   };
 }
 
-const EDITORIAL: { title: string; description: string; genres: GenreId[]; text: string; palette: number }[] = [
-  { title: 'Kompa Kings', description: 'The essential kompa of right now — from direk revival to new-school love songs.', genres: ['kompa', 'zouk'], text: 'KOMPA KINGS', palette: 0 },
-  { title: 'Rap Kreyòl Heat', description: 'The hardest Kreyòl bars on ASF. Updated every Friday.', genres: ['rap-kreyol', 'drill'], text: 'RAP KREYÒL', palette: 13 },
-  { title: 'Afro Wave', description: 'Afrobeats & amapiano for the golden hour.', genres: ['afrobeats', 'amapiano'], text: 'AFRO WAVE', palette: 2 },
-  { title: 'Late Night R&B', description: 'Slow, smooth, after midnight.', genres: ['rnb', 'zouk'], text: 'LATE NIGHT', palette: 9 },
-  { title: 'Kanaval Mode', description: 'Rara, dancehall and electronic for the streets.', genres: ['rara', 'dancehall', 'electronic'], text: 'KANAVAL', palette: 4 },
-  { title: 'Sunday Praise', description: 'Gospel and roots to start the week right.', genres: ['gospel', 'reggae'], text: 'SUNDAY', palette: 10 },
-  { title: 'Drill & Pressure', description: 'Sliding 808s and dark piano.', genres: ['drill', 'hip-hop'], text: 'PRESSURE', palette: 12 },
-  { title: 'Lakay Chill', description: 'Easy listening from home and the diaspora.', genres: ['zouk', 'reggae', 'rnb', 'kompa'], text: 'LAKAY CHILL', palette: 7 },
+// Descriptions are `catalog.playlist.<slug>` in the interface language.
+const EDITORIAL: { title: string; genres: GenreId[]; text: string; palette: number }[] = [
+  { title: 'Kompa Kings', genres: ['kompa', 'zouk'], text: 'KOMPA KINGS', palette: 0 },
+  { title: 'Rap Kreyòl Heat', genres: ['rap-kreyol', 'drill'], text: 'RAP KREYÒL', palette: 13 },
+  { title: 'Afro Wave', genres: ['afrobeats', 'amapiano'], text: 'AFRO WAVE', palette: 2 },
+  { title: 'Late Night R&B', genres: ['rnb', 'zouk'], text: 'LATE NIGHT', palette: 9 },
+  { title: 'Kanaval Mode', genres: ['rara', 'dancehall', 'electronic'], text: 'KANAVAL', palette: 4 },
+  { title: 'Sunday Praise', genres: ['gospel', 'reggae'], text: 'SUNDAY', palette: 10 },
+  { title: 'Drill & Pressure', genres: ['drill', 'hip-hop'], text: 'PRESSURE', palette: 12 },
+  { title: 'Lakay Chill', genres: ['zouk', 'reggae', 'rnb', 'kompa'], text: 'LAKAY CHILL', palette: 7 },
 ];
 
 function createPlaylists(tracks: Track[]): Playlist[] {
@@ -251,10 +246,10 @@ function createPlaylists(tracks: Track[]): Playlist[] {
     return {
       id: `pl-${slug(e.title)}`,
       title: e.title,
-      curator: 'ASF Editorial',
-      description: e.description,
+      curator: t('catalog.curator'),
+      description: t(`catalog.playlist.${slug(e.title)}` as Key),
       trackIds: ids,
-      cover: makeCover(700 + i, { template: i % 2 ? 'type' : 'orb', palette: PALETTES[e.palette], text: e.text, subtext: 'ASF Playlist' }),
+      cover: makeCover(700 + i, { template: i % 2 ? 'type' : 'orb', palette: PALETTES[e.palette], text: e.text, subtext: t('catalog.cover.playlist') }),
       followers: Math.round(20_000 + r() * 180_000),
       editorial: true,
     };
@@ -263,10 +258,10 @@ function createPlaylists(tracks: Track[]): Playlist[] {
   out.unshift({
     id: 'pl-new-heat-friday',
     title: 'New Heat Friday',
-    curator: 'ASF Editorial',
-    description: 'The freshest releases on ASF, refreshed every week.',
+    curator: t('catalog.curator'),
+    description: t('catalog.playlist.new-heat-friday'),
     trackIds: newest,
-    cover: makeCover(777, { template: 'sun', palette: PALETTES[2], text: 'NEW HEAT', subtext: 'Every Friday' }),
+    cover: makeCover(777, { template: 'sun', palette: PALETTES[2], text: 'NEW HEAT', subtext: t('catalog.cover.everyFriday') }),
     followers: 238_400,
     editorial: true,
   });

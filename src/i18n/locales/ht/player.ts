@@ -14,7 +14,6 @@ export const player: { [K in keyof typeof En]: string } = {
   'player.queue': 'Lis datant',
   'player.nowPlaying': 'K ap jwe kounye a',
   'player.openNowPlaying': 'Louvri lektè a',
-  'player.nowPlayingView': 'Panno K ap jwe kounye a',
   'player.fullScreen': 'Lektè plen ekran',
 
   // Sleep timer
@@ -24,11 +23,8 @@ export const player: { [K in keyof typeof En]: string } = {
   'player.sleep.off': 'Fèmen l',
 
   // "Now playing" side panel
-  'player.panel.hide': 'Kache panno K ap jwe kounye a',
-  'player.panel.showLyrics': 'Montre pawòl yo',
-  'player.panel.aboutArtist': 'Konsènan atis la',
-  'player.panel.followers': '{n} abòne',
-  'player.panel.nextInQueue': 'Apre sa',
+  'player.panel.toggle': 'Panno Apre sa',
+  'player.panel.hide': 'Kache panno Apre sa',
 
   // Full-screen player
   'player.np.close': 'Fèmen lektè a',

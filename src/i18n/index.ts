@@ -113,16 +113,18 @@ export function fmtNumber(n: number, digits = 0): string {
   return new Intl.NumberFormat(numberLocale(), { maximumFractionDigits: digits }).format(n);
 }
 
-/** 1.2K / 3.4M style. French and Kreyòl: 1,2 k / 3,4 M. */
+/**
+ * 1.2K / 3.4M style, with no space before the suffix in any language. French and Kreyòl keep the
+ * decimal comma (1,2K) and write billions as Md (milliard / milya).
+ */
 export function fmtCompact(n: number): string {
-  if (lang === 'en') {
-    if (n >= 1e9) return `${(n / 1e9).toFixed(1).replace(/\.0$/, '')}B`;
-    if (n >= 1e6) return `${(n / 1e6).toFixed(1).replace(/\.0$/, '')}M`;
-    if (n >= 1e4) return `${Math.round(n / 1e3)}K`;
-    if (n >= 1e3) return `${(n / 1e3).toFixed(1).replace(/\.0$/, '')}K`;
-    return String(n);
-  }
-  return new Intl.NumberFormat('fr-FR', { notation: 'compact', maximumFractionDigits: n >= 1e4 && n < 1e6 ? 0 : 1 }).format(n);
+  const sep = lang === 'en' ? '.' : ',';
+  const short = (v: number, suffix: string) => `${v.toFixed(1).replace(/\.0$/, '').replace('.', sep)}${suffix}`;
+  if (n >= 999_950_000) return short(n / 1e9, lang === 'en' ? 'B' : 'Md');
+  if (n >= 999_500) return short(n / 1e6, 'M');
+  if (n >= 1e4) return `${Math.round(n / 1e3)}K`;
+  if (n >= 1e3) return short(n / 1e3, 'K');
+  return String(n);
 }
 
 const HT_MONTHS = ['janvye', 'fevriye', 'mas', 'avril', 'me', 'jen', 'jiyè', 'out', 'septanm', 'oktòb', 'novanm', 'desanm'];

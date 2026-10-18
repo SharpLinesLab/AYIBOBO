@@ -14,7 +14,6 @@ export const player: { [K in keyof typeof En]: string } = {
   'player.queue': 'File d’attente',
   'player.nowPlaying': 'En cours de lecture',
   'player.openNowPlaying': 'Ouvrir le lecteur',
-  'player.nowPlayingView': 'Vue En cours de lecture',
   'player.fullScreen': 'Lecteur plein écran',
 
   // Sleep timer
@@ -24,11 +23,8 @@ export const player: { [K in keyof typeof En]: string } = {
   'player.sleep.off': 'Désactiver',
 
   // "Now playing" side panel
-  'player.panel.hide': 'Masquer le panneau En cours de lecture',
-  'player.panel.showLyrics': 'Afficher les paroles',
-  'player.panel.aboutArtist': 'À propos de l’artiste',
-  'player.panel.followers': '{n} abonnés',
-  'player.panel.nextInQueue': 'À suivre',
+  'player.panel.toggle': 'Panneau À suivre',
+  'player.panel.hide': 'Masquer le panneau À suivre',
 
   // Full-screen player
   'player.np.close': 'Fermer le lecteur',
