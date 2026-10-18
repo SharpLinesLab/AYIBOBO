@@ -103,6 +103,25 @@ function render(spec: CoverSpec): string {
       body = inner;
       break;
     }
+    case 'mix': {
+      // Personal-mix cover: three artist portraits on a graded field with a colour band label.
+      const figs = (spec.figures ?? [spec.seed]).slice(0, 3);
+      const slots = [
+        { x: 40, y: 70, s: 170 },
+        { x: 190, y: 40, s: 170 },
+        { x: 115, y: 150, s: 170 },
+      ];
+      const portraits = figs
+        .map((f, i) => {
+          const sl = slots[i];
+          const inner = renderPortrait(f, spec.palette, 'portrait').replace('<svg ', `<svg x="${sl.x}" y="${sl.y}" width="${sl.s}" height="${sl.s}" `);
+          return `<clipPath id="${id}c${i}"><circle cx="${sl.x + sl.s / 2}" cy="${sl.y + sl.s / 2}" r="${sl.s / 2}"/></clipPath><g clip-path="url(#${id}c${i})">${inner}</g><circle cx="${sl.x + sl.s / 2}" cy="${sl.y + sl.s / 2}" r="${sl.s / 2 - 1}" fill="none" stroke="${bg}" stroke-width="4"/>`;
+        })
+        .join('');
+      body = `<defs><linearGradient id="${id}m" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${mid}"/><stop offset="1" stop-color="${bg}"/></linearGradient></defs>
+<rect width="${S}" height="${S}" fill="url(#${id}m)"/>${portraits}<rect x="0" y="352" width="${S}" height="48" fill="${hi}"/>`;
+      break;
+    }
     case 'type':
     default: {
       body = `<defs><linearGradient id="${id}t" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${bg}"/><stop offset="1" stop-color="${mid}"/></linearGradient></defs>

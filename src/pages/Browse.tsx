@@ -2,10 +2,11 @@ import { useMemo } from 'react';
 import { GENRES, genreById, isGenreId } from '../catalog/genres';
 import { WINDOW_DAYS, playsInWindow, trackChart, trending, type ChartWindow } from '../catalog/plays';
 import { coverUrl } from '../catalog/covers';
+import { PageTint } from '../components/music/premium';
 import { compact, useMusic } from '../music';
 import { Cover, PlayAll, Shelf } from '../components/music/bits';
 import { AlbumCard, ArtistCard, PlaylistCard } from '../components/music/Cards';
-import { TrackList, TrackRow } from '../components/music/TrackRow';
+import { TrackList, TrackListHeader, TrackRow } from '../components/music/TrackRow';
 
 function GenreChips({ base, active }: { base: string; active?: string }) {
   return (
@@ -93,6 +94,7 @@ export function ChartsPage({ kind, window }: { kind: 'songs' | 'albums'; window:
       </nav>
       {kind === 'songs' ? (
         <div className="tlist" role="list">
+          <TrackListHeader withChange />
           {rows.map((r) => (
             <TrackRow key={r.track.id} track={r.track} context={tracks} index={r.rank} plays={r.plays} change={r.change} showAlbum />
           ))}
@@ -162,6 +164,7 @@ export function GenrePage({ id }: { id: string }) {
   const playlists = m.catalog.playlists.filter((p) => p.editorial && m.tracksOf(p.trackIds).some((t) => t.genre === id));
   return (
     <div className="page-music">
+      <PageTint color={g.colors[0]} />
       <header className="ghead" style={{ ['--g1' as string]: g.colors[0], ['--g2' as string]: g.colors[1] }}>
         {artists[0] && <div className="ghead__img" style={{ backgroundImage: `url("${coverUrl(artists[0].banner)}")` }} />}
         <span className="phead__kicker">Genre</span>

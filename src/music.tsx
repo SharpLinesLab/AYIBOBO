@@ -6,6 +6,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { coverUrl, makeCover } from './catalog/covers';
 import { lifetimePlays } from './catalog/plays';
+import { createMixes } from './catalog/mixes';
 import { createCatalog } from './catalog/seed';
 import type { Album, Artist, Catalog, Playlist, Track } from './catalog/types';
 import { deleteAudio, loadAudio } from './catalog/uploads';
@@ -157,6 +158,10 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
     };
   }, [uploadIds]);
 
+  // Personal mixes follow your likes (not every play, so they don't reshuffle mid-listen).
+  const likesKey = library.likes.join('|');
+  const mixes = useMemo(() => createMixes(seed.tracks, seed.artists, library.likes, []), [seed, likesKey]);
+
   const catalog: Catalog = useMemo(() => {
     const uploads = library.uploads.map((t) => {
       const art = uploadUrls[`${t.id}:cover`];
@@ -166,9 +171,9 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
       artists: seed.artists,
       tracks: [...uploads, ...seed.tracks],
       albums: seed.albums,
-      playlists: [...library.playlists, ...seed.playlists],
+      playlists: [...library.playlists, ...mixes, ...seed.playlists],
     };
-  }, [seed, library.uploads, library.playlists, uploadUrls]);
+  }, [seed, library.uploads, library.playlists, uploadUrls, mixes]);
 
   const maps = useMemo(
     () => ({

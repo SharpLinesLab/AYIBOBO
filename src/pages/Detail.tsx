@@ -15,6 +15,7 @@ import { ArtistLinks, TrackList } from '../components/music/TrackRow';
 import { Waveform } from '../components/music/Waveform';
 import { ShuffleIcon } from '../components/icons';
 import { NotFound } from './Browse';
+import { PageTint, StickyBar, useWatchRef } from '../components/music/premium';
 
 const totalDuration = (ts: Track[]) => {
   const s = ts.reduce((a, t) => a + t.duration, 0);
@@ -23,10 +24,29 @@ const totalDuration = (ts: Track[]) => {
   return h ? `${h} hr ${mm} min` : `${mm} min`;
 };
 
-function DetailHero({ cover, round, kicker, title, children }: { cover: CoverSpec; round?: boolean; kicker: string; title: React.ReactNode; children?: React.ReactNode }) {
+function DetailHero({
+  cover,
+  round,
+  kicker,
+  title,
+  name,
+  tracks,
+  children,
+}: {
+  cover: CoverSpec;
+  round?: boolean;
+  kicker: string;
+  title: React.ReactNode;
+  /** Plain-text title for the sticky bar. */
+  name: string;
+  tracks: Track[];
+  children?: React.ReactNode;
+}) {
+  const ref = useWatchRef();
   return (
-    <header className="dhero">
-      <div className="dhero__bg" style={{ backgroundImage: `url("${coverUrl(cover)}")` }} />
+    <header className="dhero" ref={ref}>
+      <PageTint spec={cover} />
+      <StickyBar watch={ref} title={name} tracks={tracks} spec={cover} />
       <div className="dhero__art">
         <Cover spec={cover} round={round} />
       </div>
@@ -90,7 +110,7 @@ export function SongPage({ id }: { id: string }) {
 
   return (
     <div className="page-music">
-      <DetailHero cover={t.cover} kicker={t.uploaded ? 'Your upload' : 'Song'} title={<>{t.title}{t.explicit && <ExplicitBadge />}</>}>
+      <DetailHero cover={t.cover} name={t.title} tracks={[t, ...more]} kicker={t.uploaded ? 'Your upload' : 'Song'} title={<>{t.title}{t.explicit && <ExplicitBadge />}</>}>
         <div className="dhero__by">
           <ArtistLinks track={t} />
         </div>
@@ -205,7 +225,7 @@ export function AlbumPage({ id }: { id: string }) {
   const more = m.catalog.albums.filter((x) => x.artistId === a.artistId && x.id !== a.id);
   return (
     <div className="page-music">
-      <DetailHero cover={a.cover} kicker={a.type === 'ep' ? 'EP' : a.type === 'mixtape' ? 'Mixtape' : 'Album'} title={a.title}>
+      <DetailHero cover={a.cover} name={a.title} tracks={tracks} kicker={a.type === 'ep' ? 'EP' : a.type === 'mixtape' ? 'Mixtape' : 'Album'} title={a.title}>
         {artist && (
           <a className="dhero__by dhero__artist" href={`#/artist/${artist.id}`}>
             <Cover spec={artist.avatar} size={28} round />
@@ -228,7 +248,7 @@ export function AlbumPage({ id }: { id: string }) {
         </div>
       </DetailHero>
       <section className="card-panel">
-        <TrackList tracks={tracks} showCover={false} />
+        <TrackList tracks={tracks} showCover={false} header />
       </section>
       {more.length > 0 && (
         <Shelf title={`More from ${artist?.name ?? 'this artist'}`}>
@@ -252,7 +272,7 @@ export function PlaylistPage({ id }: { id: string }) {
   const saved = m.library.likedPlaylists.includes(p.id);
   return (
     <div className="page-music">
-      <DetailHero cover={p.cover} kicker={p.owned ? 'Your playlist' : 'Playlist'} title={p.title}>
+      <DetailHero cover={p.cover} name={p.title} tracks={tracks} kicker={p.owned ? 'Your playlist' : 'Playlist'} title={p.title}>
         <p className="dhero__desc">{p.description || (p.owned ? 'Add songs with “⋯ → Add to playlist” on any track.' : '')}</p>
         <div className="dhero__meta">
           <span>{p.curator}</span>
@@ -285,7 +305,7 @@ export function PlaylistPage({ id }: { id: string }) {
       </DetailHero>
       <section className="card-panel">
         {tracks.length ? (
-          <TrackList tracks={tracks} showAlbum playlistId={p.owned ? p.id : undefined} />
+          <TrackList tracks={tracks} showAlbum header playlistId={p.owned ? p.id : undefined} />
         ) : (
           <div className="empty-state">
             <h2>This playlist is empty</h2>
@@ -304,6 +324,7 @@ export function PlaylistPage({ id }: { id: string }) {
 
 export function ArtistPage({ id }: { id: string }) {
   const m = useMusic();
+  const heroRef = useWatchRef();
   const a = m.artist(id);
   const all = useMemo(() => (a ? m.artistTracks(a.id) : []), [m, a]);
   if (!a) return <NotFound what="artist" />;
@@ -317,7 +338,9 @@ export function ArtistPage({ id }: { id: string }) {
   const monthly = own.reduce((s, t) => s + m.totalPlays(t), 0) / 12;
   return (
     <div className="page-music">
-      <header className="ahero">
+      <header className="ahero" ref={heroRef}>
+        <PageTint spec={a.poster} />
+        <StickyBar watch={heroRef} title={a.name} tracks={popular} spec={a.poster} />
         <div className="ahero__banner" style={{ backgroundImage: `url("${coverUrl(a.banner)}")` }} />
         <div className="ahero__row">
           <Cover spec={a.avatar} round className="ahero__avatar" />

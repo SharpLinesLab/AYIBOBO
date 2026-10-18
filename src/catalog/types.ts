@@ -14,7 +14,7 @@ export type GenreId =
   | 'electronic';
 
 /** `photo` = album cover built around the artist's portrait; `portrait`/`poster`/`stage` = artist imagery. */
-export type CoverTemplate = 'orb' | 'sun' | 'rings' | 'waves' | 'grid' | 'type' | 'split' | 'photo' | 'portrait' | 'poster' | 'stage';
+export type CoverTemplate = 'orb' | 'sun' | 'rings' | 'waves' | 'grid' | 'type' | 'split' | 'photo' | 'portrait' | 'poster' | 'stage' | 'mix';
 
 export interface CoverSpec {
   template: CoverTemplate;
@@ -27,6 +27,8 @@ export interface CoverSpec {
   imageUrl?: string;
   /** Seed of the artist whose silhouette appears on `photo` covers. */
   figureSeed?: number;
+  /** Artist seeds shown as portraits on `mix` covers. */
+  figures?: number[];
 }
 
 export interface Artist {

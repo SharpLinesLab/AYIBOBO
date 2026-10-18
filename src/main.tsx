@@ -4,6 +4,7 @@ import { App } from './App';
 import './styles/app.css';
 import './styles/music.css';
 import './styles/premium.css';
+import './styles/signature.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

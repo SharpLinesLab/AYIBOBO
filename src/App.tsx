@@ -30,7 +30,7 @@ function PageLoading() {
 import { SubscribeModal } from './components/SubscribeModal';
 import { Sidebar } from './components/shell/Sidebar';
 import { TopBar } from './components/shell/TopBar';
-import { NowPlaying, PlayerBar } from './components/shell/Player';
+import { NowPlaying, NowPlayingPanel, PlayerBar, usePanelOpen } from './components/shell/Player';
 import { MobileTabs } from './components/shell/MobileTabs';
 import { DiscoverPage } from './pages/Discover';
 import { ChartsPage, GenrePage, GenresPage, NotFound, TrendingPage } from './pages/Browse';
@@ -137,6 +137,7 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
   const [detailId, setDetailId] = useState<string | null>(null);
   const [statsOpen, setStatsOpen] = useState(false);
   const [npOpen, setNpOpen] = useState(false);
+  const [panelOpen, setPanelOpen] = usePanelOpen();
   const hasPlayer = useSyncExternalStore(player.subscribe, () => !!player.getState().current);
   const [subscribeOpen, setSubscribeOpen] = useState(false);
   const [checkout, setCheckout] = useState<CheckoutRequestState | null>(null);
@@ -326,9 +327,10 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
         >
           Skip to content
         </a>
-        <div className={`app${hasPlayer ? ' has-player' : ''}`}>
+        <div className={`app${hasPlayer ? ' has-player' : ''}${panelOpen && hasPlayer ? ' has-panel' : ''}`}>
           <Sidebar />
           <div className="app__main">
+            <div id="page-tint-root" aria-hidden />
             <TopBar theme={theme} onToggleTheme={toggleTheme} onSubscribe={() => setSubscribeOpen(true)} />
             <main id="content" className="content" tabIndex={-1} key={route.page === 'leaderboard' ? 'lb' : hash}>
               <ErrorBoundary resetKey={hash}>
@@ -337,7 +339,8 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
             </main>
             <Footer showStats={route.page === 'leaderboard'} />
           </div>
-          <PlayerBar onExpand={() => setNpOpen(true)} />
+          <PlayerBar onExpand={() => setNpOpen(true)} panelOpen={panelOpen} onTogglePanel={() => setPanelOpen(!panelOpen)} />
+          {panelOpen && hasPlayer && <NowPlayingPanel onClose={() => setPanelOpen(false)} />}
           <MobileTabs />
         </div>
         {npOpen && <NowPlaying onClose={() => setNpOpen(false)} />}

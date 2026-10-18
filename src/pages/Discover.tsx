@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { GENRES } from '../catalog/genres';
 import { trackChart, trending } from '../catalog/plays';
-import type { Album, Track } from '../catalog/types';
+import type { Album, CoverSpec, Track } from '../catalog/types';
+import { PageTint, QuickPicks, StreamCard } from '../components/music/premium';
 import { coverUrl } from '../catalog/covers';
 import { compact, useMusic, usePlayerState } from '../music';
 import { pause, resume } from '../player/engine';
@@ -131,6 +132,12 @@ function BoostSpotlight() {
 export function DiscoverPage() {
   const m = useMusic();
   const { catalog, now, library } = m;
+  const [tint, setTint] = useState<CoverSpec | undefined>(undefined);
+  const mixes = catalog.playlists.filter((p) => p.id.startsWith('mix-'));
+  const stream = useMemo(
+    () => [...catalog.tracks].filter((t) => !t.albumId).sort((a, b) => b.releasedAt - a.releasedAt).slice(0, 4),
+    [catalog.tracks],
+  );
 
   const data = useMemo(() => {
     const byDate = [...catalog.tracks].filter((t) => !t.uploaded).sort((a, b) => b.releasedAt - a.releasedAt);
@@ -162,6 +169,9 @@ export function DiscoverPage() {
 
   return (
     <div className="page-music">
+      <PageTint spec={tint} color={tint ? undefined : '#1d6b45'} />
+      <QuickPicks onTint={setTint} />
+
       <HeroCarousel items={data.features} />
 
       <nav className="genre-strip" aria-label="Genres">
@@ -220,6 +230,26 @@ export function DiscoverPage() {
           ))}
         </Shelf>
       )}
+
+      <Shelf title="Your mixes" subtitle="Made for you — updated as you like songs">
+        {mixes.map((p) => (
+          <PlaylistCard key={p.id} playlist={p} />
+        ))}
+      </Shelf>
+
+      <section aria-labelledby="stream-title">
+        <header className="shelf__head">
+          <div>
+            <h2 id="stream-title">Fresh from the community</h2>
+            <p>New drops from artists on ASF — tap the waveform to jump in</p>
+          </div>
+        </header>
+        <div className="stream-list">
+          {stream.map((t) => (
+            <StreamCard key={t.id} track={t} context={stream} />
+          ))}
+        </div>
+      </section>
 
       <Shelf title="Featured playlists" subtitle="Curated by ASF Editorial">
         {catalog.playlists

@@ -94,7 +94,7 @@ export function PlaylistCard({ playlist }: { playlist: Playlist }) {
       <a className="mcard__title" href={`#/playlist/${playlist.id}`}>
         {playlist.title}
       </a>
-      <span className="mcard__sub">{playlist.curator}</span>
+      <span className="mcard__sub">{playlist.id.startsWith('mix-') ? playlist.description : playlist.curator}</span>
       <span className="mcard__meta">{playlist.trackIds.length} songs</span>
     </div>
   );

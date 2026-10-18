@@ -89,9 +89,30 @@ export function TrackRow({ track, context, index, showCover = true, plays, chang
   );
 }
 
-export function TrackList({ tracks, startIndex = 1, ...rest }: { tracks: Track[]; startIndex?: number } & Omit<TrackRowProps, 'track' | 'context' | 'index'>) {
+/** Column header row (#, Title, Plays, duration) aligned with TrackRow. */
+export function TrackListHeader({ showCover = true, withChange = false }: { showCover?: boolean; withChange?: boolean }) {
+  return (
+    <div className="trow trow--head" aria-hidden>
+      <span className="trow__index">#</span>
+      {withChange && <span className="trow__change" />}
+      {showCover && <span className="trow__cover-spacer" />}
+      <span className="trow__main">Title</span>
+      <span className="trow__plays">Plays</span>
+      <span className="trow__actions-spacer" />
+      <span className="trow__time">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" aria-label="Duration">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v5l3 2" />
+        </svg>
+      </span>
+    </div>
+  );
+}
+
+export function TrackList({ tracks, startIndex = 1, header, ...rest }: { tracks: Track[]; startIndex?: number; header?: boolean } & Omit<TrackRowProps, 'track' | 'context' | 'index'>) {
   return (
     <div className="tlist" role="list">
+      {header && <TrackListHeader showCover={rest.showCover !== false} withChange={rest.change !== undefined} />}
       {tracks.map((t, i) => (
         <TrackRow key={t.id} track={t} context={tracks} index={startIndex + i} {...rest} />
       ))}

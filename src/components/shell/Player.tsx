@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent as RPointerEvent } from 'react';
-import { fmtTime, useMusic, usePlayerState, usePosition } from '../../music';
+import { compact, fmtTime, useMusic, usePlayerState, usePosition } from '../../music';
 import {
   cycleRepeat,
   getAnalyser,
@@ -16,7 +16,9 @@ import {
   type Playable,
 } from '../../player/engine';
 import { CloseIcon, CollapseIcon, ExpandIcon, MoonSleepIcon, MuteIcon, NextIcon, PauseIcon, PlayIcon, PrevIcon, QueueIcon, RepeatIcon, ShuffleIcon, VolumeIcon } from '../icons';
-import { Eq, LikeButton } from '../music/bits';
+import { Cover, Eq, LikeButton } from '../music/bits';
+import { useArtPalette } from '../../catalog/color';
+import type { CoverSpec } from '../../catalog/types';
 import { Waveform } from '../music/Waveform';
 
 /** Thin seek bar used in the player bar. */
@@ -242,7 +244,7 @@ export function NowPlaying({ onClose }: { onClose: () => void }) {
   if (!cur) return null;
   return (
     <div className="np" role="dialog" aria-modal="true" aria-label="Now playing" ref={dialog}>
-      <div className="np__bg" style={{ backgroundImage: cur.artwork ? `url("${cur.artwork}")` : undefined }} />
+      <MeshBackdrop spec={track?.cover} />
       <div className="np__inner">
         <header className="np__head">
           <button className="round-btn" onClick={onClose} aria-label="Close now playing" ref={closeBtn}>
@@ -292,7 +294,114 @@ export function NowPlaying({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function PlayerBar({ onExpand }: { onExpand: () => void }) {
+/** Apple Music-style living backdrop: slow-drifting blobs in the artwork's colours. */
+function MeshBackdrop({ spec }: { spec?: CoverSpec }) {
+  const [a, b, c] = useArtPalette(spec);
+  return (
+    <div className="mesh" aria-hidden style={{ ['--m1' as string]: a, ['--m2' as string]: b, ['--m3' as string]: c }}>
+      <i />
+      <i />
+      <i />
+      <i />
+    </div>
+  );
+}
+
+const PANEL_KEY = 'asf:np-panel';
+
+export function usePanelOpen(): [boolean, (v: boolean) => void] {
+  const [open, setOpen] = useState(() => {
+    try {
+      const v = localStorage.getItem(PANEL_KEY);
+      return v === null ? window.innerWidth >= 1440 : v === '1';
+    } catch {
+      return false;
+    }
+  });
+  return [
+    open,
+    (v: boolean) => {
+      setOpen(v);
+      try {
+        localStorage.setItem(PANEL_KEY, v ? '1' : '0');
+      } catch {
+        /* ignore */
+      }
+    },
+  ];
+}
+
+/** Spotify-style "Now playing" side panel: artwork, artist card, next up. Wide screens only. */
+export function NowPlayingPanel({ onClose }: { onClose: () => void }) {
+  const s = usePlayerState();
+  const m = useMusic();
+  const cur = s.current;
+  if (!cur) return null;
+  const track = m.track(cur.id);
+  const artist = track ? m.artist(track.artistId) : undefined;
+  const next = s.queue[s.index + 1];
+  const following = artist ? m.library.follows.includes(artist.id) : false;
+  return (
+    <aside className="npp" aria-label="Now playing">
+      <header className="npp__head">
+        <a href={cur.href} className="npp__ctx">
+          {track?.albumId ? m.album(track.albumId)?.title : 'Now playing'}
+        </a>
+        <button className="icon-toggle" onClick={onClose} aria-label="Hide now playing panel">
+          <CloseIcon width={16} height={16} />
+        </button>
+      </header>
+      <div className="npp__art">{cur.artwork && <img src={cur.artwork} alt="" />}</div>
+      <div className="npp__titles">
+        <div>
+          <a href={cur.href} className="npp__title">
+            {cur.title}
+          </a>
+          <a href={cur.subtitleHref} className="npp__sub">
+            {cur.subtitle}
+          </a>
+        </div>
+        {track && <LikeButton id={track.id} />}
+      </div>
+      {artist && (
+        <section className="npp__artist">
+          <div className="npp__artist-img">
+            <Cover spec={artist.poster} />
+            <span>About the artist</span>
+          </div>
+          <div className="npp__artist-body">
+            <a href={`#/artist/${artist.id}`} className="npp__artist-name">
+              {artist.name}
+            </a>
+            <div className="npp__artist-row">
+              <span className="muted">{compact(m.followerCount(artist))} followers</span>
+              <button className={`follow-btn${following ? ' is-on' : ''}`} onClick={() => m.toggleFollow(artist.id)}>
+                {following ? 'Following' : 'Follow'}
+              </button>
+            </div>
+            <p>{artist.bio}</p>
+          </div>
+        </section>
+      )}
+      {next && (
+        <section className="npp__next">
+          <div className="npp__next-head">
+            <b>Next in queue</b>
+          </div>
+          <button className="qrow__main" onClick={() => jumpTo(next.id)}>
+            {next.artwork && <img src={next.artwork} alt="" width={40} height={40} />}
+            <span>
+              <b>{next.title}</b>
+              <small>{next.subtitle}</small>
+            </span>
+          </button>
+        </section>
+      )}
+    </aside>
+  );
+}
+
+export function PlayerBar({ onExpand, panelOpen, onTogglePanel }: { onExpand: () => void; panelOpen: boolean; onTogglePanel: () => void }) {
   const s = usePlayerState();
   const m = useMusic();
   const [queueOpen, setQueueOpen] = useState(false);
@@ -330,6 +439,9 @@ export function PlayerBar({ onExpand }: { onExpand: () => void }) {
         <button className={`tbtn${queueOpen ? ' is-on' : ''}`} onClick={() => setQueueOpen((o) => !o)} aria-label="Queue" aria-expanded={queueOpen}>
           <QueueIcon />
         </button>
+        <button className={`tbtn npp-toggle${panelOpen ? ' is-on' : ''}`} onClick={onTogglePanel} aria-label="Now playing view" aria-pressed={panelOpen}>
+          <PanelIcon />
+        </button>
         <VolumeControl />
         <button className="tbtn" onClick={onExpand} aria-label="Full screen player">
           <ExpandIcon />
@@ -350,4 +462,13 @@ export function PlayerBar({ onExpand }: { onExpand: () => void }) {
 function MobileProgress() {
   const { position, duration } = usePosition();
   return <span style={{ width: `${duration ? (position / duration) * 100 : 0}%` }} />;
+}
+
+function PanelIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <rect x="3" y="4" width="18" height="16" rx="3" />
+      <path d="M15 4v16" />
+    </svg>
+  );
 }
