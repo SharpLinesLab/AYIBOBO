@@ -9,13 +9,17 @@ import './styles/signature.css';
 import './styles/features.css';
 import { registerServiceWorker, resolveAudioUrl } from './offline';
 import { setUrlResolver } from './player/engine';
+import { detectLang, setLang } from './i18n';
 
 // Downloaded songs play from the device; the service worker makes the app itself work offline.
 setUrlResolver(resolveAudioUrl);
 registerServiceWorker();
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+// Load the interface language first so the first paint is already in it (English is built in).
+const render = () =>
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
+setLang(detectLang(), false).then(render, render);

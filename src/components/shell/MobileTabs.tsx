@@ -1,24 +1,25 @@
+import { t } from '../../i18n';
 import { useApp } from '../../store';
 import { ChartIcon, FlameIcon, HomeIcon, LibraryIcon, TrophyIcon } from '../icons';
 
 const TABS = [
-  { href: '#/', label: 'Discover', pages: ['home', 'genres', 'genre'], Icon: HomeIcon },
-  { href: '#/trending', label: 'Trending', pages: ['trending'], Icon: FlameIcon },
-  { href: '#/charts', label: 'Charts', pages: ['charts'], Icon: ChartIcon },
-  { href: '#/leaderboard', label: 'Boost', pages: ['leaderboard', 'daily'], Icon: TrophyIcon },
-  { href: '#/library/likes', label: 'Library', pages: ['library', 'upload'], Icon: LibraryIcon },
-];
+  { href: '#/', label: 'common.nav.discover', pages: ['home', 'genres', 'genre'], Icon: HomeIcon },
+  { href: '#/trending', label: 'common.nav.trending', pages: ['trending'], Icon: FlameIcon },
+  { href: '#/charts', label: 'common.nav.chartsShort', pages: ['charts'], Icon: ChartIcon },
+  { href: '#/leaderboard', label: 'common.nav.boostShort', pages: ['leaderboard', 'daily'], Icon: TrophyIcon },
+  { href: '#/library/likes', label: 'common.nav.library', pages: ['library', 'upload', 'settings', 'studio'], Icon: LibraryIcon },
+] as const;
 
 export function MobileTabs() {
   const { route } = useApp();
   return (
-    <nav className="mtabs" aria-label="Sections">
+    <nav className="mtabs" aria-label={t('common.nav.sections')}>
       {TABS.map(({ href, label, pages, Icon }) => {
-        const on = pages.includes(route.page);
+        const on = (pages as readonly string[]).includes(route.page);
         return (
           <a key={href} href={href} className={on ? 'is-active' : ''} aria-current={on ? 'page' : undefined}>
             <Icon />
-            <span>{label}</span>
+            <span>{t(label)}</span>
           </a>
         );
       })}

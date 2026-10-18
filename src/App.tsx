@@ -34,6 +34,7 @@ import { Sidebar } from './components/shell/Sidebar';
 import { TopBar } from './components/shell/TopBar';
 import { SettingsPage } from './pages/Settings';
 import { PaletteHost } from './components/shell/PaletteHost';
+import { useLang } from './i18n';
 import { ShareHost } from './components/music/Share';
 import { ConnectionBanner } from './components/music/Offline';
 import { NowPlayingPanel, PlayerBar, usePanelOpen, type NpTab } from './components/shell/Player';
@@ -73,6 +74,7 @@ function useHashRoute() {
 }
 
 export function App() {
+  const lang = useLang();
   const [backend, setBackend] = useState<Backend | null>(null);
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -117,7 +119,8 @@ export function App() {
     );
   }
   if (!backend || !snapshot) return <LoadingShell />;
-  return <Shell backend={backend} snapshot={snapshot} setSnapshot={setSnapshot} />;
+  // Switching language re-renders the whole interface with the new strings (playback carries on).
+  return <Shell key={lang} backend={backend} snapshot={snapshot} setSnapshot={setSnapshot} />;
 }
 
 function LoadingShell() {

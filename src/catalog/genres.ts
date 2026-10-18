@@ -1,3 +1,4 @@
+import { t, type Key } from '../i18n';
 import type { GenreId } from './types';
 
 export interface Genre {
@@ -23,6 +24,12 @@ export const GENRES: Genre[] = [
   { id: 'rara', label: 'Rara', blurb: 'Street processions, vaksin and kata.', colors: ['#9a3412', '#fdba74'] },
   { id: 'electronic', label: 'Electronic', blurb: 'Club cuts and future sounds.', colors: ['#1e1b4b', '#22d3ee'] },
 ];
+
+// Names and blurbs are interface copy: read them in the current language.
+for (const g of GENRES) {
+  Object.defineProperty(g, 'label', { get: () => t(`common.genre.${g.id}` as Key), enumerable: true });
+  Object.defineProperty(g, 'blurb', { get: () => t(`common.genreBlurb.${g.id}` as Key), enumerable: true });
+}
 
 const BY_ID = new Map(GENRES.map((g) => [g.id, g]));
 

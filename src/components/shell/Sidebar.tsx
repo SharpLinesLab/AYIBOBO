@@ -1,23 +1,24 @@
+import { t } from '../../i18n';
 import { useMusic } from '../../music';
 import { useApp } from '../../store';
 import { AsfLogo, ChartIcon, ClockIcon, DownloadIcon, FlameIcon, GearIcon, GridIcon, HeartLine, HomeIcon, ListIcon, StudioIcon, TrophyIcon, UploadIcon, UsersIcon } from '../icons';
 import { Cover } from '../music/bits';
 
 export const MAIN_NAV = [
-  { href: '#/', label: 'Discover', page: 'home', Icon: HomeIcon },
-  { href: '#/trending', label: 'Trending', page: 'trending', Icon: FlameIcon },
-  { href: '#/charts', label: 'Top Charts', page: 'charts', Icon: ChartIcon },
-  { href: '#/genres', label: 'Genres', page: 'genres', Icon: GridIcon },
-  { href: '#/leaderboard', label: 'Boost Board', page: 'leaderboard', Icon: TrophyIcon },
+  { href: '#/', label: 'common.nav.discover', page: 'home', Icon: HomeIcon },
+  { href: '#/trending', label: 'common.nav.trending', page: 'trending', Icon: FlameIcon },
+  { href: '#/charts', label: 'common.nav.charts', page: 'charts', Icon: ChartIcon },
+  { href: '#/genres', label: 'common.nav.genres', page: 'genres', Icon: GridIcon },
+  { href: '#/leaderboard', label: 'common.nav.boost', page: 'leaderboard', Icon: TrophyIcon },
 ] as const;
 
 const LIB_NAV = [
-  { href: '#/library/likes', label: 'Liked songs', tab: 'likes', Icon: HeartLine },
-  { href: '#/library/playlists', label: 'Playlists', tab: 'playlists', Icon: ListIcon },
-  { href: '#/library/following', label: 'Following', tab: 'following', Icon: UsersIcon },
-  { href: '#/library/recent', label: 'Recently played', tab: 'recent', Icon: ClockIcon },
-  { href: '#/library/downloads', label: 'Downloads', tab: 'downloads', Icon: DownloadIcon },
-  { href: '#/library/uploads', label: 'My uploads', tab: 'uploads', Icon: UploadIcon },
+  { href: '#/library/likes', label: 'common.nav.likes', tab: 'likes', Icon: HeartLine },
+  { href: '#/library/playlists', label: 'common.nav.playlists', tab: 'playlists', Icon: ListIcon },
+  { href: '#/library/following', label: 'common.nav.following', tab: 'following', Icon: UsersIcon },
+  { href: '#/library/recent', label: 'common.nav.recent', tab: 'recent', Icon: ClockIcon },
+  { href: '#/library/downloads', label: 'common.nav.downloads', tab: 'downloads', Icon: DownloadIcon },
+  { href: '#/library/uploads', label: 'common.nav.uploads', tab: 'uploads', Icon: UploadIcon },
 ] as const;
 
 export function Sidebar() {
@@ -25,29 +26,29 @@ export function Sidebar() {
   const m = useMusic();
   const active = (page: string) => route.page === page || (page === 'genres' && route.page === 'genre');
   return (
-    <aside className="side" aria-label="Main navigation">
+    <aside className="side" aria-label={t('common.nav.main')}>
       <a href="#/" className="side__brand">
-        <span className="sr-only">ASF — Ayiti Sakap Fet, home</span>
+        <span className="sr-only">{t('common.nav.home')}</span>
         <AsfLogo />
       </a>
-      <nav className="side__group" aria-label="Browse">
+      <nav className="side__group" aria-label={t('common.nav.browse')}>
         {MAIN_NAV.map(({ href, label, page, Icon }) => (
           <a key={href} href={href} className={`side__link${active(page) ? ' is-active' : ''}`} aria-current={active(page) ? 'page' : undefined}>
             <Icon />
-            <span>{label}</span>
+            <span>{t(label)}</span>
             {page === 'leaderboard' && <span className="side__pill">$</span>}
           </a>
         ))}
       </nav>
-      <div className="side__label">Your library</div>
-      <nav className="side__group" aria-label="Your library">
+      <div className="side__label">{t('common.nav.yourLibrary')}</div>
+      <nav className="side__group" aria-label={t('common.nav.yourLibrary')}>
         {LIB_NAV.map(({ href, label, tab, Icon }) => {
           const on = route.page === 'library' && route.tab === tab;
           const count = tab === 'likes' ? m.library.likes.length : tab === 'uploads' ? m.library.uploads.length : tab === 'downloads' ? m.library.downloads.length : 0;
           return (
             <a key={href} href={href} className={`side__link${on ? ' is-active' : ''}`}>
               <Icon />
-              <span>{label}</span>
+              <span>{t(label)}</span>
               {count > 0 && <span className="side__count">{count}</span>}
             </a>
           );
@@ -55,8 +56,8 @@ export function Sidebar() {
       </nav>
       {m.library.playlists.length > 0 && (
         <>
-          <div className="side__label">Your playlists</div>
-          <nav className="side__group side__playlists" aria-label="Your playlists">
+          <div className="side__label">{t('common.nav.yourPlaylists')}</div>
+          <nav className="side__group side__playlists" aria-label={t('common.nav.yourPlaylists')}>
             {m.library.playlists.slice(0, 8).map((p) => (
               <a key={p.id} href={`#/playlist/${p.id}`} className={`side__pl${route.page === 'playlist' && route.id === p.id ? ' is-active' : ''}`}>
                 <Cover spec={p.cover} size={32} />
@@ -66,24 +67,24 @@ export function Sidebar() {
           </nav>
         </>
       )}
-      <div className="side__label">Creators</div>
-      <nav className="side__group" aria-label="Creators">
+      <div className="side__label">{t('common.nav.creators')}</div>
+      <nav className="side__group" aria-label={t('common.nav.creators')}>
         <a href="#/studio" className={`side__link${route.page === 'studio' ? ' is-active' : ''}`} aria-current={route.page === 'studio' ? 'page' : undefined}>
           <StudioIcon />
-          <span>Artist Studio</span>
+          <span>{t('common.nav.studio')}</span>
         </a>
         <a href="#/settings" className={`side__link${route.page === 'settings' ? ' is-active' : ''}`} aria-current={route.page === 'settings' ? 'page' : undefined}>
           <GearIcon />
-          <span>Settings</span>
+          <span>{t('common.nav.settings')}</span>
         </a>
       </nav>
       <a className="side__upload" href="#/upload">
-        <UploadIcon /> Upload music
+        <UploadIcon /> {t('common.nav.uploadMusic')}
       </a>
       <div className="side__promo">
-        <b>Boost your release</b>
-        <span>Claim a rank on the public Boost Board — rank is strictly what you pay.</span>
-        <a href="#/leaderboard">Open Boost Board →</a>
+        <b>{t('common.promo.title')}</b>
+        <span>{t('common.promo.body')}</span>
+        <a href="#/leaderboard">{t('common.promo.cta')}</a>
       </div>
     </aside>
   );

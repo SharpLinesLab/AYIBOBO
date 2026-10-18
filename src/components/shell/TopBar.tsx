@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { searchCatalog } from '../../catalog/search';
+import { t } from '../../i18n';
 import { useMusic } from '../../music';
+import { LanguageMenu } from '../LanguagePicker';
 import { useApp } from '../../store';
 import { SocialLinks } from '../Chrome';
 import { AsfLogo, ChevronLeft, ChevronRight, MoonIcon, SearchIcon, SunIcon, UploadIcon } from '../icons';
@@ -18,10 +20,10 @@ function GlobalSearch() {
   const res = useMemo(() => searchCatalog(m.catalog, q, 4), [m.catalog, q]);
   const items = useMemo(
     () => [
-      ...res.tracks.map((t) => ({ key: t.id, href: `#/song/${t.id}`, title: t.title, sub: `Song · ${m.artistNames(t)}`, cover: t.cover, round: false })),
-      ...res.artists.map((a) => ({ key: a.id, href: `#/artist/${a.id}`, title: a.name, sub: 'Artist', cover: a.avatar, round: true })),
-      ...res.albums.map((a) => ({ key: a.id, href: `#/album/${a.id}`, title: a.title, sub: `Album · ${m.artist(a.artistId)?.name ?? ''}`, cover: a.cover, round: false })),
-      ...res.playlists.map((p) => ({ key: p.id, href: `#/playlist/${p.id}`, title: p.title, sub: `Playlist · ${p.curator}`, cover: p.cover, round: false })),
+      ...res.tracks.map((x) => ({ key: x.id, href: `#/song/${x.id}`, title: x.title, sub: `${t('common.kind.song')} · ${m.artistNames(x)}`, cover: x.cover, round: false })),
+      ...res.artists.map((a) => ({ key: a.id, href: `#/artist/${a.id}`, title: a.name, sub: t('common.kind.artist'), cover: a.avatar, round: true })),
+      ...res.albums.map((a) => ({ key: a.id, href: `#/album/${a.id}`, title: a.title, sub: `${t('common.kind.album')} · ${m.artist(a.artistId)?.name ?? ''}`, cover: a.cover, round: false })),
+      ...res.playlists.map((p) => ({ key: p.id, href: `#/playlist/${p.id}`, title: p.title, sub: `${t('common.kind.playlist')} · ${p.curator}`, cover: p.cover, round: false })),
     ],
     [res, m],
   );
@@ -56,8 +58,8 @@ function GlobalSearch() {
       <input
         ref={input}
         value={q}
-        placeholder="Search songs, artists, albums, playlists"
-        aria-label="Search"
+        placeholder={t('common.search.placeholder')}
+        aria-label={t('common.search.label')}
         role="combobox"
         aria-expanded={open && q.trim().length > 0}
         aria-controls="gsearch-list"
@@ -87,7 +89,7 @@ function GlobalSearch() {
       {open && q.trim() && (
         <div className="gsearch__panel" id="gsearch-list" role="listbox">
           <button className={`gsearch__all${active === 0 ? ' is-active' : ''}`} onClick={() => go(`#/search/${encodeURIComponent(q.trim())}`)}>
-            <SearchIcon /> Search for “{q.trim()}”
+            <SearchIcon /> {t('common.search.for', { q: q.trim() })}
           </button>
           {items.map((it, i) => (
             <button key={it.key} className={`gsearch__item${active === i + 1 ? ' is-active' : ''}`} role="option" aria-selected={active === i + 1} onMouseEnter={() => setActive(i + 1)} onClick={() => go(it.href)}>
@@ -98,7 +100,7 @@ function GlobalSearch() {
               </span>
             </button>
           ))}
-          {items.length === 0 && <p className="gsearch__empty">No matches yet — press Enter to search everything.</p>}
+          {items.length === 0 && <p className="gsearch__empty">{t('common.search.noMatches')}</p>}
         </div>
       )}
     </div>
@@ -115,14 +117,14 @@ export function TopBar({ theme, onToggleTheme, onSubscribe }: { theme: 'light' |
   }, []);
   return (
     <header className={`topbar${scrolled ? ' is-scrolled' : ''}`}>
-      <a href="#/" className="topbar__brand" aria-label="ASF home">
+      <a href="#/" className="topbar__brand" aria-label={t('common.nav.homeShort')}>
         <AsfLogo compact />
       </a>
       <div className="topbar__history">
-        <button className="round-btn" onClick={() => history.back()} aria-label="Back">
+        <button className="round-btn" onClick={() => history.back()} aria-label={t('common.nav.back')}>
           <ChevronLeft />
         </button>
-        <button className="round-btn" onClick={() => history.forward()} aria-label="Forward">
+        <button className="round-btn" onClick={() => history.forward()} aria-label={t('common.nav.forward')}>
           <ChevronRight />
         </button>
       </div>
@@ -132,13 +134,14 @@ export function TopBar({ theme, onToggleTheme, onSubscribe }: { theme: 'light' |
           <SocialLinks size={18} />
         </span>
         <a className="btn-outline topbar__upload" href="#/upload">
-          <UploadIcon width={16} height={16} /> Upload
+          <UploadIcon width={16} height={16} /> {t('common.top.upload')}
         </a>
-        <button className="round-btn" onClick={onToggleTheme} aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+        <LanguageMenu />
+        <button className="round-btn" onClick={onToggleTheme} aria-label={theme === 'dark' ? t('common.top.light') : t('common.top.dark')}>
           {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
         </button>
         <button className="btn-accent topbar__sub" onClick={onSubscribe}>
-          Subscribe
+          {t('common.top.subscribe')}
         </button>
       </div>
     </header>

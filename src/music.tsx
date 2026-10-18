@@ -13,6 +13,7 @@ import { deleteAudio, loadAudio } from './catalog/uploads';
 import { getPosition, getState, onPlay, playQueue, setAutoplayProvider, subscribe, subscribePosition, toggleItem, type Playable, type PlayerState } from './player/engine';
 import { synthPeaks } from './player/synth';
 import { isStreamed, removeFromOffline, saveForOffline } from './offline';
+import { fmtCompact } from './i18n';
 
 export const dayKey = (t: number) => new Date(t).toISOString().slice(0, 10);
 
@@ -394,10 +395,7 @@ export function fmtTime(sec: number): string {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
+/** 1.2K-style counts in the current interface language. */
 export function compact(n: number): string {
-  if (n >= 1e9) return `${(n / 1e9).toFixed(1).replace(/\.0$/, '')}B`;
-  if (n >= 1e6) return `${(n / 1e6).toFixed(1).replace(/\.0$/, '')}M`;
-  if (n >= 1e4) return `${Math.round(n / 1e3)}K`;
-  if (n >= 1e3) return `${(n / 1e3).toFixed(1).replace(/\.0$/, '')}K`;
-  return String(n);
+  return fmtCompact(n);
 }
