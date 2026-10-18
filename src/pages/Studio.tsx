@@ -3,23 +3,23 @@ import { genreById } from '../catalog/genres';
 import { dailyPlays } from '../catalog/plays';
 import type { Artist, Track } from '../catalog/types';
 import { mulberry32 } from '../lib/metadata';
+import { fmtDate, fmtNumber, t, type Key } from '../i18n';
 import { compact, dayKey, useMusic } from '../music';
 import { useApp } from '../store';
 import { Cover } from '../components/music/bits';
 import { PageHead } from './Browse';
 
 type Range = 7 | 28 | 365;
-const RANGES: { id: Range; label: string }[] = [
-  { id: 7, label: '7 days' },
-  { id: 28, label: '28 days' },
-  { id: 365, label: '12 months' },
-];
+const RANGES: Range[] = [7, 28, 365];
+const rangeKey = (r: Range) => `player.studio.range.${r}` as const;
+const lastKey = (r: Range) => `player.studio.last.${r}` as const;
+const vsPrevKey = (r: Range) => `player.studio.vsPrev.${r}` as const;
 const DAY = 86_400_000;
 /** The synthetic history covers ~400 days, so period-over-period deltas exist up to 28 days. */
 const MAX_HISTORY = 400;
 
-const fmtInt = (n: number) => Math.round(n).toLocaleString('en-US');
-const fmtDay = (t: number, withYear = false) => new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(withYear ? { year: 'numeric' } : {}) });
+const fmtInt = (n: number) => fmtNumber(Math.round(n));
+const fmtDay = (at: number, withYear = false) => fmtDate(at, { day: true, month: 'short', year: withYear });
 
 // --- data ------------------------------------------------------------------------------------------
 
@@ -104,14 +104,16 @@ function audience(a: Artist) {
   const weights = new Map<string, number>();
   for (const [c, w] of [...CITIES.base, ...extra]) weights.set(c, (weights.get(c) ?? 0) + w * (0.6 + r() * 0.8));
   const cities = [...weights].sort((x, y) => y[1] - x[1]).slice(0, 6);
-  const sources: [string, number][] = [
-    ['Playlists', 30 + r() * 14],
-    ['Artist profile & catalog', 18 + r() * 10],
-    ['Search', 10 + r() * 6],
-    ['Your library & likes', 12 + r() * 8],
-    ['Boost Board', 4 + r() * 6],
-    ['Other', 4 + r() * 4],
+  // Called while rendering, so the source names are read in the current language.
+  const src: [Key, number][] = [
+    ['player.studio.src.playlists', 30 + r() * 14],
+    ['player.studio.src.profile', 18 + r() * 10],
+    ['player.studio.src.search', 10 + r() * 6],
+    ['player.studio.src.library', 12 + r() * 8],
+    ['common.nav.boost', 4 + r() * 6],
+    ['player.studio.src.other', 4 + r() * 4],
   ];
+  const sources = src.map(([k, v]): [string, number] => [t(k), v]);
   const norm = (list: [string, number][]) => {
     const total = list.reduce((s, [, v]) => s + v, 0);
     return list.map(([k, v]) => ({ label: k, share: v / total }));
@@ -181,7 +183,7 @@ function StreamsChart({ points, title }: { points: { t: number; v: number; label
           {title}
         </h2>
         <button className="link-btn" onClick={() => setTable((v) => !v)} aria-pressed={table}>
-          {table ? 'Show chart' : 'Show as table'}
+          {t(table ? 'player.studio.showChart' : 'player.studio.showTable')}
         </button>
       </div>
       {table ? (
@@ -189,8 +191,8 @@ function StreamsChart({ points, title }: { points: { t: number; v: number; label
           <table>
             <thead>
               <tr>
-                <th scope="col">Period</th>
-                <th scope="col">Streams</th>
+                <th scope="col">{t('player.studio.period')}</th>
+                <th scope="col">{t('player.studio.streams')}</th>
               </tr>
             </thead>
             <tbody>
@@ -221,7 +223,9 @@ function StreamsChart({ points, title }: { points: { t: number; v: number; label
               onPointerLeave={() => setHover(null)}
             >
               <desc id={`${id}-d`}>
-                {points.length ? `${fmtInt(points.reduce((s, p) => s + p.v, 0))} streams from ${points[0].label} to ${points[points.length - 1].label}. Use arrow keys to read each point.` : 'No data'}
+                {points.length
+                  ? t('player.studio.chartDesc', { n: fmtInt(points.reduce((s, p) => s + p.v, 0)), from: points[0].label, to: points[points.length - 1].label })
+                  : t('player.studio.noData')}
               </desc>
               {ticks.map((t) => (
                 <g key={t}>
@@ -250,7 +254,7 @@ function StreamsChart({ points, title }: { points: { t: number; v: number; label
           {hp && hover !== null && (
             <div className="schart__tip" style={{ left: Math.min(Math.max(x(hover), 70), width - 70), top: Math.max(0, y(hp.v) - 64) }} role="status">
               <span>{hp.label}</span>
-              <b className="num">{fmtInt(hp.v)} streams</b>
+              <b className="num">{t('player.studio.streamsN', { n: fmtInt(hp.v) })}</b>
             </div>
           )}
         </div>
@@ -285,7 +289,7 @@ function BarList({ rows, title }: { rows: { label: string; share: number }[]; ti
             <span className="barlist__track">
               <i style={{ width: `${(r.share / max) * 100}%` }} />
             </span>
-            <span className="barlist__value num">{Math.round(r.share * 100)}%</span>
+            <span className="barlist__value num">{t('player.pct', { n: Math.round(r.share * 100) })}</span>
           </li>
         ))}
       </ul>
@@ -299,7 +303,7 @@ function Delta({ cur, prev, label }: { cur: number; prev: number | null; label: 
   const up = pct >= 0;
   return (
     <span className={`kpi__delta${up ? ' is-up' : ' is-down'}`}>
-      <span aria-hidden>{up ? '▲' : '▼'}</span> {Math.abs(pct).toFixed(pct > -10 && pct < 10 ? 1 : 0)}% <span className="muted">vs previous {label}</span>
+      <span aria-hidden>{up ? '▲' : '▼'}</span> {t('player.pct', { n: fmtNumber(Math.abs(pct), pct > -10 && pct < 10 ? 1 : 0) })} <span className="muted">{label}</span>
     </span>
   );
 }
@@ -317,15 +321,15 @@ export function StudioPage({ artistId }: { artistId?: string }) {
   const artist = isMe ? undefined : m.artist(pid ?? '');
   const tracks = useMemo(() => (isMe ? uploads : artist ? m.artistTracks(artist.id) : []), [isMe, uploads, artist, m]);
   const data = useStudioData(tracks, range);
-  const rangeLabel = RANGES.find((r) => r.id === range)!.label;
-  const periodWord = range === 365 ? '12 months' : `${range} days`;
+  const rangeLabel = t(lastKey(range));
+  const periodWord = t(vsPrevKey(range));
 
   const profiles = (
     <label className="studio__pick">
-      <span className="muted">Profile</span>
+      <span className="muted">{t('player.studio.profile')}</span>
       <select className="input" value={pid} onChange={(e) => navigate(`#/studio/${e.target.value}`)}>
-        <option value="me">{m.library.displayName || 'You'} — your uploads</option>
-        <optgroup label="Demo artist profiles">
+        <option value="me">{t('player.studio.meOption', { name: m.library.displayName || t('common.word.you') })}</option>
+        <optgroup label={t('player.studio.demoProfiles')}>
           {[...m.catalog.artists]
             .sort((a, b) => a.name.localeCompare(b.name))
             .map((a) => (
@@ -341,27 +345,27 @@ export function StudioPage({ artistId }: { artistId?: string }) {
   if (!isMe && !artist)
     return (
       <div className="page-music">
-        <PageHead kicker="Artist Studio" title="Profile not found" />
+        <PageHead kicker={t('common.nav.studio')} title={t('player.studio.notFound')} />
         {profiles}
       </div>
     );
 
-  const name = isMe ? m.library.displayName || 'Your music' : artist!.name;
+  const name = isMe ? m.library.displayName || t('player.studio.yourMusic') : artist!.name;
   const liked = tracks.filter((t) => m.isLiked(t.id)).length;
   const comments = tracks.reduce((s, t) => s + (m.library.comments[t.id]?.length ?? 0), 0);
   const listenRatio = range === 7 ? 0.42 : range === 28 ? 0.31 : 0.14;
   const kpis = isMe
     ? [
-        { label: 'Streams', value: data.streams, delta: <Delta cur={data.streams} prev={data.prev} label={periodWord} /> },
-        { label: 'Songs', value: uploads.length },
-        { label: 'Likes', value: liked },
-        { label: 'Comments', value: comments },
+        { label: t('player.studio.streams'), value: data.streams, delta: <Delta cur={data.streams} prev={data.prev} label={periodWord} /> },
+        { label: t('player.studio.songs'), value: uploads.length },
+        { label: t('player.studio.likes'), value: liked },
+        { label: t('player.studio.comments'), value: comments },
       ]
     : [
-        { label: 'Streams', value: data.streams, delta: <Delta cur={data.streams} prev={data.prev} label={periodWord} /> },
-        { label: 'Listeners', value: Math.round(data.streams * listenRatio) },
-        { label: 'Followers', value: m.followerCount(artist!) },
-        { label: 'Saves', value: Math.round(data.streams * 0.035) },
+        { label: t('player.studio.streams'), value: data.streams, delta: <Delta cur={data.streams} prev={data.prev} label={periodWord} /> },
+        { label: t('player.studio.listeners'), value: Math.round(data.streams * listenRatio) },
+        { label: t('player.studio.followers'), value: m.followerCount(artist!) },
+        { label: t('player.studio.saves'), value: Math.round(data.streams * 0.035) },
       ];
   const aud = artist ? audience(artist) : null;
   const shareMax = Math.max(1, ...data.songs.map((s) => s.streams));
@@ -371,37 +375,37 @@ export function StudioPage({ artistId }: { artistId?: string }) {
       <div className="studio__head">
         {artist ? <Cover spec={artist.avatar} size={72} round /> : <span className="studio__me" aria-hidden>{name.slice(0, 1).toUpperCase()}</span>}
         <div className="studio__titles">
-          <span className="phead__kicker">Artist Studio</span>
+          <span className="phead__kicker">{t('common.nav.studio')}</span>
           <h1>{name}</h1>
           <span className="muted">
-            {isMe ? 'Your uploads' : `${genreById(artist!.genres[0]).label} · ${artist!.handle}`} ·{' '}
+            {isMe ? t('player.studio.yourUploads') : `${genreById(artist!.genres[0]).label} · ${artist!.handle}`} ·{' '}
             {isMe ? (
-              <a href="#/library/uploads">Manage uploads</a>
+              <a href="#/library/uploads">{t('player.studio.manageUploads')}</a>
             ) : (
-              <a href={`#/artist/${artist!.id}`}>View public profile</a>
+              <a href={`#/artist/${artist!.id}`}>{t('player.studio.viewProfile')}</a>
             )}
           </span>
         </div>
         {profiles}
       </div>
 
-      <div className="studio__filters" role="group" aria-label="Time range">
+      <div className="studio__filters" role="group" aria-label={t('player.studio.timeRange')}>
         <div className="segmented">
           {RANGES.map((r) => (
-            <button key={r.id} className={range === r.id ? 'is-active' : ''} aria-pressed={range === r.id} onClick={() => setRange(r.id)}>
-              {r.label}
+            <button key={r} className={range === r ? 'is-active' : ''} aria-pressed={range === r} onClick={() => setRange(r)}>
+              {t(rangeKey(r))}
             </button>
           ))}
         </div>
-        <span className="muted studio__asof">Through yesterday, {fmtDay(m.now - DAY, true)}</span>
+        <span className="muted studio__asof">{t('player.studio.through', { date: fmtDay(m.now - DAY, true) })}</span>
       </div>
 
       {isMe && !uploads.length ? (
         <div className="empty-state card-panel">
-          <h2>Upload a song to see your stats</h2>
-          <p>Streams, likes and comments on your songs show up here.</p>
+          <h2>{t('player.studio.emptyTitle')}</h2>
+          <p>{t('player.studio.emptyBody')}</p>
           <a className="btn-accent" href="#/upload">
-            Upload music
+            {t('common.nav.uploadMusic')}
           </a>
         </div>
       ) : (
@@ -417,11 +421,13 @@ export function StudioPage({ artistId }: { artistId?: string }) {
           </div>
 
           <section className="card-panel">
-            <StreamsChart points={data.points} title={`Streams · last ${rangeLabel}`} />
+            <StreamsChart points={data.points} title={`${t('player.studio.streams')} · ${rangeLabel}`} />
           </section>
 
           <section className="card-panel">
-            <h2 className="panel-title">Top songs · last {rangeLabel}</h2>
+            <h2 className="panel-title">
+              {t('player.studio.topSongs')} · {rangeLabel}
+            </h2>
             <div className="studio__table">
               <table>
                 <thead>
@@ -429,15 +435,15 @@ export function StudioPage({ artistId }: { artistId?: string }) {
                     <th scope="col" className="num">
                       #
                     </th>
-                    <th scope="col">Song</th>
+                    <th scope="col">{t('player.studio.song')}</th>
                     <th scope="col" className="num">
-                      Streams
+                      {t('player.studio.streams')}
                     </th>
                     <th scope="col" className="studio__col-change num">
-                      Change
+                      {t('player.studio.change')}
                     </th>
                     <th scope="col" className="studio__col-trend">
-                      Trend
+                      {t('player.studio.trend')}
                     </th>
                   </tr>
                 </thead>
@@ -460,7 +466,7 @@ export function StudioPage({ artistId }: { artistId?: string }) {
                         </td>
                         <td className="num">{fmtInt(s.streams)}</td>
                         <td className={`num studio__col-change${ch === null ? '' : ch >= 0 ? ' is-up' : ' is-down'}`}>
-                          {ch === null ? '—' : `${ch >= 0 ? '▲' : '▼'} ${Math.abs(ch).toFixed(0)}%`}
+                          {ch === null ? '—' : `${ch >= 0 ? '▲' : '▼'} ${t('player.pct', { n: fmtNumber(Math.abs(ch)) })}`}
                         </td>
                         <td className="studio__col-trend">
                           <Sparkline values={s.trend} />
@@ -475,15 +481,15 @@ export function StudioPage({ artistId }: { artistId?: string }) {
 
           {aud ? (
             <div className="two-col studio__aud">
-              <BarList title="Top cities" rows={aud.cities} />
-              <BarList title="Where streams come from" rows={aud.sources} />
+              <BarList title={t('player.studio.topCities')} rows={aud.cities} />
+              <BarList title={t('player.studio.sourcesTitle')} rows={aud.sources} />
             </div>
           ) : null}
 
           <p className="muted studio__note">
             {isMe
-              ? 'Streams of your uploads are counted on this device. Listener counts, cities and stream sources appear once ASF accounts and server-side stats are switched on.'
-              : 'Demo profile: the sample catalog’s numbers are simulated so you can explore the Studio. Your own uploads show real plays.'}
+              ? t('player.studio.noteMe')
+              : t('player.studio.noteDemo')}
           </p>
         </>
       )}

@@ -6,6 +6,7 @@
  * the play position notifies `subscribePosition` listeners on animation frames so only the
  * progress UI re-renders while playing.
  */
+import type { Key } from '../i18n';
 import type { SynthRecipe } from '../catalog/types';
 import { barCount, barSeconds, renderBar } from './synth';
 
@@ -59,18 +60,18 @@ export interface SoundSettings {
 }
 
 export const EQ_BANDS = [60, 230, 910, 3600, 14000];
-export const EQ_PRESETS: { id: string; label: string; gains: number[] }[] = [
-  { id: 'flat', label: 'Flat', gains: [0, 0, 0, 0, 0] },
-  { id: 'bass', label: 'Bass boost', gains: [7, 4, 0, 0, 0] },
-  { id: 'warm', label: 'Kompa warmth', gains: [4, 2, -1, 1, 3] },
-  { id: 'vocal', label: 'Vocals', gains: [-2, 0, 3, 4, 1] },
-  { id: 'treble', label: 'Treble', gains: [0, 0, 0, 3, 6] },
-  { id: 'night', label: 'Late night', gains: [-3, -1, 0, -1, -4] },
+export const EQ_PRESETS: { id: string; labelKey: Key; gains: number[] }[] = [
+  { id: 'flat', labelKey: 'player.eq.flat', gains: [0, 0, 0, 0, 0] },
+  { id: 'bass', labelKey: 'player.eq.bass', gains: [7, 4, 0, 0, 0] },
+  { id: 'warm', labelKey: 'player.eq.warm', gains: [4, 2, -1, 1, 3] },
+  { id: 'vocal', labelKey: 'player.eq.vocal', gains: [-2, 0, 3, 4, 1] },
+  { id: 'treble', labelKey: 'player.eq.treble', gains: [0, 0, 0, 3, 6] },
+  { id: 'night', labelKey: 'player.eq.night', gains: [-3, -1, 0, -1, -4] },
 ];
-export const VIBES: { id: string; label: string; speed: number; keepPitch: boolean; reverb: number }[] = [
-  { id: 'normal', label: 'Normal', speed: 1, keepPitch: true, reverb: 0 },
-  { id: 'sped', label: 'Sped up', speed: 1.2, keepPitch: false, reverb: 0 },
-  { id: 'slowed', label: 'Slowed + reverb', speed: 0.85, keepPitch: false, reverb: 0.4 },
+export const VIBES: { id: string; labelKey: Key; speed: number; keepPitch: boolean; reverb: number }[] = [
+  { id: 'normal', labelKey: 'player.vibe.normal', speed: 1, keepPitch: true, reverb: 0 },
+  { id: 'sped', labelKey: 'player.vibe.sped', speed: 1.2, keepPitch: false, reverb: 0 },
+  { id: 'slowed', labelKey: 'player.vibe.slowed', speed: 0.85, keepPitch: false, reverb: 0.4 },
 ];
 const DEFAULT_SOUND: SoundSettings = { preset: 'flat', gains: [0, 0, 0, 0, 0], speed: 1, keepPitch: true, reverb: 0 };
 

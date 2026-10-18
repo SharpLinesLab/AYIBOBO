@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePlayerState } from '../../music';
+import { fmtNumber, t } from '../../i18n';
 import { EQ_BANDS, EQ_PRESETS, VIBES, setSound } from '../../player/engine';
 
-const bandLabel = (f: number) => (f >= 1000 ? `${f / 1000}k` : String(f));
+const bandLabel = (f: number) => (f >= 1000 ? `${fmtNumber(f / 1000, 1)}k` : String(f));
 
 /** EQ presets + bands, speed (with or without pitch) and reverb — the "sound" controls. */
 export function SoundPanel({ compact }: { compact?: boolean }) {
@@ -12,7 +13,7 @@ export function SoundPanel({ compact }: { compact?: boolean }) {
     <div className={`sound${compact ? ' sound--compact' : ''}`}>
       <div className="sound__row">
         <span className="sound__label" id="vibe-label">
-          Vibe
+          {t('player.sound.vibe')}
         </span>
         <div className="segmented sound__vibes" role="group" aria-labelledby="vibe-label">
           {VIBES.map((v) => (
@@ -22,7 +23,7 @@ export function SoundPanel({ compact }: { compact?: boolean }) {
               aria-pressed={vibe?.id === v.id}
               onClick={() => setSound({ speed: v.speed, keepPitch: v.keepPitch, reverb: v.reverb })}
             >
-              {v.label}
+              {t(v.labelKey)}
             </button>
           ))}
         </div>
@@ -30,15 +31,15 @@ export function SoundPanel({ compact }: { compact?: boolean }) {
 
       <div className="sound__row">
         <span className="sound__label" id="eq-label">
-          Equalizer
+          {t('player.sound.eq')}
         </span>
         <div className="chips sound__presets" role="group" aria-labelledby="eq-label">
           {EQ_PRESETS.map((p) => (
             <button key={p.id} className={`chip2${sound.preset === p.id ? ' is-active' : ''}`} aria-pressed={sound.preset === p.id} onClick={() => setSound({ preset: p.id, gains: p.gains })}>
-              {p.label}
+              {t(p.labelKey)}
             </button>
           ))}
-          {sound.preset === 'custom' && <span className="chip2 is-active">Custom</span>}
+          {sound.preset === 'custom' && <span className="chip2 is-active">{t('player.sound.custom')}</span>}
         </div>
         <div className="sound__bands">
           {EQ_BANDS.map((f, i) => (
@@ -50,8 +51,8 @@ export function SoundPanel({ compact }: { compact?: boolean }) {
                 max={12}
                 step={1}
                 value={sound.gains[i]}
-                aria-label={`${bandLabel(f)}Hz`}
-                aria-valuetext={`${sound.gains[i]} decibels`}
+                aria-label={t('player.sound.hz', { f: bandLabel(f) })}
+                aria-valuetext={t('player.sound.db', { n: sound.gains[i] })}
                 onChange={(e) => {
                   const gains = [...sound.gains];
                   gains[i] = Number(e.target.value);
@@ -67,23 +68,23 @@ export function SoundPanel({ compact }: { compact?: boolean }) {
       <div className="sound__row sound__row--split">
         <label className="sound__slider">
           <span className="sound__label">
-            Speed <b className="num">{sound.speed.toFixed(2)}×</b>
+            {t('player.sound.speed')} <b className="num">{fmtNumber(sound.speed, 2)}×</b>
           </span>
-          <input type="range" min={0.5} max={1.5} step={0.05} value={sound.speed} onChange={(e) => setSound({ speed: Number(e.target.value) })} aria-valuetext={`${sound.speed.toFixed(2)} times`} />
+          <input type="range" min={0.5} max={1.5} step={0.05} value={sound.speed} onChange={(e) => setSound({ speed: Number(e.target.value) })} aria-valuetext={t('player.sound.times', { n: fmtNumber(sound.speed, 2) })} />
         </label>
         <label className="sound__slider">
           <span className="sound__label">
-            Reverb <b className="num">{Math.round(sound.reverb * 100)}%</b>
+            {t('player.sound.reverb')} <b className="num">{t('player.pct', { n: Math.round(sound.reverb * 100) })}</b>
           </span>
-          <input type="range" min={0} max={1} step={0.05} value={sound.reverb} onChange={(e) => setSound({ reverb: Number(e.target.value) })} aria-valuetext={`${Math.round(sound.reverb * 100)} percent`} />
+          <input type="range" min={0} max={1} step={0.05} value={sound.reverb} onChange={(e) => setSound({ reverb: Number(e.target.value) })} aria-valuetext={t('player.sound.percent', { n: Math.round(sound.reverb * 100) })} />
         </label>
       </div>
       <div className="sound__foot">
         <label className="check">
-          <input type="checkbox" checked={sound.keepPitch} onChange={(e) => setSound({ keepPitch: e.target.checked })} /> Keep original pitch when changing speed
+          <input type="checkbox" checked={sound.keepPitch} onChange={(e) => setSound({ keepPitch: e.target.checked })} /> {t('player.sound.keepPitch')}
         </label>
         <button className="link-btn" onClick={() => setSound({ preset: 'flat', gains: [0, 0, 0, 0, 0], speed: 1, keepPitch: true, reverb: 0 })}>
-          Reset
+          {t('common.action.reset')}
         </button>
       </div>
     </div>
@@ -109,13 +110,13 @@ export function SoundButton() {
   }, [open]);
   return (
     <div className="sound-pop" ref={wrap}>
-      <button className={`tbtn${changed ? ' is-on' : ''}`} onClick={() => setOpen((o) => !o)} aria-label="Sound: equalizer, speed and reverb" aria-expanded={open}>
+      <button className={`tbtn${changed ? ' is-on' : ''}`} onClick={() => setOpen((o) => !o)} aria-label={t('player.sound.button')} aria-expanded={open}>
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
           <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />
         </svg>
       </button>
       {open && (
-        <div className="sound-pop__panel" role="dialog" aria-label="Sound">
+        <div className="sound-pop__panel" role="dialog" aria-label={t('common.settings.sound')}>
           <SoundPanel compact />
         </div>
       )}

@@ -1,5 +1,6 @@
 import { motion, useDragControls } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
+import { t } from '../../i18n';
 import { useMusic, usePlayerState } from '../../music';
 import { CollapseIcon } from '../icons';
 import { LikeButton } from '../music/bits';
@@ -51,7 +52,7 @@ export function NowPlaying({ onClose, initialTab = 'wave' }: { onClose: () => vo
       className={`np np--${tab}`}
       role="dialog"
       aria-modal="true"
-      aria-label="Now playing"
+      aria-label={t('player.nowPlaying')}
       ref={dialog}
       // Swipe down from the header (or the grab bar) to close, like a native player sheet.
       drag="y"
@@ -67,19 +68,19 @@ export function NowPlaying({ onClose, initialTab = 'wave' }: { onClose: () => vo
       <div className="np__inner">
         <span className="np__grab" aria-hidden onPointerDown={(e) => drag.start(e)} />
         <header className="np__head" onPointerDown={(e) => !(e.target as HTMLElement).closest('button,a') && drag.start(e)}>
-          <button className="round-btn" onClick={onClose} aria-label="Close now playing" ref={closeBtn}>
+          <button className="round-btn" onClick={onClose} aria-label={t('player.np.close')} ref={closeBtn}>
             <CollapseIcon />
           </button>
-          <span className="np__label">Now playing</span>
+          <span className="np__label">{t('player.nowPlaying')}</span>
           <div className="segmented np__tabs">
             <button className={tab === 'wave' ? 'is-active' : ''} onClick={() => setTab('wave')}>
-              Player
+              {t('player.np.tabPlayer')}
             </button>
             <button className={tab === 'lyrics' ? 'is-active' : ''} onClick={() => setTab('lyrics')}>
-              Lyrics
+              {t('player.lyrics')}
             </button>
             <button className={tab === 'queue' ? 'is-active' : ''} onClick={() => setTab('queue')}>
-              Queue
+              {t('player.queue')}
             </button>
           </div>
         </header>
@@ -116,7 +117,7 @@ export function NowPlaying({ onClose, initialTab = 'wave' }: { onClose: () => vo
                   <h2>{cur.title}</h2>
                   <span className="np__artist">{cur.subtitle}</span>
                 </div>
-                {track ? <LyricsView track={track} variant="full" /> : <p className="muted">No lyrics for previews.</p>}
+                {track ? <LyricsView track={track} variant="full" /> : <p className="muted">{t('player.np.noLyrics')}</p>}
                 <SeekBar />
                 <div className="np__controls">
                   {track && <LikeButton id={track.id} />}

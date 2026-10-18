@@ -2,16 +2,19 @@ import { Command } from 'cmdk';
 import { useEffect, useMemo, useState } from 'react';
 import { searchCatalog } from '../../catalog/search';
 import type { CoverSpec } from '../../catalog/types';
+import { LANGS, setLang, t, useLang } from '../../i18n';
 import { useMusic, usePlayerState } from '../../music';
 import * as player from '../../player/engine';
 import { useApp } from '../../store';
 import { Cover } from '../music/bits';
 import { SearchIcon } from '../icons';
 
+type Group = 'playback' | 'goto' | 'app' | 'lang';
+
 interface Action {
   id: string;
   label: string;
-  group: 'Playback' | 'Go to' | 'App';
+  group: Group;
   hint?: string;
   keywords?: string;
   run: () => void;
@@ -36,6 +39,7 @@ export function CommandPalette({
   const m = useMusic();
   const s = usePlayerState();
   const { navigate, toast } = useApp();
+  const lang = useLang();
   const [q, setQ] = useState('');
 
   useEffect(() => {
@@ -50,40 +54,59 @@ export function CommandPalette({
     close();
     navigate(href);
   };
+  // Labels are translated; keywords stay in English (plus the English label) so English typing still works.
   const actions: Action[] = [
-    { id: 'toggle', group: 'Playback', label: s.playing ? 'Pause' : 'Play', hint: 'Space', run: () => player.toggle(), when: !!s.current },
-    { id: 'next', group: 'Playback', label: 'Next song', hint: '⇧→', run: () => player.next(), when: !!s.current },
-    { id: 'prev', group: 'Playback', label: 'Previous song', hint: '⇧←', run: () => player.prev(), when: !!s.current },
-    { id: 'liked', group: 'Playback', label: 'Play liked songs', keywords: 'favorites hearts', run: () => m.play(liked), when: liked.length > 0 },
+    { id: 'toggle', group: 'playback', label: t(s.playing ? 'common.action.pause' : 'common.action.play'), keywords: 'play pause', hint: t('player.cmd.space'), run: () => player.toggle(), when: !!s.current },
+    { id: 'next', group: 'playback', label: t('player.cmd.nextSong'), keywords: 'next song skip', hint: '⇧→', run: () => player.next(), when: !!s.current },
+    { id: 'prev', group: 'playback', label: t('player.cmd.prevSong'), keywords: 'previous song back', hint: '⇧←', run: () => player.prev(), when: !!s.current },
+    { id: 'liked', group: 'playback', label: t('player.cmd.playLiked'), keywords: 'play liked songs favorites hearts', run: () => m.play(liked), when: liked.length > 0 },
     {
       id: 'shuffle-liked',
-      group: 'Playback',
-      label: 'Shuffle liked songs',
+      group: 'playback',
+      label: t('player.cmd.shuffleLiked'),
+      keywords: 'shuffle liked songs',
       run: () => {
         if (!player.getState().shuffle) player.toggleShuffle();
         m.play(liked, Math.floor(Math.random() * liked.length));
       },
       when: liked.length > 1,
     },
-    { id: 'shuffle', group: 'Playback', label: s.shuffle ? 'Turn shuffle off' : 'Turn shuffle on', run: () => player.toggleShuffle(), when: !!s.current },
-    { id: 'lyrics', group: 'Playback', label: 'Show lyrics', keywords: 'words karaoke', run: onLyrics, when: !!s.current },
-    { id: 'sleep', group: 'Playback', label: 'Sleep timer: 30 minutes', keywords: 'stop pause timer', run: () => (player.setSleepTimer(30), toast('Music stops in 30 minutes')), when: !!s.current },
-    { id: 'mute', group: 'Playback', label: s.muted ? 'Unmute' : 'Mute', hint: 'M', run: () => player.toggleMute(), when: !!s.current },
-    { id: 'home', group: 'Go to', label: 'Discover', run: () => go('#/') },
-    { id: 'trending', group: 'Go to', label: 'Trending', run: () => go('#/trending') },
-    { id: 'charts', group: 'Go to', label: 'Top charts', run: () => go('#/charts') },
-    { id: 'genres', group: 'Go to', label: 'Genres', run: () => go('#/genres') },
-    { id: 'likes', group: 'Go to', label: 'Liked songs', run: () => go('#/library/likes') },
-    { id: 'downloads', group: 'Go to', label: 'Downloads', keywords: 'offline', run: () => go('#/library/downloads') },
-    { id: 'studio', group: 'Go to', label: 'Artist Studio', keywords: 'stats analytics dashboard', run: () => go('#/studio') },
-    { id: 'upload', group: 'Go to', label: 'Upload music', run: () => go('#/upload') },
-    { id: 'boost', group: 'Go to', label: 'Boost Board', keywords: 'leaderboard rank', run: () => go('#/leaderboard') },
-    { id: 'settings', group: 'App', label: 'Settings', keywords: 'crossfade equalizer sound preferences', run: () => go('#/settings') },
-    { id: 'theme', group: 'App', label: 'Switch light / dark theme', keywords: 'mode appearance', run: onToggleTheme },
+    { id: 'shuffle', group: 'playback', label: t(s.shuffle ? 'player.cmd.shuffleOff' : 'player.cmd.shuffleOn'), keywords: s.shuffle ? 'turn shuffle off' : 'turn shuffle on', run: () => player.toggleShuffle(), when: !!s.current },
+    { id: 'lyrics', group: 'playback', label: t('player.cmd.showLyrics'), keywords: 'show lyrics words karaoke', run: onLyrics, when: !!s.current },
+    { id: 'sleep', group: 'playback', label: t('player.cmd.sleep30'), keywords: 'sleep timer 30 minutes stop pause', run: () => (player.setSleepTimer(30), toast(t('player.cmd.sleepToast'))), when: !!s.current },
+    { id: 'mute', group: 'playback', label: t(s.muted ? 'player.unmute' : 'player.mute'), keywords: s.muted ? 'unmute sound' : 'mute sound', hint: 'M', run: () => player.toggleMute(), when: !!s.current },
+    { id: 'home', group: 'goto', label: t('common.nav.discover'), keywords: 'discover home', run: () => go('#/') },
+    { id: 'trending', group: 'goto', label: t('common.nav.trending'), keywords: 'trending', run: () => go('#/trending') },
+    { id: 'charts', group: 'goto', label: t('common.nav.charts'), keywords: 'top charts', run: () => go('#/charts') },
+    { id: 'genres', group: 'goto', label: t('common.nav.genres'), keywords: 'genres', run: () => go('#/genres') },
+    { id: 'likes', group: 'goto', label: t('common.nav.likes'), keywords: 'liked songs favorites', run: () => go('#/library/likes') },
+    { id: 'downloads', group: 'goto', label: t('common.nav.downloads'), keywords: 'downloads offline', run: () => go('#/library/downloads') },
+    { id: 'studio', group: 'goto', label: t('common.nav.studio'), keywords: 'artist studio stats analytics dashboard', run: () => go('#/studio') },
+    { id: 'upload', group: 'goto', label: t('common.nav.uploadMusic'), keywords: 'upload music', run: () => go('#/upload') },
+    { id: 'boost', group: 'goto', label: t('common.nav.boost'), keywords: 'boost board leaderboard rank', run: () => go('#/leaderboard') },
+    { id: 'settings', group: 'app', label: t('common.nav.settings'), keywords: 'settings crossfade equalizer sound preferences', run: () => go('#/settings') },
+    { id: 'theme', group: 'app', label: t('player.cmd.theme'), keywords: 'switch light dark theme mode appearance', run: onToggleTheme },
+    // Language names stay in their own language.
+    ...LANGS.map(
+      (l): Action => ({
+        id: `lang-${l.id}`,
+        group: 'lang',
+        label: l.label,
+        keywords: `change language langue lang ${l.english} ${l.id}`,
+        hint: l.id === lang ? '✓' : undefined,
+        run: () => void setLang(l.id),
+      }),
+    ),
   ];
   const needle = q.trim().toLowerCase();
   const shown = actions.filter((a) => a.when !== false && (!needle || `${a.label} ${a.keywords ?? ''}`.toLowerCase().includes(needle)));
-  const groups = (['Playback', 'Go to', 'App'] as const).map((g) => [g, shown.filter((a) => a.group === g)] as const);
+  const groups = (['playback', 'goto', 'app', 'lang'] as const).map((g) => [g, shown.filter((a) => a.group === g)] as const);
+  const groupName: Record<Group, string> = {
+    playback: t('player.cmd.group.playback'),
+    goto: t('player.cmd.group.goto'),
+    app: t('player.cmd.group.app'),
+    lang: t('common.lang.switch'),
+  };
 
   const entity = (key: string, title: string, sub: string, cover: CoverSpec, href: string, round = false) => (
     <Command.Item key={key} value={key} onSelect={() => go(href)} className="cmdk__item">
@@ -99,7 +122,7 @@ export function CommandPalette({
     <Command.Dialog
       open={open}
       onOpenChange={setOpen}
-      label="Command palette"
+      label={t('player.cmd.label')}
       shouldFilter={false}
       overlayClassName="cmdk__overlay"
       contentClassName="cmdk__panel"
@@ -107,52 +130,54 @@ export function CommandPalette({
     >
       <div className="cmdk__input">
         <SearchIcon width={18} height={18} aria-hidden />
-        <Command.Input value={q} onValueChange={setQ} placeholder="Search music or type a command…" />
+        <Command.Input value={q} onValueChange={setQ} placeholder={t('player.cmd.placeholder')} />
         <kbd>esc</kbd>
       </div>
       <Command.List className="cmdk__list">
-        <Command.Empty className="cmdk__empty">No results for “{q}”.</Command.Empty>
+        <Command.Empty className="cmdk__empty">{t('player.cmd.empty', { q })}</Command.Empty>
         {res.tracks.length > 0 && (
-          <Command.Group heading="Songs" className="cmdk__group">
-            {res.tracks.map((t) => (
+          <Command.Group heading={t('player.cmd.songs')} className="cmdk__group">
+            {res.tracks.map((tr) => (
               <Command.Item
-                key={t.id}
-                value={t.id}
+                key={tr.id}
+                value={tr.id}
                 className="cmdk__item"
                 onSelect={() => {
                   close();
-                  m.play([t, ...res.tracks.filter((x) => x.id !== t.id)]);
+                  m.play([tr, ...res.tracks.filter((x) => x.id !== tr.id)]);
                 }}
               >
-                <Cover spec={t.cover} size={36} />
+                <Cover spec={tr.cover} size={36} />
                 <span className="cmdk__text">
-                  <b>{t.title}</b>
-                  <small>Song · {m.artistNames(t)}</small>
+                  <b>{tr.title}</b>
+                  <small>
+                    {t('common.kind.song')} · {m.artistNames(tr)}
+                  </small>
                 </span>
-                <span className="cmdk__hint">Play</span>
+                <span className="cmdk__hint">{t('common.action.play')}</span>
               </Command.Item>
             ))}
           </Command.Group>
         )}
         {res.artists.length > 0 && (
-          <Command.Group heading="Artists" className="cmdk__group">
-            {res.artists.map((a) => entity(a.id, a.name, 'Artist', a.avatar, `#/artist/${a.id}`, true))}
+          <Command.Group heading={t('player.cmd.artists')} className="cmdk__group">
+            {res.artists.map((a) => entity(a.id, a.name, t('common.kind.artist'), a.avatar, `#/artist/${a.id}`, true))}
           </Command.Group>
         )}
         {res.albums.length > 0 && (
-          <Command.Group heading="Albums" className="cmdk__group">
-            {res.albums.map((a) => entity(a.id, a.title, `Album · ${m.artist(a.artistId)?.name ?? ''}`, a.cover, `#/album/${a.id}`))}
+          <Command.Group heading={t('player.cmd.albums')} className="cmdk__group">
+            {res.albums.map((a) => entity(a.id, a.title, `${t('common.kind.album')} · ${m.artist(a.artistId)?.name ?? ''}`, a.cover, `#/album/${a.id}`))}
           </Command.Group>
         )}
         {res.playlists.length > 0 && (
-          <Command.Group heading="Playlists" className="cmdk__group">
-            {res.playlists.map((p) => entity(p.id, p.title, `Playlist · ${p.curator}`, p.cover, `#/playlist/${p.id}`))}
+          <Command.Group heading={t('player.cmd.playlists')} className="cmdk__group">
+            {res.playlists.map((p) => entity(p.id, p.title, `${t('common.kind.playlist')} · ${p.curator}`, p.cover, `#/playlist/${p.id}`))}
           </Command.Group>
         )}
         {groups.map(
           ([g, list]) =>
             list.length > 0 && (
-              <Command.Group key={g} heading={g} className="cmdk__group">
+              <Command.Group key={g} heading={groupName[g]} className="cmdk__group">
                 {list.map((a) => (
                   <Command.Item
                     key={a.id}
@@ -175,7 +200,7 @@ export function CommandPalette({
         {needle && (
           <Command.Item value="search-all" className="cmdk__item cmdk__item--action" onSelect={() => go(`#/search/${encodeURIComponent(q.trim())}`)}>
             <span className="cmdk__text">
-              <b>See all results for “{q.trim()}”</b>
+              <b>{t('player.cmd.seeAll', { q: q.trim() })}</b>
             </span>
             <kbd>↵</kbd>
           </Command.Item>
@@ -184,14 +209,14 @@ export function CommandPalette({
       <div className="cmdk__foot">
         <span>
           <kbd>↑</kbd>
-          <kbd>↓</kbd> to move
+          <kbd>↓</kbd> {t('player.cmd.toMove')}
         </span>
         <span>
-          <kbd>↵</kbd> to open
+          <kbd>↵</kbd> {t('player.cmd.toOpen')}
         </span>
         <span>
           <kbd>⌘</kbd>
-          <kbd>K</kbd> to toggle
+          <kbd>K</kbd> {t('player.cmd.toToggle')}
         </span>
       </div>
     </Command.Dialog>

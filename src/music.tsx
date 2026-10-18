@@ -13,7 +13,7 @@ import { deleteAudio, loadAudio } from './catalog/uploads';
 import { getPosition, getState, onPlay, playQueue, setAutoplayProvider, subscribe, subscribePosition, toggleItem, type Playable, type PlayerState } from './player/engine';
 import { synthPeaks } from './player/synth';
 import { isStreamed, removeFromOffline, saveForOffline } from './offline';
-import { fmtCompact } from './i18n';
+import { fmtCompact, t } from './i18n';
 
 export const dayKey = (t: number) => new Date(t).toISOString().slice(0, 10);
 
@@ -204,10 +204,10 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
   );
 
   const artistNames = useCallback(
-    (t: Track) => {
-      const main = maps.artists.get(t.artistId)?.name ?? library.displayName ?? 'You';
-      const feats = (t.featuring ?? []).map((id) => maps.artists.get(id)?.name).filter(Boolean);
-      return feats.length ? `${main} feat. ${feats.join(', ')}` : main || 'You';
+    (tr: Track) => {
+      const main = maps.artists.get(tr.artistId)?.name ?? library.displayName ?? t('common.word.you');
+      const feats = (tr.featuring ?? []).map((id) => maps.artists.get(id)?.name).filter(Boolean);
+      return feats.length ? `${main} feat. ${feats.join(', ')}` : main || t('common.word.you');
     },
     [maps, library.displayName],
   );
@@ -307,8 +307,8 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
         const id = `pl-me-${Date.now().toString(36)}`;
         const pl: Playlist = {
           id,
-          title: title.trim().slice(0, 60) || 'My playlist',
-          curator: library.displayName || 'You',
+          title: title.trim().slice(0, 60) || t('player.music.myPlaylist'),
+          curator: library.displayName || t('common.word.you'),
           description: '',
           trackIds,
           cover: makeCover(Date.now() % 100000, { text: title.slice(0, 18) }),
@@ -329,7 +329,7 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
           ...l,
           comments: {
             ...l.comments,
-            [tid]: [{ id: `c${Date.now().toString(36)}`, author: l.displayName || 'You', text: text.trim().slice(0, 500), at: Date.now(), position }, ...(l.comments[tid] ?? [])],
+            [tid]: [{ id: `c${Date.now().toString(36)}`, author: l.displayName || t('common.word.you'), text: text.trim().slice(0, 500), at: Date.now(), position }, ...(l.comments[tid] ?? [])],
           },
         })),
       addUpload: (t) => update((l) => ({ ...l, uploads: [t, ...l.uploads] })),

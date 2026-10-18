@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect, useRef, useState, type PointerEvent as RPoin
 
 // The queue (drag-to-reorder) and full-screen player load on demand, with the motion library.
 const QueueList = lazy(() => import('./Queue').then((m) => ({ default: m.QueueList })));
+import { t } from '../../i18n';
 import { compact, fmtTime, useMusic, usePlayerState, usePosition } from '../../music';
 import {
   cycleRepeat,
@@ -43,7 +44,7 @@ export function SeekBar() {
         ref={ref}
         role="slider"
         tabIndex={0}
-        aria-label="Seek"
+        aria-label={t('player.seek')}
         aria-valuemin={0}
         aria-valuemax={Math.round(duration)}
         aria-valuenow={Math.round(f * duration)}
@@ -74,19 +75,19 @@ export function Transport({ big }: { big?: boolean }) {
   const s = usePlayerState();
   return (
     <div className={`transport${big ? ' transport--big' : ''}`}>
-      <button className={`tbtn${s.shuffle ? ' is-on' : ''}`} onClick={toggleShuffle} aria-label="Shuffle" aria-pressed={s.shuffle}>
+      <button className={`tbtn${s.shuffle ? ' is-on' : ''}`} onClick={toggleShuffle} aria-label={t('common.action.shuffle')} aria-pressed={s.shuffle}>
         <ShuffleIcon />
       </button>
-      <button className="tbtn" onClick={prev} aria-label="Previous">
+      <button className="tbtn" onClick={prev} aria-label={t('common.action.previous')}>
         <PrevIcon />
       </button>
-      <button className="tbtn tbtn--main" onClick={toggle} aria-label={s.playing ? 'Pause' : 'Play'} disabled={!s.current}>
+      <button className="tbtn tbtn--main" onClick={toggle} aria-label={t(s.playing ? 'common.action.pause' : 'common.action.play')} disabled={!s.current}>
         {s.loading ? <span className="spinner" /> : s.playing ? <PauseIcon /> : <PlayIcon />}
       </button>
-      <button className="tbtn" onClick={() => next()} aria-label="Next">
+      <button className="tbtn" onClick={() => next()} aria-label={t('common.action.next')}>
         <NextIcon />
       </button>
-      <button className={`tbtn${s.repeat !== 'off' ? ' is-on' : ''}`} onClick={cycleRepeat} aria-label={`Repeat: ${s.repeat}`}>
+      <button className={`tbtn${s.repeat !== 'off' ? ' is-on' : ''}`} onClick={cycleRepeat} aria-label={t(`player.repeat.${s.repeat}`)}>
         <RepeatIcon />
         {s.repeat === 'one' && <span className="tbtn__one">1</span>}
       </button>
@@ -99,10 +100,10 @@ export function VolumeControl() {
   const v = s.muted ? 0 : s.volume;
   return (
     <div className="vol">
-      <button className="tbtn" onClick={toggleMute} aria-label={s.muted ? 'Unmute' : 'Mute'}>
+      <button className="tbtn" onClick={toggleMute} aria-label={t(s.muted ? 'player.unmute' : 'player.mute')}>
         {v === 0 ? <MuteIcon /> : <VolumeIcon />}
       </button>
-      <input type="range" min={0} max={1} step={0.01} value={v} onChange={(e) => setVolume(Number(e.target.value))} aria-label="Volume" style={{ ['--v' as string]: `${v * 100}%` }} />
+      <input type="range" min={0} max={1} step={0.01} value={v} onChange={(e) => setVolume(Number(e.target.value))} aria-label={t('player.volume')} style={{ ['--v' as string]: `${v * 100}%` }} />
     </div>
   );
 }
@@ -113,20 +114,20 @@ export function SleepTimer() {
   const left = s.sleepAt ? Math.max(1, Math.round((s.sleepAt - Date.now()) / 60_000)) : null;
   return (
     <div className="sleep">
-      <button className={`tbtn${s.sleepAt ? ' is-on' : ''}`} onClick={() => setOpen((o) => !o)} aria-label="Sleep timer" aria-expanded={open}>
+      <button className={`tbtn${s.sleepAt ? ' is-on' : ''}`} onClick={() => setOpen((o) => !o)} aria-label={t('player.sleep.label')} aria-expanded={open}>
         <MoonSleepIcon />
-        {left && <span className="tbtn__badge">{left}m</span>}
+        {left && <span className="tbtn__badge">{t('player.sleep.badge', { n: left })}</span>}
       </button>
       {open && (
         <div className="sleep__menu" role="menu">
           {[15, 30, 45, 60].map((m) => (
             <button key={m} role="menuitem" onClick={() => (setSleepTimer(m), setOpen(false))}>
-              {m} minutes
+              {t('player.sleep.minutes', { n: m })}
             </button>
           ))}
           {s.sleepAt && (
             <button role="menuitem" onClick={() => (setSleepTimer(null), setOpen(false))}>
-              Turn off
+              {t('player.sleep.off')}
             </button>
           )}
         </div>
@@ -224,12 +225,12 @@ export function NowPlayingPanel({ onClose, onLyrics }: { onClose: () => void; on
   const next = s.queue[s.index + 1];
   const following = artist ? m.library.follows.includes(artist.id) : false;
   return (
-    <aside className="npp" aria-label="Now playing">
+    <aside className="npp" aria-label={t('player.nowPlaying')}>
       <header className="npp__head">
         <a href={cur.href} className="npp__ctx">
-          {track?.albumId ? m.album(track.albumId)?.title : 'Now playing'}
+          {track?.albumId ? m.album(track.albumId)?.title : t('player.nowPlaying')}
         </a>
-        <button className="icon-toggle" onClick={onClose} aria-label="Hide now playing panel">
+        <button className="icon-toggle" onClick={onClose} aria-label={t('player.panel.hide')}>
           <CloseIcon width={16} height={16} />
         </button>
       </header>
@@ -248,9 +249,9 @@ export function NowPlayingPanel({ onClose, onLyrics }: { onClose: () => void; on
       {track && hasLyrics(track) && (
         <section className="npp__lyrics">
           <div className="npp__next-head">
-            <b>Lyrics</b>
+            <b>{t('player.lyrics')}</b>
             <button className="link-btn" onClick={onLyrics}>
-              Show lyrics
+              {t('player.panel.showLyrics')}
             </button>
           </div>
           <LyricsView track={track} variant="card" />
@@ -260,16 +261,16 @@ export function NowPlayingPanel({ onClose, onLyrics }: { onClose: () => void; on
         <section className="npp__artist">
           <div className="npp__artist-img">
             <Cover spec={artist.poster} />
-            <span>About the artist</span>
+            <span>{t('player.panel.aboutArtist')}</span>
           </div>
           <div className="npp__artist-body">
             <a href={`#/artist/${artist.id}`} className="npp__artist-name">
               {artist.name}
             </a>
             <div className="npp__artist-row">
-              <span className="muted">{compact(m.followerCount(artist))} followers</span>
+              <span className="muted">{t('player.panel.followers', { n: compact(m.followerCount(artist)) })}</span>
               <button className={`follow-btn${following ? ' is-on' : ''}`} onClick={() => m.toggleFollow(artist.id)}>
-                {following ? 'Following' : 'Follow'}
+                {t(following ? 'common.action.following' : 'common.action.follow')}
               </button>
             </div>
             <p>{artist.bio}</p>
@@ -279,7 +280,7 @@ export function NowPlayingPanel({ onClose, onLyrics }: { onClose: () => void; on
       {next && (
         <section className="npp__next">
           <div className="npp__next-head">
-            <b>Next in queue</b>
+            <b>{t('player.panel.nextInQueue')}</b>
           </div>
           <button className="qrow__main" onClick={() => jumpTo(next.id)}>
             {next.artwork && <img src={next.artwork} alt="" width={40} height={40} />}
@@ -312,12 +313,12 @@ export function PlayerBar({
   if (!cur) return null;
   const track = m.track(cur.id);
   return (
-    <div className="pbar" role="region" aria-label="Player">
+    <div className="pbar" role="region" aria-label={t('player.region')}>
       <div className="pbar__mobile-progress">
         <MobileProgress />
       </div>
       <div className="pbar__now">
-        <button className="pbar__art" onClick={onExpand} aria-label="Open now playing">
+        <button className="pbar__art" onClick={onExpand} aria-label={t('player.openNowPlaying')}>
           {cur.artwork && <img src={cur.artwork} alt="" />}
           <span className="pbar__expand">
             <ExpandIcon />
@@ -338,23 +339,23 @@ export function PlayerBar({
         <SeekBar />
       </div>
       <div className="pbar__right">
-        <button className="tbtn" onClick={onLyrics} aria-label="Lyrics" disabled={!track || !hasLyrics(track)}>
+        <button className="tbtn" onClick={onLyrics} aria-label={t('player.lyrics')} disabled={!track || !hasLyrics(track)}>
           <MicIcon />
         </button>
         <SoundButton />
         <SleepTimer />
-        <button className={`tbtn${queueOpen ? ' is-on' : ''}`} onClick={() => setQueueOpen((o) => !o)} aria-label="Queue" aria-expanded={queueOpen}>
+        <button className={`tbtn${queueOpen ? ' is-on' : ''}`} onClick={() => setQueueOpen((o) => !o)} aria-label={t('player.queue')} aria-expanded={queueOpen}>
           <QueueIcon />
         </button>
-        <button className={`tbtn npp-toggle${panelOpen ? ' is-on' : ''}`} onClick={onTogglePanel} aria-label="Now playing view" aria-pressed={panelOpen}>
+        <button className={`tbtn npp-toggle${panelOpen ? ' is-on' : ''}`} onClick={onTogglePanel} aria-label={t('player.nowPlayingView')} aria-pressed={panelOpen}>
           <PanelIcon />
         </button>
         <VolumeControl />
-        <button className="tbtn" onClick={onExpand} aria-label="Full screen player">
+        <button className="tbtn" onClick={onExpand} aria-label={t('player.fullScreen')}>
           <ExpandIcon />
         </button>
       </div>
-      <button className="pbar__mobile-toggle tbtn tbtn--main" onClick={toggle} aria-label={s.playing ? 'Pause' : 'Play'}>
+      <button className="pbar__mobile-toggle tbtn tbtn--main" onClick={toggle} aria-label={t(s.playing ? 'common.action.pause' : 'common.action.play')}>
         {s.playing ? <PauseIcon /> : <PlayIcon />}
       </button>
       {queueOpen && (

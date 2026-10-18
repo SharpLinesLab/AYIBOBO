@@ -1,5 +1,6 @@
 import { Reorder, useDragControls } from 'motion/react';
 import { useEffect, useState } from 'react';
+import { t } from '../../i18n';
 import { usePlayerState } from '../../music';
 import { getUpNext, jumpTo, removeFromQueue, reorderUpNext, type Playable } from '../../player/engine';
 import { CloseIcon } from '../icons';
@@ -17,7 +18,7 @@ function Row({ p, current, playing, onPick }: { p: Playable; current?: boolean; 
         {current && <Eq paused={!playing} />}
       </button>
       {!current && (
-        <button className="icon-toggle" onClick={() => removeFromQueue(p.id)} aria-label={`Remove ${p.title} from queue`}>
+        <button className="icon-toggle" onClick={() => removeFromQueue(p.id)} aria-label={t('player.queue.remove', { title: p.title })}>
           <CloseIcon width={16} height={16} />
         </button>
       )}
@@ -30,7 +31,7 @@ function DraggableRow({ p, index, count, onMove, onPick, onDrop }: { p: Playable
   const controls = useDragControls();
   return (
     <Reorder.Item value={p} dragListener={false} dragControls={controls} onDragEnd={onDrop} className="qrow qrow--drag" whileDrag={{ scale: 1.02, boxShadow: '0 12px 30px rgba(0,0,0,0.35)' }}>
-      <span className="qrow__handle" onPointerDown={(e) => controls.start(e)} aria-hidden title="Drag to reorder">
+      <span className="qrow__handle" onPointerDown={(e) => controls.start(e)} aria-hidden title={t('player.queue.drag')}>
         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
           <circle cx="9" cy="6" r="1.6" />
           <circle cx="15" cy="6" r="1.6" />
@@ -42,10 +43,10 @@ function DraggableRow({ p, index, count, onMove, onPick, onDrop }: { p: Playable
       </span>
       <Row p={p} onPick={onPick} />
       <span className="qrow__move">
-        <button className="icon-toggle" onClick={() => onMove(index, index - 1)} disabled={index === 0} aria-label={`Move ${p.title} up`}>
+        <button className="icon-toggle" onClick={() => onMove(index, index - 1)} disabled={index === 0} aria-label={t('player.queue.moveUp', { title: p.title })}>
           ↑
         </button>
-        <button className="icon-toggle" onClick={() => onMove(index, index + 1)} disabled={index === count - 1} aria-label={`Move ${p.title} down`}>
+        <button className="icon-toggle" onClick={() => onMove(index, index + 1)} disabled={index === count - 1} aria-label={t('player.queue.moveDown', { title: p.title })}>
           ↓
         </button>
       </span>
@@ -75,7 +76,7 @@ export function QueueList({ onPick }: { onPick?: () => void }) {
     <div className="queue">
       {s.current && (
         <>
-          <h4>Now playing</h4>
+          <h4>{t('player.nowPlaying')}</h4>
           <ul>
             <li className="qrow is-current">
               <Row p={s.current} current playing={s.playing} onPick={onPick} />
@@ -83,7 +84,7 @@ export function QueueList({ onPick }: { onPick?: () => void }) {
           </ul>
         </>
       )}
-      <h4>Up next {mine.length > 0 && <span className="muted">· {mine.length}</span>}</h4>
+      <h4>{t('player.queue.upNext')} {mine.length > 0 && <span className="muted">· {mine.length}</span>}</h4>
       {mine.length ? (
         <Reorder.Group axis="y" values={mine} onReorder={setMine} as="ul" className="queue__list">
           {mine.map((p, i) => (
@@ -91,12 +92,12 @@ export function QueueList({ onPick }: { onPick?: () => void }) {
           ))}
         </Reorder.Group>
       ) : (
-        <p className="muted queue__empty">{s.autoplay ? 'When your music ends, ASF keeps going with similar songs.' : 'Nothing queued. Use “⋯ → Add to queue” on any song.'}</p>
+        <p className="muted queue__empty">{s.autoplay ? t('player.queue.emptyAuto') : t('player.queue.emptyHint', { action: t('browse.menu.addQueue') })}</p>
       )}
       {auto.length > 0 && (
         <>
           <h4>
-            Autoplay <span className="muted">· similar songs</span>
+            {t('player.queue.autoplay')} <span className="muted">· {t('player.queue.similar')}</span>
           </h4>
           <ul>
             {auto.map((p) => (

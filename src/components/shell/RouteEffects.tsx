@@ -1,58 +1,60 @@
 import { Component, useEffect, useLayoutEffect, useRef, type ErrorInfo, type ReactNode } from 'react';
 import { genreById, isGenreId } from '../../catalog/genres';
+import { t } from '../../i18n';
 import { useMusic } from '../../music';
 import { useApp, type Route } from '../../store';
 
 const BRAND = 'ASF — Ayiti Sakap Fet';
 
 function titleFor(route: Route, m: ReturnType<typeof useMusic>): string {
+  const boost = t('common.nav.boost');
   switch (route.page) {
     case 'home':
-      return `${BRAND} · Music`;
+      return `${BRAND} · ${t('player.title.music')}`;
     case 'trending':
-      return route.genre && isGenreId(route.genre) ? `Trending ${genreById(route.genre).label}` : 'Trending';
+      return route.genre && isGenreId(route.genre) ? t('player.title.trendingGenre', { genre: genreById(route.genre).label }) : t('common.nav.trending');
     case 'charts':
-      return `Top ${route.kind === 'songs' ? 'Songs' : 'Albums'}`;
+      return t(route.kind === 'songs' ? 'player.title.topSongs' : 'player.title.topAlbums');
     case 'genres':
-      return 'Genres';
+      return t('common.nav.genres');
     case 'genre':
-      return isGenreId(route.id) ? genreById(route.id).label : 'Not found';
+      return isGenreId(route.id) ? genreById(route.id).label : t('player.title.notFound');
     case 'song': {
-      const t = m.track(route.id);
-      return t ? `${t.title} — ${m.artistNames(t)}` : 'Song not found';
+      const tr = m.track(route.id);
+      return tr ? `${tr.title} — ${m.artistNames(tr)}` : t('player.title.songNotFound');
     }
     case 'album': {
       const a = m.album(route.id);
-      return a ? `${a.title} — ${m.artist(a.artistId)?.name ?? ''}` : 'Album not found';
+      return a ? `${a.title} — ${m.artist(a.artistId)?.name ?? ''}` : t('player.title.albumNotFound');
     }
     case 'artist':
-      return m.artist(route.id)?.name ?? 'Artist not found';
+      return m.artist(route.id)?.name ?? t('player.title.artistNotFound');
     case 'playlist':
-      return m.playlist(route.id)?.title ?? 'Playlist not found';
+      return m.playlist(route.id)?.title ?? t('player.title.playlistNotFound');
     case 'library':
-      return 'Your library';
+      return t('common.nav.yourLibrary');
     case 'search':
-      return route.q ? `Search: ${route.q}` : 'Search';
+      return route.q ? t('player.title.search', { q: route.q }) : t('common.search.label');
     case 'upload':
-      return 'Upload music';
+      return t('common.nav.uploadMusic');
     case 'settings':
-      return 'Settings';
+      return t('common.nav.settings');
     case 'studio': {
       const a = route.artistId ? m.artist(route.artistId) : undefined;
-      return a ? `${a.name} · Artist Studio` : 'Artist Studio';
+      return a ? `${a.name} · ${t('common.nav.studio')}` : t('common.nav.studio');
     }
     case 'leaderboard':
-      return 'Boost Board';
+      return boost;
     case 'daily':
-      return 'Daily archive · Boost Board';
+      return `${t('player.title.daily')} · ${boost}`;
     case 'categories':
-      return 'Categories · Boost Board';
+      return `${t('player.title.categories')} · ${boost}`;
     case 'about':
-      return 'About';
+      return t('player.title.about');
     case 'rules':
-      return 'Rules & FAQ';
+      return t('player.title.rules');
     case 'notfound':
-      return 'Page not found';
+      return t('player.title.pageNotFound');
   }
 }
 
@@ -134,14 +136,14 @@ export class ErrorBoundary extends Component<{ resetKey: string; children: React
     if (!this.state.error) return this.props.children;
     return (
       <div className="crash" role="alert">
-        <h1>Something went wrong</h1>
-        <p>This page hit an unexpected error. Your music and library are safe.</p>
+        <h1>{t('player.crash.title')}</h1>
+        <p>{t('player.crash.body')}</p>
         <div className="row">
           <button className="btn-accent" onClick={() => this.setState({ error: null })}>
-            Try again
+            {t('common.action.tryAgain')}
           </button>
           <a className="btn-glass" href="#/">
-            Go to Discover
+            {t('player.crash.home')}
           </a>
         </div>
       </div>

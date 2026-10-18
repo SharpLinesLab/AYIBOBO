@@ -25,7 +25,7 @@ const ActivityFeed = lazy(() => import('./components/Sidebars').then((m) => ({ d
 function PageLoading() {
   return (
     <div className="page-loading" role="status" aria-live="polite">
-      <span className="spinner" aria-hidden /> <span className="sr-only">Loading…</span>
+      <span className="spinner" aria-hidden /> <span className="sr-only">{t('player.app.loading')}</span>
     </div>
   );
 }
@@ -34,7 +34,7 @@ import { Sidebar } from './components/shell/Sidebar';
 import { TopBar } from './components/shell/TopBar';
 import { SettingsPage } from './pages/Settings';
 import { PaletteHost } from './components/shell/PaletteHost';
-import { useLang } from './i18n';
+import { t, useLang } from './i18n';
 import { ShareHost } from './components/music/Share';
 import { ConnectionBanner } from './components/music/Offline';
 import { NowPlayingPanel, PlayerBar, usePanelOpen, type NpTab } from './components/shell/Player';
@@ -99,7 +99,7 @@ export function App() {
         setSnapshot(s);
         unsub = b.subscribe(setSnapshot);
       } catch (e) {
-        if (!cancelled) setLoadError((e as Error).message || 'Failed to load the leaderboard.');
+        if (!cancelled) setLoadError((e as Error).message || t('player.app.loadFailed'));
       }
     })();
     return () => {
@@ -112,7 +112,7 @@ export function App() {
     return (
       <div className="page">
         <div className="empty" style={{ marginTop: 80 }}>
-          <b>We couldn’t load the leaderboard</b>
+          <b>{t('player.app.loadError')}</b>
           {loadError}
         </div>
       </div>
@@ -178,7 +178,7 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
     const params = new URLSearchParams(window.location.search);
     const status = params.get('checkout');
     if (!status) return;
-    toast(status === 'success' ? 'Payment received — your rank updates as soon as Stripe confirms it.' : 'Checkout cancelled — nothing was charged.');
+    toast(t(status === 'success' ? 'player.app.paid' : 'player.app.cancelled'));
     params.delete('checkout');
     params.delete('session_id');
     const qs = params.toString();
@@ -319,13 +319,13 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
         <div className="lb">
           <CategoryBar />
           <div className="layout">
-            <aside className="sidebar sidebar--left" aria-label="Today">
+            <aside className="sidebar sidebar--left" aria-label={t('player.app.today')}>
               <TodayWidget />
             </aside>
             <div className="main">
               <LeaderboardHome />
             </div>
-            <aside className="sidebar sidebar--right" aria-label="Activity">
+            <aside className="sidebar sidebar--right" aria-label={t('player.app.activity')}>
               <ActivityFeed />
             </aside>
           </div>
@@ -346,7 +346,7 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
             document.getElementById('content')?.focus();
           }}
         >
-          Skip to content
+          {t('common.nav.skip')}
         </a>
         <div className={`app${hasPlayer ? ' has-player' : ''}${panelOpen && hasPlayer ? ' has-panel' : ''}`}>
           <Sidebar />
