@@ -2,6 +2,7 @@ import { useRef, useState, type PointerEvent } from 'react';
 import type { Track } from '../../catalog/types';
 import { fmtTime, useMusic, usePlayerState, usePosition } from '../../music';
 import { seek } from '../../player/engine';
+import { t } from '../../i18n';
 
 /**
  * Scrubbable waveform. For the current track it shows progress and seeks on click/drag; for any
@@ -39,7 +40,7 @@ export function Waveform({ track, context, height = 72 }: { track: Track; contex
       style={{ height }}
       role="slider"
       tabIndex={0}
-      aria-label={`Seek ${track.title}`}
+      aria-label={t('browse.wave.seek', { title: track.title })}
       aria-valuemin={0}
       aria-valuemax={Math.round(track.duration)}
       aria-valuenow={Math.round(progress * track.duration)}

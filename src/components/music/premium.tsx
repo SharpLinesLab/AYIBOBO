@@ -5,6 +5,7 @@ import { genreById } from '../../catalog/genres';
 import type { CoverSpec, Playlist, Track } from '../../catalog/types';
 import { relativeTime } from '../../lib/format';
 import { compact, useMusic } from '../../music';
+import { plural, t } from '../../i18n';
 import { Cover, LikeButton, PlayAll, RepostIcon } from './bits';
 import { Verified } from './Cards';
 import { ArtistLinks } from './TrackRow';
@@ -35,7 +36,7 @@ export function StickyBar({ watch, title, tracks, spec }: { watch: RefObject<HTM
   }, [watch]);
   return (
     <div className={`sticky-bar${show ? ' is-shown' : ''}`} style={{ ['--tint' as string]: pal[0] }} aria-hidden={!show} inert={!show}>
-      <PlayAll tracks={tracks} size="sm" label={`Play ${title}`} />
+      <PlayAll tracks={tracks} size="sm" label={t('common.action.playName', { name: title })} />
       <span className="sticky-bar__title">{title}</span>
     </div>
   );
@@ -43,10 +44,10 @@ export function StickyBar({ watch, title, tracks, spec }: { watch: RefObject<HTM
 
 function greeting(): string {
   const h = new Date().getHours();
-  if (h < 5) return 'Good night';
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (h < 5) return t('browse.greet.night');
+  if (h < 12) return t('browse.greet.morning');
+  if (h < 18) return t('browse.greet.afternoon');
+  return t('browse.greet.evening');
 }
 
 interface Pick {
@@ -70,7 +71,7 @@ export function QuickPicks({ onTint }: { onTint: (spec: CoverSpec | undefined) =
       }
     };
     const liked = m.tracksOf(m.library.likes);
-    if (liked.length) add({ key: 'liked', title: 'Liked Songs', href: '#/library/likes', spec: { template: 'type', palette: ['#1e1b4b', '#4338ca', '#a5b4fc'], seed: 4242, text: '♥' }, tracks: liked });
+    if (liked.length) add({ key: 'liked', title: t('common.nav.likes'), href: '#/library/likes', spec: { template: 'type', palette: ['#1e1b4b', '#4338ca', '#a5b4fc'], seed: 4242, text: '♥' }, tracks: liked });
     for (const id of m.library.recents) {
       const t = m.track(id);
       if (!t) continue;
@@ -97,7 +98,7 @@ export function QuickPicks({ onTint }: { onTint: (spec: CoverSpec | undefined) =
               <span className="qp__title">{p.title}</span>
             </a>
             <span className="qp__play">
-              <PlayAll tracks={p.tracks} size="sm" label={`Play ${p.title}`} />
+              <PlayAll tracks={p.tracks} size="sm" label={t('common.action.playName', { name: p.title })} />
             </span>
           </div>
         ))}
@@ -131,15 +132,15 @@ export function StreamCard({ track, context }: { track: Track; context: Track[] 
               {artist.verified && <Verified />}
             </a>
           ) : (
-            <span className="stream__poster">{m.library.displayName || 'You'}</span>
+            <span className="stream__poster">{m.library.displayName || t('common.word.you')}</span>
           )}
-          <span className="muted">posted a track · {relativeTime(track.releasedAt, m.now)}</span>
+          <span className="muted">{t('browse.stream.posted', { when: relativeTime(track.releasedAt, m.now) })}</span>
           <a className="tag stream__tag" href={`#/genres/${track.genre}`}>
             #{genreById(track.genre).label.toLowerCase().replace(/\s+/g, '')}
           </a>
         </div>
         <div className="stream__head">
-          <PlayAll tracks={[track, ...context.filter((t) => t.id !== track.id)]} size="md" label={`Play ${track.title}`} />
+          <PlayAll tracks={[track, ...context.filter((t) => t.id !== track.id)]} size="md" label={t('common.action.playName', { name: track.title })} />
           <div className="stream__titles">
             <a href={`#/song/${track.id}`} className="stream__title">
               {track.title}
@@ -153,10 +154,10 @@ export function StreamCard({ track, context }: { track: Track; context: Track[] 
         <div className="stream__actions">
           <LikeButton id={track.id} withLabel />
           <button className={`icon-toggle icon-toggle--label${reposted ? ' is-on' : ''}`} onClick={() => m.toggleRepost(track.id)} aria-pressed={reposted}>
-            <RepostIcon /> <span>{reposted ? 'Reposted' : 'Repost'}</span>
+            <RepostIcon /> <span>{reposted ? t('common.action.reposted') : t('common.action.repost')}</span>
           </button>
-          <span className="stream__stat">▶ {compact(plays)}</span>
-          <a className="stream__stat" href={`#/song/${track.id}`}>
+          <span className="stream__stat" title={plural('common.count.plays', plays)}>▶ {compact(plays)}</span>
+          <a className="stream__stat" href={`#/song/${track.id}`} aria-label={plural('common.count.comments', comments)}>
             💬 {comments}
           </a>
         </div>

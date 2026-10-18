@@ -1,6 +1,7 @@
 import { GENRES, genreById } from './genres';
 import type { Artist, GenreId, Playlist, Track } from './types';
 import { hashString, mulberry32 } from '../lib/metadata';
+import { t } from '../i18n';
 
 /**
  * Personal mixes ("ASF Mix 1…6"): one per genre you listen to most, falling back to the most
@@ -33,9 +34,9 @@ export function createMixes(tracks: Track[], artists: Artist[], likedIds: string
     const genre = genreById(g);
     return {
       id: `mix-${g}`,
-      title: `ASF Mix ${i + 1}`,
-      curator: 'Made for you',
-      description: `${genre.label} — ${names.slice(0, 2).join(', ')}${names.length > 2 ? ' and more' : ''}`,
+      title: t('browse.mix.title', { n: i + 1 }),
+      curator: t('browse.mix.curator'),
+      description: t(names.length > 2 ? 'browse.mix.descMore' : 'browse.mix.desc', { genre: genre.label, names: names.slice(0, 2).join(', ') }),
       trackIds: ids,
       cover: {
         template: 'mix',

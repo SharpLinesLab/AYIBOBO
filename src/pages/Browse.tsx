@@ -4,15 +4,16 @@ import { WINDOW_DAYS, playsInWindow, trackChart, trending, type ChartWindow } fr
 import { coverUrl } from '../catalog/covers';
 import { PageTint } from '../components/music/premium';
 import { compact, useMusic } from '../music';
+import { plural, t, type Key } from '../i18n';
 import { Cover, PlayAll, Shelf } from '../components/music/bits';
 import { AlbumCard, ArtistCard, PlaylistCard } from '../components/music/Cards';
 import { TrackList, TrackListHeader, TrackRow } from '../components/music/TrackRow';
 
 function GenreChips({ base, active }: { base: string; active?: string }) {
   return (
-    <nav className="chips" aria-label="Filter">
+    <nav className="chips" aria-label={t('browse.filter')}>
       <a href={base} className={`chip2${!active ? ' is-active' : ''}`} aria-current={!active ? 'page' : undefined}>
-        All genres
+        {t('browse.allGenres')}
       </a>
       {GENRES.map((g) => (
         <a key={g.id} href={`${base}/${g.id}`} className={`chip2${active === g.id ? ' is-active' : ''}`} aria-current={active === g.id ? 'page' : undefined}>
@@ -40,10 +41,10 @@ export function TrendingPage({ genre }: { genre?: string }) {
   const list = useMemo(() => trending(m.catalog.tracks.filter((t) => !t.uploaded && (!g || t.genre === g)), m.now).slice(0, 50), [m.catalog.tracks, m.now, g]);
   return (
     <div className="page-music">
-      <PageHead kicker="Trending" title={g ? `Trending in ${genreById(g).label}` : 'Trending on ASF'} sub="Songs gaining the most plays right now, weighted by week-over-week growth.">
+      <PageHead kicker={t('common.nav.trending')} title={g ? t('browse.trending.titleGenre', { genre: genreById(g).label }) : t('browse.trending.title')} sub={t('browse.trending.sub')}>
         <div className="phead__actions">
-          <PlayAll tracks={list} label="Play trending" />
-          <span className="muted">{list.length} songs</span>
+          <PlayAll tracks={list} label={t('browse.trending.playAll')} />
+          <span className="muted">{plural('common.count.songs', list.length)}</span>
         </div>
       </PageHead>
       <GenreChips base="#/trending" active={g} />
@@ -52,11 +53,11 @@ export function TrendingPage({ genre }: { genre?: string }) {
   );
 }
 
-const WINDOWS: { id: ChartWindow; label: string }[] = [
-  { id: 'day', label: 'Today' },
-  { id: 'week', label: 'This week' },
-  { id: 'month', label: 'This month' },
-  { id: 'year', label: 'This year' },
+const WINDOWS: { id: ChartWindow; label: Key }[] = [
+  { id: 'day', label: 'browse.window.day' },
+  { id: 'week', label: 'browse.window.week' },
+  { id: 'month', label: 'browse.window.month' },
+  { id: 'year', label: 'browse.window.year' },
 ];
 
 export function ChartsPage({ kind, window }: { kind: 'songs' | 'albums'; window: ChartWindow }) {
@@ -72,23 +73,23 @@ export function ChartsPage({ kind, window }: { kind: 'songs' | 'albums'; window:
   const tracks = rows.map((r) => r.track);
   return (
     <div className="page-music">
-      <PageHead kicker="Top charts" title={kind === 'songs' ? 'Top Songs' : 'Top Albums'} sub="Updated continuously. Arrows show movement versus the previous period.">
+      <PageHead kicker={t('browse.charts.kicker')} title={kind === 'songs' ? t('browse.charts.songsTitle') : t('browse.charts.albumsTitle')} sub={t('browse.charts.sub')}>
         <div className="phead__actions">
-          {kind === 'songs' && <PlayAll tracks={tracks.slice(0, 50)} label="Play the chart" />}
+          {kind === 'songs' && <PlayAll tracks={tracks.slice(0, 50)} label={t('browse.charts.playAll')} />}
           <div className="segmented">
             <a className={kind === 'songs' ? 'is-active' : ''} href={`#/charts/songs/${window}`}>
-              Songs
+              {t('browse.charts.songs')}
             </a>
             <a className={kind === 'albums' ? 'is-active' : ''} href={`#/charts/albums/${window}`}>
-              Albums
+              {t('browse.charts.albums')}
             </a>
           </div>
         </div>
       </PageHead>
-      <nav className="chips" aria-label="Filter">
+      <nav className="chips" aria-label={t('browse.filter')}>
         {WINDOWS.map((w) => (
           <a key={w.id} href={`#/charts/${kind}/${w.id}`} className={`chip2${window === w.id ? ' is-active' : ''}`} aria-current={window === w.id ? 'page' : undefined}>
-            {w.label}
+            {t(w.label)}
           </a>
         ))}
       </nav>
@@ -114,11 +115,11 @@ export function ChartsPage({ kind, window }: { kind: 'songs' | 'albums'; window:
                     {a.title}
                   </a>
                   <span className="muted">
-                    {artist && <a href={`#/artist/${artist.id}`}>{artist.name}</a>} · {a.trackIds.length} songs
+                    {artist && <a href={`#/artist/${artist.id}`}>{artist.name}</a>} · {plural('common.count.songs', a.trackIds.length)}
                   </span>
                 </span>
-                <span className="num muted">{compact(plays)} plays</span>
-                <PlayAll tracks={m.tracksOf(a.trackIds)} size="sm" label={`Play ${a.title}`} />
+                <span className="num muted">{plural('common.count.plays', plays, { n: compact(plays) })}</span>
+                <PlayAll tracks={m.tracksOf(a.trackIds)} size="sm" label={t('common.action.playName', { name: a.title })} />
               </li>
             );
           })}
@@ -132,7 +133,7 @@ export function GenresPage() {
   const m = useMusic();
   return (
     <div className="page-music">
-      <PageHead kicker="Browse" title="Genres & moods" sub="From kompa to drill — dive into the sounds of Haiti and the diaspora." />
+      <PageHead kicker={t('common.nav.browse')} title={t('browse.genres.title')} sub={t('browse.genres.sub')} />
       <div className="genre-grid">
         {GENRES.map((g) => {
           const artists = m.catalog.artists.filter((a) => a.genres.includes(g.id)).sort((a, b) => b.followers - a.followers).slice(0, 3);
@@ -167,41 +168,41 @@ export function GenrePage({ id }: { id: string }) {
       <PageTint color={g.colors[0]} />
       <header className="ghead" style={{ ['--g1' as string]: g.colors[0], ['--g2' as string]: g.colors[1] }}>
         {artists[0] && <div className="ghead__img" style={{ backgroundImage: `url("${coverUrl(artists[0].banner)}")` }} />}
-        <span className="phead__kicker">Genre</span>
+        <span className="phead__kicker">{t('browse.genre.kicker')}</span>
         <h1>{g.label}</h1>
         <p>{g.blurb}</p>
         <div className="phead__actions">
-          <PlayAll tracks={tracks.slice(0, 30)} label={`Play ${g.label}`} />
+          <PlayAll tracks={tracks.slice(0, 30)} label={t('common.action.playName', { name: g.label })} />
           <span>
-            {tracks.length} songs · {artists.length} artists
+            {plural('common.count.songs', tracks.length)} · {plural('browse.count.artists', artists.length)}
           </span>
         </div>
       </header>
       <section>
         <header className="shelf__head">
           <div>
-            <h2>Top {g.label} songs</h2>
+            <h2>{t('browse.genre.top', { genre: g.label })}</h2>
           </div>
           <a className="shelf__all" href={`#/trending/${id}`}>
-            See all
+            {t('common.action.viewAll')}
           </a>
         </header>
         <TrackList tracks={tracks.slice(0, 10)} showAlbum />
       </section>
       {albums.length > 0 && (
-        <Shelf title="Albums & EPs">
+        <Shelf title={t('browse.genre.albums')}>
           {albums.map((a) => (
             <AlbumCard key={a.id} album={a} />
           ))}
         </Shelf>
       )}
-      <Shelf title="Artists">
+      <Shelf title={t('browse.genre.artists')}>
         {artists.map((a) => (
           <ArtistCard key={a.id} artist={a} />
         ))}
       </Shelf>
       {playlists.length > 0 && (
-        <Shelf title="Playlists">
+        <Shelf title={t('common.nav.playlists')}>
           {playlists.map((p) => (
             <PlaylistCard key={p.id} playlist={p} />
           ))}
@@ -211,14 +212,23 @@ export function GenrePage({ id }: { id: string }) {
   );
 }
 
+const NOT_FOUND: Record<string, Key> = {
+  page: 'browse.notFound.page',
+  song: 'browse.notFound.song',
+  album: 'browse.notFound.album',
+  playlist: 'browse.notFound.playlist',
+  artist: 'browse.notFound.artist',
+  genre: 'browse.notFound.genre',
+};
+
 export function NotFound({ what }: { what: string }) {
   return (
     <div className="page-music">
       <div className="empty-state">
-        <h1>We couldn’t find that {what}</h1>
-        <p>It may have been removed, or the link is wrong.</p>
+        <h1>{t(NOT_FOUND[what] ?? 'browse.notFound.page')}</h1>
+        <p>{t('browse.notFound.body')}</p>
         <a className="btn-accent" href="#/">
-          Back to Discover
+          {t('browse.notFound.back')}
         </a>
       </div>
     </div>

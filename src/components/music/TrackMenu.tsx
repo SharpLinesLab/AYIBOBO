@@ -5,6 +5,7 @@ import type { Track } from '../../catalog/types';
 import { useMusic } from '../../music';
 import { addToQueue, playNext } from '../../player/engine';
 import { useApp } from '../../store';
+import { t } from '../../i18n';
 
 export function MoreIcon() {
   return (
@@ -67,7 +68,7 @@ export function TrackMenu({ track, playlistId }: { track: Track; playlistId?: st
         ref={btn}
         type="button"
         className="icon-toggle"
-        aria-label={`More options for ${track.title}`}
+        aria-label={t('browse.menu.more', { title: track.title })}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={(e) => {
@@ -83,23 +84,23 @@ export function TrackMenu({ track, playlistId }: { track: Track; playlistId?: st
           <div className="menu" role="menu" ref={menu} style={{ top: pos.top, left: pos.left }} onClick={(e) => e.stopPropagation()}>
             {sub === 'main' ? (
               <>
-                <button role="menuitem" onClick={() => (playNext(m.toPlayable(track)), done('Playing next'))}>
-                  Play next
+                <button role="menuitem" onClick={() => (playNext(m.toPlayable(track)), done(t('browse.menu.playingNext')))}>
+                  {t('browse.menu.playNext')}
                 </button>
-                <button role="menuitem" onClick={() => (addToQueue(m.toPlayable(track)), done('Added to queue'))}>
-                  Add to queue
+                <button role="menuitem" onClick={() => (addToQueue(m.toPlayable(track)), done(t('browse.menu.addedQueue')))}>
+                  {t('browse.menu.addQueue')}
                 </button>
                 <button role="menuitem" onClick={() => setSub('playlists')}>
-                  Add to playlist <span aria-hidden>›</span>
+                  {t('browse.menu.addPlaylist')} <span aria-hidden>›</span>
                 </button>
                 {playlistId && (
-                  <button role="menuitem" onClick={() => (m.removeFromPlaylist(playlistId, track.id), done('Removed from playlist'))}>
-                    Remove from this playlist
+                  <button role="menuitem" onClick={() => (m.removeFromPlaylist(playlistId, track.id), done(t('browse.menu.removed')))}>
+                    {t('browse.menu.removeFromPlaylist')}
                   </button>
                 )}
                 <hr />
-                <button role="menuitem" onClick={() => (m.toggleRepost(track.id), done(reposted ? 'Repost removed' : 'Reposted to your profile'))}>
-                  {reposted ? 'Undo repost' : 'Repost'}
+                <button role="menuitem" onClick={() => (m.toggleRepost(track.id), done(reposted ? t('browse.menu.repostRemoved') : t('browse.menu.reposted')))}>
+                  {reposted ? t('browse.menu.undoRepost') : t('common.action.repost')}
                 </button>
                 <button
                   role="menuitem"
@@ -108,47 +109,47 @@ export function TrackMenu({ track, playlistId }: { track: Track; playlistId?: st
                     openShare({ kind: 'Song', title: track.title, subtitle: m.artistNames(track), cover: track.cover, href: `#/song/${track.id}`, trackId: track.id, peaks: m.peaks(track) });
                   }}
                 >
-                  Share
+                  {t('common.action.share')}
                 </button>
                 <hr />
                 {m.artist(track.artistId) && (
                   <button role="menuitem" onClick={() => (setOpen(false), navigate(`#/artist/${track.artistId}`))}>
-                    Go to artist
+                    {t('browse.menu.goArtist')}
                   </button>
                 )}
                 {track.albumId && (
                   <button role="menuitem" onClick={() => (setOpen(false), navigate(`#/album/${track.albumId}`))}>
-                    Go to album
+                    {t('browse.menu.goAlbum')}
                   </button>
                 )}
                 <button role="menuitem" onClick={() => (setOpen(false), navigate(`#/song/${track.id}`))}>
-                  Song details
+                  {t('browse.menu.details')}
                 </button>
               </>
             ) : (
               <>
                 <button role="menuitem" className="menu__back" onClick={() => setSub('main')}>
-                  ‹ Back
+                  ‹ {t('common.nav.back')}
                 </button>
                 <form
                   className="menu__new"
                   onSubmit={(e) => {
                     e.preventDefault();
-                    const pl = m.createPlaylist(newName || 'My playlist', [track.id]);
+                    const pl = m.createPlaylist(newName || t('browse.menu.defaultName'), [track.id]);
                     setNewName('');
-                    done(`Created “${pl.title}”`);
+                    done(t('browse.menu.created', { title: pl.title }));
                   }}
                 >
-                  <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="New playlist name" aria-label="New playlist name" autoFocus />
-                  <button type="submit">Create</button>
+                  <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={t('browse.menu.newName')} aria-label={t('browse.menu.newName')} autoFocus />
+                  <button type="submit">{t('browse.menu.create')}</button>
                 </form>
-                {owned.length === 0 && <p className="menu__empty">No playlists yet.</p>}
+                {owned.length === 0 && <p className="menu__empty">{t('browse.menu.noPlaylists')}</p>}
                 {owned.map((p) => (
                   <button
                     role="menuitem"
                     key={p.id}
                     disabled={p.trackIds.includes(track.id)}
-                    onClick={() => (m.addToPlaylist(p.id, track.id), done(`Added to “${p.title}”`))}
+                    onClick={() => (m.addToPlaylist(p.id, track.id), done(t('browse.menu.added', { title: p.title })))}
                   >
                     {p.title}
                     {p.trackIds.includes(track.id) && <span className="menu__check">✓</span>}

@@ -8,6 +8,7 @@ import { compact, useMusic, usePlayerState } from '../music';
 import { pause, resume } from '../player/engine';
 import { useApp } from '../store';
 import { usd } from '../lib/format';
+import { plural, t } from '../i18n';
 import { PauseIcon, PlayIcon } from '../components/icons';
 import { Cover, HeartIcon, Shelf } from '../components/music/bits';
 import { AlbumCard, ArtistCard, GenreTile, PlaylistCard, PosterCard, TrackCard, Verified } from '../components/music/Cards';
@@ -29,7 +30,7 @@ function HeroCarousel({ items }: { items: Feature[] }) {
   }, [i, hold, n]);
   if (!n) return null;
   return (
-    <section className="hero2" onMouseEnter={() => setHold(true)} onMouseLeave={() => setHold(false)} aria-roledescription="carousel" aria-label="Featured releases">
+    <section className="hero2" onMouseEnter={() => setHold(true)} onMouseLeave={() => setHold(false)} aria-roledescription={t('browse.hero.carousel')} aria-label={t('browse.hero.label')}>
       {items.map((f, k) => {
         const active = k === i;
         const cover = f.kind === 'album' ? f.album.cover : f.track.cover;
@@ -49,7 +50,7 @@ function HeroCarousel({ items }: { items: Feature[] }) {
             </a>
             <div className="hero2__body">
               <span className="hero2__kicker">
-                {f.kind === 'album' ? (f.album.type === 'ep' ? 'New EP' : f.album.type === 'mixtape' ? 'New mixtape' : 'New album') : 'New single'}
+                {t(f.kind === 'album' ? (f.album.type === 'ep' ? 'browse.hero.newEp' : f.album.type === 'mixtape' ? 'browse.hero.newMixtape' : 'browse.hero.newAlbum') : 'browse.hero.newSingle')}
               </span>
               <h1 className="hero2__title">
                 <a href={href} tabIndex={active ? 0 : -1}>
@@ -63,7 +64,7 @@ function HeroCarousel({ items }: { items: Feature[] }) {
                   {artist.verified && <Verified />}
                 </a>
               )}
-              <p className="hero2__desc">{f.kind === 'album' ? f.album.description : `${f.track.description} ${compact(m.totalPlays(f.track))} plays so far.`}</p>
+              <p className="hero2__desc">{f.kind === 'album' ? f.album.description : `${f.track.description} ${plural('browse.hero.playsSoFar', m.totalPlays(f.track), { n: compact(m.totalPlays(f.track)) })}`}</p>
               <div className="hero2__actions">
                 <button
                   className="btn-accent btn-lg"
@@ -71,14 +72,14 @@ function HeroCarousel({ items }: { items: Feature[] }) {
                   onClick={() => (isCur ? (s.playing ? pause() : resume()) : m.play(f.tracks, 0))}
                 >
                   {playing ? <PauseIcon width={14} height={14} /> : <PlayIcon width={14} height={14} />}
-                  {playing ? 'Pause' : 'Play now'}
+                  {playing ? t('common.action.pause') : t('browse.hero.playNow')}
                 </button>
                 <button
                   className={`btn-glass btn-lg${saved ? ' is-on' : ''}`}
                   tabIndex={active ? 0 : -1}
                   onClick={() => (f.kind === 'album' ? m.toggleLikeAlbum(f.album.id) : m.toggleLike(f.track.id))}
                 >
-                  <HeartIcon filled={saved} /> {saved ? 'Saved' : 'Save'}
+                  <HeartIcon filled={saved} /> {saved ? t('common.action.saved') : t('common.action.save')}
                 </button>
               </div>
             </div>
@@ -87,7 +88,7 @@ function HeroCarousel({ items }: { items: Feature[] }) {
       })}
       <div className="hero2__dots" role="tablist">
         {items.map((_, k) => (
-          <button key={k} role="tab" aria-selected={k === i} aria-label={`Slide ${k + 1}`} className={k === i ? 'is-active' : ''} onClick={() => setI(k)}>
+          <button key={k} role="tab" aria-selected={k === i} aria-label={t('browse.hero.slide', { n: k + 1 })} className={k === i ? 'is-active' : ''} onClick={() => setI(k)}>
             {k === i && !hold && <span key={i} />}
           </button>
         ))}
@@ -104,10 +105,10 @@ function BoostSpotlight() {
     <section className="boost-spot">
       <div className="boost-spot__copy">
         <span className="badge-gold">Boost Board</span>
-        <h2>Rank is strictly what you pay.</h2>
-        <p>No algorithm, no gatekeepers. Put your site, release or @handle on the public board — #1 costs the current #1 plus $5.</p>
+        <h2>{t('browse.boost.title')}</h2>
+        <p>{t('browse.boost.body', { amount: usd(5) })}</p>
         <a className="btn-accent" href="#/leaderboard">
-          Claim a rank
+          {t('browse.boost.cta')}
         </a>
       </div>
       <ol className="boost-spot__list">
@@ -174,27 +175,27 @@ export function DiscoverPage() {
 
       <HeroCarousel items={data.features} />
 
-      <nav className="genre-strip" aria-label="Genres">
+      <nav className="genre-strip" aria-label={t('common.nav.genres')}>
         {GENRES.map((g) => (
           <GenreTile key={g.id} id={g.id} />
         ))}
       </nav>
 
       {recent.length > 0 && (
-        <Shelf title="Jump back in" subtitle="Recently played" href="#/library/recent">
+        <Shelf title={t('browse.discover.jumpBack')} subtitle={t('common.nav.recent')} href="#/library/recent">
           {recent.map((t) => (
             <TrackCard key={t.id} track={t} context={recent} />
           ))}
         </Shelf>
       )}
 
-      <Shelf title="Trending now" subtitle="The fastest-rising songs on ASF this week" href="#/trending">
+      <Shelf title={t('browse.discover.trending')} subtitle={t('browse.discover.trendingSub')} href="#/trending">
         {data.trend.map((t, i) => (
           <TrackCard key={t.id} track={t} context={data.trend} rank={i + 1} />
         ))}
       </Shelf>
 
-      <Shelf title="Artist spotlight" subtitle="The voices defining the sound right now">
+      <Shelf title={t('browse.discover.spotlight')} subtitle={t('browse.discover.spotlightSub')}>
         {data.spotlight.map((a) => (
           <PosterCard key={a.id} artist={a} />
         ))}
@@ -204,11 +205,11 @@ export function DiscoverPage() {
         <div className="split__main">
           <header className="shelf__head">
             <div>
-              <h2>Top songs this week</h2>
-              <p>Ranked by plays over the last 7 days</p>
+              <h2>{t('browse.discover.topSongs')}</h2>
+              <p>{t('browse.discover.topSongsSub')}</p>
             </div>
             <a className="shelf__all" href="#/charts/songs/week">
-              Full chart
+              {t('browse.discover.fullChart')}
             </a>
           </header>
           <div className="tlist tlist--two" role="list">
@@ -219,19 +220,19 @@ export function DiscoverPage() {
         </div>
       </section>
 
-      <Shelf title="New releases" subtitle="Fresh albums, EPs and singles">
+      <Shelf title={t('browse.discover.newReleases')} subtitle={t('browse.discover.newReleasesSub')}>
         {data.releases.map((r) => (r.kind === 'album' ? <AlbumCard key={r.a.id} album={r.a} /> : <TrackCard key={r.t.id} track={r.t} />))}
       </Shelf>
 
       {forYou.length > 0 && (
-        <Shelf title="Made for you" subtitle="Based on the songs you’ve liked">
+        <Shelf title={t('browse.discover.forYou')} subtitle={t('browse.discover.forYouSub')}>
           {forYou.map((t) => (
             <TrackCard key={t.id} track={t} context={forYou} />
           ))}
         </Shelf>
       )}
 
-      <Shelf title="Your mixes" subtitle="Made for you — updated as you like songs">
+      <Shelf title={t('browse.discover.mixes')} subtitle={t('browse.discover.mixesSub')}>
         {mixes.map((p) => (
           <PlaylistCard key={p.id} playlist={p} />
         ))}
@@ -240,8 +241,8 @@ export function DiscoverPage() {
       <section aria-labelledby="stream-title">
         <header className="shelf__head">
           <div>
-            <h2 id="stream-title">Fresh from the community</h2>
-            <p>New drops from artists on ASF — tap the waveform to jump in</p>
+            <h2 id="stream-title">{t('browse.discover.community')}</h2>
+            <p>{t('browse.discover.communitySub')}</p>
           </div>
         </header>
         <div className="stream-list">
@@ -251,7 +252,7 @@ export function DiscoverPage() {
         </div>
       </section>
 
-      <Shelf title="Featured playlists" subtitle="Curated by ASF Editorial">
+      <Shelf title={t('browse.discover.featured')} subtitle={t('browse.discover.featuredSub')}>
         {catalog.playlists
           .filter((p) => p.editorial)
           .map((p) => (
@@ -261,7 +262,7 @@ export function DiscoverPage() {
 
       <BoostSpotlight />
 
-      <Shelf title="Artists to watch" subtitle="Rising voices across the diaspora">
+      <Shelf title={t('browse.discover.toWatch')} subtitle={t('browse.discover.toWatchSub')}>
         {data.rising.map((a) => (
           <ArtistCard key={a.id} artist={a} />
         ))}

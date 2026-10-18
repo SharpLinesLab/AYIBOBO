@@ -1,6 +1,7 @@
 import { genreById } from '../../catalog/genres';
 import type { Album, Artist, Playlist, Track } from '../../catalog/types';
 import { compact, useMusic } from '../../music';
+import { plural, t } from '../../i18n';
 import { Cover, ExplicitBadge, PlayAll, useIsCurrent } from './bits';
 import { ArtistLinks } from './TrackRow';
 
@@ -24,7 +25,7 @@ export function TrackCard({ track, context, rank }: { track: Track; context?: Tr
       <span className="mcard__sub">
         <ArtistLinks track={track} />
       </span>
-      <span className="mcard__meta">{compact(m.totalPlays(track))} plays</span>
+      <span className="mcard__meta">{plural('common.count.plays', m.totalPlays(track), { n: compact(m.totalPlays(track)) })}</span>
     </div>
   );
 }
@@ -37,7 +38,7 @@ function PlayAllSingle({ track, context }: { track: Track; context?: Track[] }) 
     <button
       type="button"
       className={`play-btn play-btn--md${playing ? ' is-playing' : ''}`}
-      aria-label={playing ? `Pause ${track.title}` : `Play ${track.title}`}
+      aria-label={t(playing ? 'common.action.pauseName' : 'common.action.playName', { name: track.title })}
       onClick={(e) => {
         e.stopPropagation();
         m.toggle(track, context);
@@ -69,14 +70,14 @@ export function AlbumCard({ album }: { album: Album }) {
         <Cover spec={album.cover} />
       </a>
       <span className="mcard__play">
-        <PlayAll tracks={tracks} size="md" label={`Play ${album.title}`} />
+        <PlayAll tracks={tracks} size="md" label={t('common.action.playName', { name: album.title })} />
       </span>
       <a className="mcard__title" href={`#/album/${album.id}`}>
         {album.title}
       </a>
       <span className="mcard__sub">{artist && <a href={`#/artist/${artist.id}`}>{artist.name}</a>}</span>
       <span className="mcard__meta">
-        {album.type === 'ep' ? 'EP' : album.type === 'mixtape' ? 'Mixtape' : 'Album'} · {new Date(album.releasedAt).getFullYear()}
+        {t(album.type === 'ep' ? 'common.kind.ep' : album.type === 'mixtape' ? 'common.kind.mixtape' : 'common.kind.album')} · {new Date(album.releasedAt).getFullYear()}
       </span>
     </div>
   );
@@ -92,13 +93,13 @@ export function PlaylistCard({ playlist }: { playlist: Playlist }) {
         <Cover spec={playlist.cover} />
       </a>
       <span className="mcard__play">
-        <PlayAll tracks={tracks} size="md" label={`Play ${playlist.title}`} />
+        <PlayAll tracks={tracks} size="md" label={t('common.action.playName', { name: playlist.title })} />
       </span>
       <a className="mcard__title" href={`#/playlist/${playlist.id}`}>
         {playlist.title}
       </a>
       <span className="mcard__sub">{playlist.id.startsWith('mix-') ? playlist.description : playlist.curator}</span>
-      <span className="mcard__meta">{playlist.trackIds.length} songs</span>
+      <span className="mcard__meta">{plural('common.count.songs', playlist.trackIds.length)}</span>
     </div>
   );
 }
@@ -123,9 +124,9 @@ export function ArtistCard({ artist }: { artist: Artist }) {
         {artist.name}
         {artist.verified && <Verified />}
       </a>
-      <span className="mcard__meta">{compact(m.followerCount(artist))} followers</span>
+      <span className="mcard__meta">{plural('common.count.followers', m.followerCount(artist), { n: compact(m.followerCount(artist)) })}</span>
       <button type="button" className={`follow-btn${following ? ' is-on' : ''}`} onClick={() => m.toggleFollow(artist.id)}>
-        {following ? 'Following' : 'Follow'}
+        {following ? t('common.action.following') : t('common.action.follow')}
       </button>
     </div>
   );
@@ -133,7 +134,7 @@ export function ArtistCard({ artist }: { artist: Artist }) {
 
 export function Verified() {
   return (
-    <svg className="verified" viewBox="0 0 24 24" width="15" height="15" aria-label="Verified" role="img">
+    <svg className="verified" viewBox="0 0 24 24" width="15" height="15" aria-label={t('common.word.verified')} role="img">
       <path
         fill="currentColor"
         d="M12 1.5l2.4 1.8 3-.2.9 2.9 2.5 1.7-.9 2.9.9 2.9-2.5 1.7-.9 2.9-3-.2L12 22.5l-2.4-1.8-3 .2-.9-2.9-2.5-1.7.9-2.9-.9-2.9 2.5-1.7.9-2.9 3 .2z"
@@ -169,13 +170,13 @@ export function PosterCard({ artist }: { artist: Artist }) {
         <span className="poster__text">
           <span className="poster__kicker">{genreById(artist.genres[0]).label} · {artist.location.split(',')[0]}</span>
           <span className="poster__name">{artist.name}</span>
-          <span className="poster__meta">{compact(m.followerCount(artist))} followers</span>
+          <span className="poster__meta">{plural('common.count.followers', m.followerCount(artist), { n: compact(m.followerCount(artist)) })}</span>
         </span>
       </a>
       <span className="poster__actions">
-        <PlayAll tracks={top} size="sm" label={`Play ${artist.name}`} />
+        <PlayAll tracks={top} size="sm" label={t('common.action.playName', { name: artist.name })} />
         <button type="button" className={`follow-btn${following ? ' is-on' : ''}`} onClick={() => m.toggleFollow(artist.id)}>
-          {following ? 'Following' : 'Follow'}
+          {following ? t('common.action.following') : t('common.action.follow')}
         </button>
       </span>
     </div>

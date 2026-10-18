@@ -3,6 +3,7 @@ import { generatedCoverUrl } from '../../catalog/covers';
 import type { CoverSpec, Track } from '../../catalog/types';
 import { useMusic, usePlayerState } from '../../music';
 import { pause, resume } from '../../player/engine';
+import { t } from '../../i18n';
 import { ChevronLeft, ChevronRight, PauseIcon, PlayIcon } from '../icons';
 
 export function Cover({ spec, size, round, className = '', alt = '' }: { spec: CoverSpec; size?: number; round?: boolean; className?: string; alt?: string }) {
@@ -53,7 +54,7 @@ export function PlayAll({ tracks, size = 'lg', label }: { tracks: Track[]; size?
     <button
       type="button"
       className={`play-btn play-btn--${size}${playing ? ' is-playing' : ''}`}
-      aria-label={playing ? 'Pause' : label ?? 'Play'}
+      aria-label={playing ? t('common.action.pause') : label ?? t('common.action.play')}
       disabled={!tracks.length}
       onClick={(e) => {
         e.preventDefault();
@@ -95,7 +96,7 @@ export function LikeButton({ id, withLabel }: { id: string; withLabel?: boolean 
       type="button"
       className={`icon-toggle${liked ? ' is-on' : ''}${withLabel ? ' icon-toggle--label' : ''}`}
       aria-pressed={liked}
-      aria-label={liked ? 'Unlike' : 'Like'}
+      aria-label={liked ? t('browse.unlike') : t('common.action.like')}
       onClick={(e) => {
         e.stopPropagation();
         toggleLike(id);
@@ -105,14 +106,14 @@ export function LikeButton({ id, withLabel }: { id: string; withLabel?: boolean 
       <span key={pop} className={pop ? 'heart-pop' : ''}>
         <HeartIcon filled={liked} />
       </span>
-      {withLabel && <span>{liked ? 'Liked' : 'Like'}</span>}
+      {withLabel && <span>{liked ? t('common.action.liked') : t('common.action.like')}</span>}
     </button>
   );
 }
 
 export function ExplicitBadge() {
   return (
-    <span className="explicit" title="Explicit" aria-label="Explicit">
+    <span className="explicit" title={t('common.word.explicit')} aria-label={t('common.word.explicit')}>
       E
     </span>
   );
@@ -143,13 +144,13 @@ export function Shelf({ title, subtitle, href, children }: { title: string; subt
         <div className="shelf__nav">
           {href && (
             <a className="shelf__all" href={href}>
-              View all
+              {t('common.action.viewAll')}
             </a>
           )}
-          <button className="round-btn" disabled={edges.start} onClick={() => page(-1)} aria-label={`Scroll ${title} left`}>
+          <button className="round-btn" disabled={edges.start} onClick={() => page(-1)} aria-label={t('browse.shelf.scrollLeft', { title })}>
             <ChevronLeft />
           </button>
-          <button className="round-btn" disabled={edges.end} onClick={() => page(1)} aria-label={`Scroll ${title} right`}>
+          <button className="round-btn" disabled={edges.end} onClick={() => page(1)} aria-label={t('browse.shelf.scrollRight', { title })}>
             <ChevronRight />
           </button>
         </div>
