@@ -50,6 +50,31 @@ function sanitizeDraft(raw: unknown, target: NormalizedTarget): ListingDraft | n
   return { title, tagline: str(d.tagline, 80), description: str(d.description, 400), category: d.category, artwork, preview };
 }
 
+/** Most recent Stripe session ids kept for webhook de-duplication. */
+const MAX_PROCESSED = 10_000;
+/** Visitors who haven't pinged for this long are dropped from presence. */
+const PRESENCE_TTL_MS = 5 * 60_000;
+
+/**
+ * Content-Security-Policy. No inline scripts (the theme bootstrap is /theme-init.js); covers and
+ * uploads use data:/blob: URLs and real artwork may come from any https: host.
+ */
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "img-src 'self' data: blob: https:",
+  "media-src 'self' data: blob: https:",
+  "connect-src 'self'",
+  "worker-src 'self'",
+  "manifest-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join('; ');
+
 /**
  * Minimal fixed-window rate limiter keyed by IP + bucket. RATE_LIMIT_MULTIPLIER scales every limit
  * (e.g. for end-to-end tests where many browsers share one IP); it defaults to 1.
@@ -90,6 +115,7 @@ export function createApp(cfg: AppConfig) {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Content-Security-Policy', CSP);
     next();
   });
 
@@ -124,6 +150,8 @@ export function createApp(cfg: AppConfig) {
       const applied = applyPaidCharge(d.state, pending.target, paid, pending.draft, Date.now(), `pay_${session.id}`);
       d.state = applied.state;
       d.processed.push(session.id);
+      // Only recent session ids matter for de-duplicating webhook retries; keep the list bounded.
+      if (d.processed.length > MAX_PROCESSED) d.processed.splice(0, d.processed.length - MAX_PROCESSED);
       delete d.pending[claimId];
     });
   }
@@ -169,7 +197,10 @@ export function createApp(cfg: AppConfig) {
       res.status(400).json({ ok: false });
       return;
     }
-    presence.set(id, Date.now());
+    const nowMs = Date.now();
+    // Expire stale visitors here too, so presence can't grow without bound if /api/state is never called.
+    for (const [vid, t] of presence) if (t < nowMs - PRESENCE_TTL_MS) presence.delete(vid);
+    presence.set(id, nowMs);
     const today = utcDayKey(Date.now());
     if (today !== visitorsDay) {
       visitorsDay = today;
@@ -212,6 +243,17 @@ export function createApp(cfg: AppConfig) {
       d.subscribers ??= [];
       if (!d.subscribers.some((s) => s.email === email)) d.subscribers.push({ email, at: Date.now() });
     });
+    res.json({ ok: true });
+  });
+
+  // Always answers { ok: true }, so it can't be used to discover who is subscribed.
+  app.post('/api/newsletter/unsubscribe', rateLimit('newsletter-unsubscribe', 5, 60_000), async (req, res) => {
+    const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase().slice(0, 254) : '';
+    if (email) {
+      await db.mutate((d) => {
+        if (d.subscribers) d.subscribers = d.subscribers.filter((s) => s.email !== email);
+      });
+    }
     res.json({ ok: true });
   });
 

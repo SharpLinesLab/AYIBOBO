@@ -7,9 +7,10 @@ import type { StateResponse } from '../src/lib/api';
 
 let base = '';
 let close: () => void;
+let db: Db;
 
 beforeAll(async () => {
-  const db = new Db(null, true);
+  db = new Db(null, true);
   await db.init();
   const app = createApp({
     db,
@@ -73,6 +74,20 @@ describe('API server', () => {
   it('accepts newsletter sign-ups and rejects bad emails', async () => {
     expect((await post('/api/newsletter', { email: 'fan@example.com' })).status).toBe(200);
     expect((await post('/api/newsletter', { email: 'nope' })).status).toBe(400);
+  });
+
+  it('unsubscribes from the newsletter and always answers ok', async () => {
+    const emails = () => db.mutate((d) => (d.subscribers ?? []).map((s) => s.email));
+    await post('/api/newsletter', { email: 'leaver@example.com' });
+    expect(await emails()).toContain('leaver@example.com');
+    const r = await post('/api/newsletter/unsubscribe', { email: ' Leaver@Example.com ' });
+    expect(r.status).toBe(200);
+    expect(await r.json()).toEqual({ ok: true });
+    expect(await emails()).not.toContain('leaver@example.com');
+    expect(await emails()).toContain('fan@example.com');
+    // Unknown or missing addresses get the same answer.
+    expect(await json(post('/api/newsletter/unsubscribe', { email: 'never@example.com' }))).toEqual({ ok: true });
+    expect(await json(post('/api/newsletter/unsubscribe', {}))).toEqual({ ok: true });
   });
 
   it('counts clicks', async () => {

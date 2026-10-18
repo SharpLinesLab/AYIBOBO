@@ -1,5 +1,6 @@
 import { Command } from 'cmdk';
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { searchCatalog } from '../../catalog/search';
 import type { CoverSpec } from '../../catalog/types';
 import { LANGS, setLang, t, useLang } from '../../i18n';
@@ -43,7 +44,17 @@ export function CommandPalette({
   const [q, setQ] = useState('');
 
   useEffect(() => {
-    if (!open) setQ('');
+    if (!open) {
+      setQ('');
+      return;
+    }
+    // Modal behaviour: lock page scroll and return focus to where it was on close.
+    const prev = document.activeElement as HTMLElement | null;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+      prev?.focus?.({ preventScroll: true });
+    };
   }, [open]);
 
   const res = useMemo(() => searchCatalog(m.catalog, q, 5), [m.catalog, q]);
@@ -118,108 +129,120 @@ export function CommandPalette({
     </Command.Item>
   );
 
-  return (
-    <Command.Dialog
-      open={open}
-      onOpenChange={setOpen}
-      label={t('player.cmd.label')}
-      shouldFilter={false}
-      overlayClassName="cmdk__overlay"
-      contentClassName="cmdk__panel"
-      loop
-    >
-      <div className="cmdk__input">
-        <SearchIcon width={18} height={18} aria-hidden />
-        <Command.Input value={q} onValueChange={setQ} placeholder={t('player.cmd.placeholder')} />
-        <kbd>esc</kbd>
-      </div>
-      <Command.List className="cmdk__list">
-        <Command.Empty className="cmdk__empty">{t('player.cmd.empty', { q })}</Command.Empty>
-        {res.tracks.length > 0 && (
-          <Command.Group heading={t('player.cmd.songs')} className="cmdk__group">
-            {res.tracks.map((tr) => (
-              <Command.Item
-                key={tr.id}
-                value={tr.id}
-                className="cmdk__item"
-                onSelect={() => {
-                  close();
-                  m.play([tr, ...res.tracks.filter((x) => x.id !== tr.id)]);
-                }}
-              >
-                <Cover spec={tr.cover} size={36} />
-                <span className="cmdk__text">
-                  <b>{tr.title}</b>
-                  <small>
-                    {t('common.kind.song')} · {m.artistNames(tr)}
-                  </small>
-                </span>
-                <span className="cmdk__hint">{t('common.action.play')}</span>
-              </Command.Item>
-            ))}
-          </Command.Group>
-        )}
-        {res.artists.length > 0 && (
-          <Command.Group heading={t('player.cmd.artists')} className="cmdk__group">
-            {res.artists.map((a) => entity(a.id, a.name, t('common.kind.artist'), a.avatar, `#/artist/${a.id}`, true))}
-          </Command.Group>
-        )}
-        {res.albums.length > 0 && (
-          <Command.Group heading={t('player.cmd.albums')} className="cmdk__group">
-            {res.albums.map((a) => entity(a.id, a.title, `${t('common.kind.album')} · ${m.artist(a.artistId)?.name ?? ''}`, a.cover, `#/album/${a.id}`))}
-          </Command.Group>
-        )}
-        {res.playlists.length > 0 && (
-          <Command.Group heading={t('player.cmd.playlists')} className="cmdk__group">
-            {res.playlists.map((p) => entity(p.id, p.title, `${t('common.kind.playlist')} · ${p.curator}`, p.cover, `#/playlist/${p.id}`))}
-          </Command.Group>
-        )}
-        {groups.map(
-          ([g, list]) =>
-            list.length > 0 && (
-              <Command.Group key={g} heading={groupName[g]} className="cmdk__group">
-                {list.map((a) => (
-                  <Command.Item
-                    key={a.id}
-                    value={`action-${a.id}`}
-                    className="cmdk__item cmdk__item--action"
-                    onSelect={() => {
-                      close();
-                      a.run();
-                    }}
-                  >
-                    <span className="cmdk__text">
-                      <b>{a.label}</b>
-                    </span>
-                    {a.hint && <kbd>{a.hint}</kbd>}
-                  </Command.Item>
-                ))}
-              </Command.Group>
-            ),
-        )}
-        {needle && (
-          <Command.Item value="search-all" className="cmdk__item cmdk__item--action" onSelect={() => go(`#/search/${encodeURIComponent(q.trim())}`)}>
-            <span className="cmdk__text">
-              <b>{t('player.cmd.seeAll', { q: q.trim() })}</b>
-            </span>
-            <kbd>↵</kbd>
-          </Command.Item>
-        )}
-      </Command.List>
-      <div className="cmdk__foot">
-        <span>
-          <kbd>↑</kbd>
-          <kbd>↓</kbd> {t('player.cmd.toMove')}
-        </span>
-        <span>
-          <kbd>↵</kbd> {t('player.cmd.toOpen')}
-        </span>
-        <span>
-          <kbd>⌘</kbd>
-          <kbd>K</kbd> {t('player.cmd.toToggle')}
-        </span>
-      </div>
-    </Command.Dialog>
+  if (!open) return null;
+  // Our own overlay rather than cmdk's Command.Dialog: its scroll lock injects a <style> element,
+  // which the Content-Security-Policy (no inline styles) would block.
+  return createPortal(
+    <div className="cmdk__overlay" onMouseDown={(e) => e.target === e.currentTarget && setOpen(false)}>
+      <Command
+        label={t('player.cmd.label')}
+        shouldFilter={false}
+        loop
+        className="cmdk__panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('player.cmd.label')}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            setOpen(false);
+          } else if (e.key === 'Tab') e.preventDefault(); // keep focus in the search field
+        }}
+      >
+        <div className="cmdk__input">
+          <SearchIcon width={18} height={18} aria-hidden />
+          <Command.Input value={q} onValueChange={setQ} placeholder={t('player.cmd.placeholder')} autoFocus />
+          <kbd>esc</kbd>
+        </div>
+        <Command.List className="cmdk__list">
+          <Command.Empty className="cmdk__empty">{t('player.cmd.empty', { q })}</Command.Empty>
+          {res.tracks.length > 0 && (
+            <Command.Group heading={t('player.cmd.songs')} className="cmdk__group">
+              {res.tracks.map((tr) => (
+                <Command.Item
+                  key={tr.id}
+                  value={tr.id}
+                  className="cmdk__item"
+                  onSelect={() => {
+                    close();
+                    m.play([tr, ...res.tracks.filter((x) => x.id !== tr.id)]);
+                  }}
+                >
+                  <Cover spec={tr.cover} size={36} />
+                  <span className="cmdk__text">
+                    <b>{tr.title}</b>
+                    <small>
+                      {t('common.kind.song')} · {m.artistNames(tr)}
+                    </small>
+                  </span>
+                  <span className="cmdk__hint">{t('common.action.play')}</span>
+                </Command.Item>
+              ))}
+            </Command.Group>
+          )}
+          {res.artists.length > 0 && (
+            <Command.Group heading={t('player.cmd.artists')} className="cmdk__group">
+              {res.artists.map((a) => entity(a.id, a.name, t('common.kind.artist'), a.avatar, `#/artist/${a.id}`, true))}
+            </Command.Group>
+          )}
+          {res.albums.length > 0 && (
+            <Command.Group heading={t('player.cmd.albums')} className="cmdk__group">
+              {res.albums.map((a) => entity(a.id, a.title, `${t('common.kind.album')} · ${m.artist(a.artistId)?.name ?? ''}`, a.cover, `#/album/${a.id}`))}
+            </Command.Group>
+          )}
+          {res.playlists.length > 0 && (
+            <Command.Group heading={t('player.cmd.playlists')} className="cmdk__group">
+              {res.playlists.map((p) => entity(p.id, p.title, `${t('common.kind.playlist')} · ${p.curator}`, p.cover, `#/playlist/${p.id}`))}
+            </Command.Group>
+          )}
+          {groups.map(
+            ([g, list]) =>
+              list.length > 0 && (
+                <Command.Group key={g} heading={groupName[g]} className="cmdk__group">
+                  {list.map((a) => (
+                    <Command.Item
+                      key={a.id}
+                      value={`action-${a.id}`}
+                      className="cmdk__item cmdk__item--action"
+                      onSelect={() => {
+                        close();
+                        a.run();
+                      }}
+                    >
+                      <span className="cmdk__text">
+                        <b>{a.label}</b>
+                      </span>
+                      {a.hint && <kbd>{a.hint}</kbd>}
+                    </Command.Item>
+                  ))}
+                </Command.Group>
+              ),
+          )}
+          {needle && (
+            <Command.Item value="search-all" className="cmdk__item cmdk__item--action" onSelect={() => go(`#/search/${encodeURIComponent(q.trim())}`)}>
+              <span className="cmdk__text">
+                <b>{t('player.cmd.seeAll', { q: q.trim() })}</b>
+              </span>
+              <kbd>↵</kbd>
+            </Command.Item>
+          )}
+        </Command.List>
+        <div className="cmdk__foot">
+          <span>
+            <kbd>↑</kbd>
+            <kbd>↓</kbd> {t('player.cmd.toMove')}
+          </span>
+          <span>
+            <kbd>↵</kbd> {t('player.cmd.toOpen')}
+          </span>
+          <span>
+            <kbd>⌘</kbd>
+            <kbd>K</kbd> {t('player.cmd.toToggle')}
+          </span>
+        </div>
+      </Command>
+    </div>,
+    document.body,
   );
 }
 
