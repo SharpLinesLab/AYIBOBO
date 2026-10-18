@@ -78,6 +78,9 @@ describe('legal pages', () => {
     expect(en['legal.privacy.rights.p2']).toMatch(/email address, display name and password hash.*synced library.*every song/s);
     expect(en['legal.terms.uploads.p3']).toMatch(/non-exclusive, worldwide, royalty-free licence to host, store, copy, stream and display/);
     expect(en['legal.terms.uploads.p3']).toMatch(/keep ownership/);
+    // The Copyright Policy describes published artist uploads too (no more "stays in their own browser").
+    for (const [lang, d] of LANGS) expect(d['legal.copyright.today.p'], lang).not.toMatch(/browser|navigateur|navigatè/);
+    expect(en['legal.copyright.today.p']).toMatch(/stored on our servers.*only our moderators.*published publicly.*deleted/s);
   });
 
   for (const [lang] of LANGS) {

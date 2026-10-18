@@ -151,7 +151,7 @@ export const legal: { [K in keyof typeof En]: string } = {
   'legal.copyright.repeat.h': 'Atteintes répétées',
   'legal.copyright.repeat.p': 'Nous gardons une trace des notifications valables. Toute personne qui porte atteinte aux droits d’auteur de façon répétée perdra la possibilité de mettre en ligne sur ASF ou d’utiliser le service. Dans les cas graves, une seule infraction suffit.',
   'legal.copyright.today.h': 'Les mises en ligne sur ASF aujourd’hui',
-  'legal.copyright.today.p': 'Pour l’instant, la musique mise en ligne reste dans le navigateur de la personne qui l’a ajoutée et les autres auditeurs ne peuvent pas la voir. Cette politique couvre tout le contenu d’ASF, y compris les mises en ligne une fois qu’elles pourront être partagées.',
+  'legal.copyright.today.p': 'Les titres que les artistes nous envoient sont stockés sur nos serveurs. Tant qu’un titre attend d’être vérifié, seuls nos modérateurs peuvent le voir ou l’écouter. Une fois approuvé par un modérateur, il est publié sur ASF et accessible à tous ; s’il n’est pas approuvé, ses fichiers sont supprimés. Cette politique couvre tout le contenu d’ASF, y compris ces titres.',
   'legal.copyright.contact.h': 'Contact',
   'legal.copyright.contact.p': 'Pour toute autre question sur les droits d’auteur, écrivez à [DMCA CONTACT EMAIL].',
 };

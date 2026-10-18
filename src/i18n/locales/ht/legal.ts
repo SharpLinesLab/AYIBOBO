@@ -150,7 +150,7 @@ export const legal: { [K in keyof typeof En]: string } = {
   'legal.copyright.repeat.h': 'Moun ki vyole dwa otè plizyè fwa',
   'legal.copyright.repeat.p': 'Nou kenbe yon dosye sou notifikasyon ki valab yo. Nenpòt moun ki vyole dwa otè plizyè fwa p ap ka mete mizik sou ASF ni sèvi ak ASF ankò. Nan ka ki grav, yon sèl vyolasyon ase.',
   'legal.copyright.today.h': 'Mizik moun mete sou ASF kounye a',
-  'legal.copyright.today.p': 'Pou kounye a, mizik moun mete rete nan pwòp navigatè yo epi lòt moun k ap koute pa ka wè l. Politik sa a kouvri tout kontni ki sou ASF, sa vle di tou mizik moun mete yo lè y ap ka pataje yo.',
+  'legal.copyright.today.p': 'Chante atis yo voye ban nou yo anrejistre sou sèvè nou yo. Pandan yon chante ap tann revizyon, se sèlman moderatè nou yo ki ka wè l oswa koute l. Lè yon moderatè apwouve l, li pibliye sou ASF pou tout moun; si yo pa apwouve l, nou efase fichye li yo. Politik sa a kouvri tout kontni ki sou ASF, sa vle di chante sa yo tou.',
   'legal.copyright.contact.h': 'Kontak',
   'legal.copyright.contact.p': 'Pou nenpòt lòt kesyon sou dwa otè, ekri nou nan [DMCA CONTACT EMAIL].',
 };

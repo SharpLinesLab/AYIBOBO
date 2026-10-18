@@ -152,7 +152,7 @@ export const legal = {
   'legal.copyright.repeat.h': 'Repeat infringers',
   'legal.copyright.repeat.p': 'We keep a record of valid notices. Anyone who repeatedly infringes copyright will lose the ability to upload to or use ASF. In serious cases, one violation is enough.',
   'legal.copyright.today.h': 'Uploads on ASF today',
-  'legal.copyright.today.p': 'Right now, music people upload stays in their own browser and other listeners can’t see it. This policy covers all content on ASF, including uploads once they can be shared.',
+  'legal.copyright.today.p': 'Songs that artists send us are stored on our servers. While a song is waiting for review, only our moderators can see or play it. Once a moderator approves it, it is published publicly on ASF; if it isn’t approved, its files are deleted. This policy covers all content on ASF, including these songs.',
   'legal.copyright.contact.h': 'Contact',
   'legal.copyright.contact.p': 'For any other copyright question, email [DMCA CONTACT EMAIL].',
 };
