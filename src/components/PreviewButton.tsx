@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { PREVIEW_SECONDS, getPlayerState, subscribePlayer, togglePreview } from '../lib/audio';
+import { t } from '../i18n';
 import type { Listing } from '../lib/types';
 import { PauseIcon, PlayIcon } from './icons';
 
@@ -27,7 +28,7 @@ export function PreviewButton({ listing }: { listing: Listing }) {
       type="button"
       className={`preview${playing ? ' is-playing' : ''}`}
       onClick={() => togglePreview(listing)}
-      aria-label={playing ? `Stop preview of ${listing.title}` : `Play a ${PREVIEW_SECONDS}-second preview of ${listing.title}`}
+      aria-label={playing ? t('boost.preview.stop', { title: listing.title }) : t('boost.preview.play', { n: PREVIEW_SECONDS, title: listing.title })}
       aria-pressed={playing}
     >
       <span className="preview__btn">{playing ? <PauseIcon /> : <PlayIcon />}</span>
@@ -44,7 +45,7 @@ export function PreviewButton({ listing }: { listing: Listing }) {
           <span className="num">0:{String(remaining).padStart(2, '0')}</span>
         </>
       ) : (
-        <span>Preview</span>
+        <span>{t('boost.preview.label')}</span>
       )}
     </button>
   );

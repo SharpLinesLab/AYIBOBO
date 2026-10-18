@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { t } from '../i18n';
 import { CloseIcon } from './icons';
 
 let openCount = 0;
@@ -67,7 +68,7 @@ export function Modal({
       }}
     >
       <div ref={ref} role="dialog" aria-modal="true" aria-label={label} tabIndex={-1} className={variant === 'drawer' ? 'drawer' : `modal${wide ? ' modal--wide' : ''}`}>
-        <button type="button" className="icon-btn modal__close" onClick={onClose} aria-label="Close">
+        <button type="button" className="icon-btn modal__close" onClick={onClose} aria-label={t('common.action.close')}>
           <CloseIcon />
         </button>
         {children}

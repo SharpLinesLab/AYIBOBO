@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CATEGORIES, categoryById } from '../lib/categories';
 import { quoteClaim, type ClaimQuote, type ListingDraft } from '../lib/claim';
-import { usd } from '../lib/format';
+import { t, type Key } from '../i18n';
+import { rich, usd } from '../lib/format';
 import type { SiteMetadata } from '../lib/metadata';
 import type { NormalizedTarget } from '../lib/normalize';
 import { MAX_BID, MIN_BID, clampBid, getBoard, stepAmount, totalOnBoard } from '../lib/ranking';
@@ -20,7 +21,7 @@ export interface CheckoutRequestState {
 
 type Phase = 'resolving' | 'scanning' | 'review' | 'paying' | 'done' | 'failed';
 
-const SCAN_STEPS = ['Resolving & normalizing link', 'Reading title & description', 'Fetching artwork / favicon', 'Detecting category', 'Looking for an audio preview'];
+const SCAN_STEPS: Key[] = ['boost.checkout.scan.resolve', 'boost.checkout.scan.read', 'boost.checkout.scan.artwork', 'boost.checkout.scan.category', 'boost.checkout.scan.audio'];
 
 export function CheckoutModal({ req, onClose, onClaimed }: { req: CheckoutRequestState; onClose: () => void; onClaimed: (listingId: string, board: BoardId, fromRank: number | null) => void }) {
   const { backend, snapshot, now } = useApp();
@@ -44,26 +45,26 @@ export function CheckoutModal({ req, onClose, onClaimed }: { req: CheckoutReques
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const t = await backend.resolve(req.input).catch(() => null);
+      const res = await backend.resolve(req.input).catch(() => null);
       if (cancelled) return;
-      if (!t || !t.ok) {
-        setFailure(t?.error ?? 'We couldn’t read that link. Check it and try again.');
+      if (!res || !res.ok) {
+        setFailure(res?.error ?? t('boost.checkout.readFail'));
         setPhase('failed');
         return;
       }
-      setTarget(t);
-      const known = snapshot.state.listings.find((l) => l.key === t.key);
+      setTarget(res);
+      const known = snapshot.state.listings.find((l) => l.key === res.key);
       if (known) {
         setPhase('review');
         return;
       }
       setPhase('scanning');
       const timer = window.setInterval(() => setScanStep((s) => Math.min(SCAN_STEPS.length - 1, s + 1)), 260);
-      const m = await backend.scrape(t).catch(() => null);
+      const m = await backend.scrape(res).catch(() => null);
       clearInterval(timer);
       if (cancelled) return;
       if (!m) {
-        setFailure('We couldn’t scan that site right now. Please try again.');
+        setFailure(t('boost.checkout.scanFail'));
         setPhase('failed');
         return;
       }
@@ -95,14 +96,14 @@ export function CheckoutModal({ req, onClose, onClaimed }: { req: CheckoutReques
       ? { title: existing.title, tagline: existing.tagline, description: existing.description, category: existing.category, artwork: existing.artwork, preview: existing.preview }
       : draft!;
     if (!existing && !d.title.trim()) {
-      setPayError('Give your listing a title.');
+      setPayError(t('boost.checkout.needTitle'));
       return;
     }
     setPayError(null);
     setPhase('paying');
     const res = await backend
       .checkout({ input: target.kind === 'handle' ? target.key : target.url, board, amount, draft: d })
-      .catch((e: Error) => ({ kind: 'error' as const, error: e.message || 'Payment failed. Please try again.', suggested: undefined }));
+      .catch((e: Error) => ({ kind: 'error' as const, error: e.message || t('boost.checkout.payFail'), suggested: undefined }));
     if (res.kind === 'redirect') {
       window.location.assign(res.url);
       return;
@@ -121,10 +122,10 @@ export function CheckoutModal({ req, onClose, onClaimed }: { req: CheckoutReques
   const shown = existing ?? (draft && target ? { title: draft.title, tagline: draft.tagline, artwork: draft.artwork, display: target.display, category: draft.category } : null);
 
   return (
-    <Modal onClose={onClose} label="Claim rank checkout">
+    <Modal onClose={onClose} label={t('boost.checkout.label')}>
       {(phase === 'resolving' || phase === 'scanning') && (
         <div className="stack">
-          <h2>Scanning your link…</h2>
+          <h2>{t('boost.checkout.scanning')}</h2>
           <p className="modal__sub mono">{target?.display ?? req.input}</p>
           <div className="preview-card" aria-hidden>
             <span className="thumb skeleton" />
@@ -140,7 +141,7 @@ export function CheckoutModal({ req, onClose, onClaimed }: { req: CheckoutReques
               return (
                 <li key={s} className={done ? 'done' : ''}>
                   {done ? <span className="check">✓</span> : i === scanStep || (phase === 'resolving' && i === 0) ? <span className="spinner" style={{ color: 'var(--accent)' }} /> : <span style={{ width: 18 }} />}
-                  {s}
+                  {t(s)}
                 </li>
               );
             })}
@@ -150,16 +151,20 @@ export function CheckoutModal({ req, onClose, onClaimed }: { req: CheckoutReques
 
       {phase === 'failed' && (
         <div className="stack">
-          <h2>That link can’t be listed</h2>
+          <h2>{t('boost.checkout.failedTitle')}</h2>
           <div className="notice notice--error" role="alert">
             {failure}
           </div>
           <p className="muted" style={{ margin: 0, fontSize: 13.5 }}>
-            Tip: paste the canonical page (e.g. <code className="mono">yourlabel.com</code>, <code className="mono">artist.bandcamp.com</code>,{' '}
-            <code className="mono">open.spotify.com/artist/…</code>) or an <code className="mono">@handle</code>.
+            {rich(t('boost.checkout.tip'), {
+              a: <code className="mono">yourlabel.com</code>,
+              b: <code className="mono">artist.bandcamp.com</code>,
+              c: <code className="mono">open.spotify.com/artist/…</code>,
+              handle: <code className="mono">@handle</code>,
+            })}
           </p>
           <button className="cta cta--ghost" onClick={onClose}>
-            Edit link
+            {t('boost.checkout.editLink')}
           </button>
         </div>
       )}
@@ -168,14 +173,14 @@ export function CheckoutModal({ req, onClose, onClaimed }: { req: CheckoutReques
         <div className="stack">
           <div>
             <div className="row" style={{ marginBottom: 6, flexWrap: 'wrap' }}>
-              {existing ? <span className="badge">Existing listing · top-up</span> : <span className="badge badge--green">New listing</span>}
-              {meta && <span className="badge badge--muted">{meta.source === 'scraped' ? 'scraped' : 'auto-detected'}</span>}
+              {existing ? <span className="badge">{t('boost.checkout.badgeTopup')}</span> : <span className="badge badge--green">{t('boost.checkout.badgeNew')}</span>}
+              {meta && <span className="badge badge--muted">{meta.source === 'scraped' ? t('boost.checkout.scraped') : t('boost.checkout.autoDetected')}</span>}
             </div>
-            <h2>{existing ? 'Raise your rank' : 'Claim your rank'}</h2>
+            <h2>{existing ? t('boost.checkout.raiseTitle') : t('boost.checkout.claimTitle')}</h2>
             <p className="modal__sub" style={{ marginBottom: 0 }}>
               {existing
-                ? 'This link is already on the leaderboard. Pick a new total — you only pay the difference.'
-                : 'Check how your listing will look, then pay to place it.'}
+                ? t('boost.checkout.raiseSub')
+                : t('boost.checkout.claimSub')}
             </p>
           </div>
 
@@ -188,7 +193,7 @@ export function CheckoutModal({ req, onClose, onClaimed }: { req: CheckoutReques
               </div>
               <div className="muted" style={{ fontSize: 12.5 }}>
                 {categoryById(shown.category).icon} <b style={{ color: 'var(--text)' }}>{categoryById(shown.category).label}</b> · {shown.display}
-                {draft?.preview || existing?.preview ? ' · ▶ audio preview' : ''}
+                {draft?.preview || existing?.preview ? ` · ▶ ${t('boost.checkout.audioPreview')}` : ''}
               </div>
             </div>
           </div>
@@ -196,19 +201,19 @@ export function CheckoutModal({ req, onClose, onClaimed }: { req: CheckoutReques
           {!existing && draft && (
             <div className="stack">
               <label className="field">
-                Title
+                {t('boost.checkout.title')}
                 <input className="input" value={draft.title} maxLength={80} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
               </label>
               <label className="field">
-                Tagline
+                {t('boost.checkout.tagline')}
                 <input className="input" value={draft.tagline} maxLength={80} onChange={(e) => setDraft({ ...draft, tagline: e.target.value })} />
               </label>
               <label className="field">
-                Description
+                {t('boost.checkout.description')}
                 <textarea className="input" rows={2} value={draft.description} maxLength={400} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
               </label>
               <label className="field">
-                Category
+                {t('boost.hero.category')}
                 <select className="input" value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value as CategoryId })}>
                   {CATEGORIES.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -221,22 +226,22 @@ export function CheckoutModal({ req, onClose, onClaimed }: { req: CheckoutReques
           )}
 
           <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
-            <div className="segmented" style={{ margin: 0 }} role="tablist" aria-label="Board">
+            <div className="segmented" style={{ margin: 0 }} role="tablist" aria-label={t('boost.board.choose')}>
               <button type="button" className={board === 'all' ? 'is-active' : ''} onClick={() => setBoard('all')} role="tab" aria-selected={board === 'all'}>
-                🏆 All-time
+                🏆 {t('boost.board.all')}
               </button>
               <button type="button" className={board === 'today' ? 'is-active' : ''} onClick={() => setBoard('today')} role="tab" aria-selected={board === 'today'}>
-                <span className="dot" /> Today
+                <span className="dot" /> {t('boost.board.today')}
               </button>
             </div>
             <div className="amount" style={{ fontSize: 24, fontWeight: 800 }}>
-              <button type="button" className="stepper" style={{ width: 34, height: 34 }} aria-label="Decrease" onClick={() => setAmount((a) => stepAmount(entries, a, -1, floor, existing?.id))}>
+              <button type="button" className="stepper" style={{ width: 34, height: 34 }} aria-label={t('boost.checkout.decrease')} onClick={() => setAmount((a) => stepAmount(entries, a, -1, floor, existing?.id))}>
                 <MinusIcon />
               </button>
               <span className="mono accent" aria-live="polite">
                 {usd(amount)}
               </span>
-              <button type="button" className="stepper" style={{ width: 34, height: 34 }} aria-label="Increase" disabled={amount >= MAX_BID} onClick={() => setAmount((a) => stepAmount(entries, a, 1, floor, existing?.id))}>
+              <button type="button" className="stepper" style={{ width: 34, height: 34 }} aria-label={t('boost.checkout.increase')} disabled={amount >= MAX_BID} onClick={() => setAmount((a) => stepAmount(entries, a, 1, floor, existing?.id))}>
                 <PlusIcon />
               </button>
             </div>
@@ -247,7 +252,7 @@ export function CheckoutModal({ req, onClose, onClaimed }: { req: CheckoutReques
               {quote.error}{' '}
               {quote.suggested && (
                 <button type="button" className="link-btn link-btn--accent" onClick={() => setAmount(clampBid(quote.suggested!))}>
-                  Use {usd(quote.suggested)}
+                  {t('boost.checkout.use', { amount: usd(quote.suggested) })}
                 </button>
               )}
             </div>
@@ -260,11 +265,11 @@ export function CheckoutModal({ req, onClose, onClaimed }: { req: CheckoutReques
                   const r = quote.ranks[b];
                   return (
                     <div className="rank-tile" key={b}>
-                      <small>{b === 'all' ? '🏆 All-time' : '● Today'}</small>
+                      <small>{b === 'all' ? `🏆 ${t('boost.board.all')}` : `● ${t('boost.board.today')}`}</small>
                       <strong>#{r.after}</strong>
                       <span>
                         {' '}
-                        {r.before ? `from #${r.before}` : 'new'} · {usd(r.totalAfter)}
+                        {r.before ? t('boost.checkout.fromRank', { rank: r.before }) : t('boost.checkout.newRank')} · {usd(r.totalAfter)}
                       </span>
                     </div>
                   );
@@ -273,16 +278,16 @@ export function CheckoutModal({ req, onClose, onClaimed }: { req: CheckoutReques
               <div className="summary">
                 {quote.currentTotal > 0 && (
                   <div className="summary__row">
-                    <span>Current spend ({board === 'all' ? 'all-time' : 'today'})</span>
+                    <span>{board === 'all' ? t('boost.checkout.currentAll') : t('boost.checkout.currentToday')}</span>
                     <span className="num">{usd(quote.currentTotal)}</span>
                   </div>
                 )}
                 <div className="summary__row">
-                  <span>New {board === 'all' ? 'all-time' : 'today'} total</span>
+                  <span>{board === 'all' ? t('boost.checkout.newTotalAll') : t('boost.checkout.newTotalToday')}</span>
                   <span className="num">{usd(quote.targetTotal)}</span>
                 </div>
                 <div className="summary__row total">
-                  <span>{quote.currentTotal > 0 ? 'You pay the difference' : 'You pay'}</span>
+                  <span>{quote.currentTotal > 0 ? t('boost.checkout.payDifference') : t('boost.checkout.youPay')}</span>
                   <span className="num">{usd(quote.charge)}</span>
                 </div>
               </div>
@@ -297,24 +302,29 @@ export function CheckoutModal({ req, onClose, onClaimed }: { req: CheckoutReques
 
           {!backend.stripe && (
             <div className="notice">
-              <b>Demo checkout.</b> No card is charged — payments are simulated
-              {backend.mode === 'local' ? ' and saved in this browser' : ' on this server'}. Connect Stripe on the server for real payments.
+              <b>{t('boost.checkout.demoTitle')}</b> {backend.mode === 'local' ? t('boost.checkout.demoLocal') : t('boost.checkout.demoServer')}
             </div>
           )}
 
           <button type="button" className="cta cta--solid" disabled={!quote?.ok || phase === 'paying'} onClick={pay} data-autofocus>
             {phase === 'paying' ? (
               <>
-                <span className="spinner" /> Processing…
+                <span className="spinner" /> {t('boost.checkout.processing')}
               </>
             ) : quote?.ok ? (
-              backend.stripe ? `Continue to secure checkout · ${usd(quote.charge)}` : `Pay ${usd(quote.charge)}`
+              backend.stripe ? t('boost.checkout.continueStripe', { amount: usd(quote.charge) }) : t('boost.checkout.pay', { amount: usd(quote.charge) })
             ) : (
-              'Adjust your bid'
+              t('boost.checkout.adjust')
             )}
           </button>
           <p className="hero__fine" style={{ textAlign: 'center' }}>
-            Whole US dollars. Payments are final; anyone can outbid you. By paying you agree to the <a className="link-btn" href="#/rules" onClick={onClose}>rules</a>.
+            {rich(t('boost.checkout.fine'), {
+              rules: (
+                <a className="link-btn" href="#/rules" onClick={onClose}>
+                  {t('boost.checkout.rules')}
+                </a>
+              ),
+            })}
           </p>
         </div>
       )}
@@ -322,12 +332,12 @@ export function CheckoutModal({ req, onClose, onClaimed }: { req: CheckoutReques
       {phase === 'done' && result && (
         <div className="success">
           <div className="success__burst">🎉</div>
-          <h2 style={{ margin: '0 0 6px' }}>You’re #{result.ranks.all.after} all-time</h2>
+          <h2 style={{ margin: '0 0 6px' }}>{t('boost.checkout.doneTitle', { rank: result.ranks.all.after })}</h2>
           <p className="modal__sub">
-            and #{result.ranks.today.after} on today’s board · paid {usd(result.charge)} · new total {usd(result.ranks.all.totalAfter)}
+            {t('boost.checkout.doneSub', { today: result.ranks.today.after, paid: usd(result.charge), total: usd(result.ranks.all.totalAfter) })}
           </p>
           <button className="cta cta--solid" onClick={onClose} data-autofocus>
-            See it on the board
+            {t('boost.checkout.seeBoard')}
           </button>
         </div>
       )}

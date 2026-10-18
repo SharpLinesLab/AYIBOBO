@@ -1,3 +1,5 @@
+import { t } from '../i18n';
+import { usd } from './format';
 import { MAX_BID, MIN_BID, getBoard, projectRank, rankOnBoard, totalOnBoard } from './ranking';
 import type { NormalizedTarget } from './normalize';
 import type { Artwork, AudioPreview, BoardId, CategoryId, LeaderboardState, Listing, Payment } from './types';
@@ -36,8 +38,6 @@ export interface ClaimError {
 
 export type ClaimQuoteResult = ClaimQuote | ClaimError;
 
-const usd = (n: number) => `$${n.toLocaleString('en-US')}`;
-
 export function findListingByKey(state: LeaderboardState, key: string): Listing | undefined {
   return state.listings.find((l) => l.key === key);
 }
@@ -55,8 +55,8 @@ export function quoteClaim(
   amount: number,
   now: number,
 ): ClaimQuoteResult {
-  if (!Number.isInteger(amount)) return { ok: false, code: 'not_integer', error: 'Bids are whole US dollars.' };
-  if (amount > MAX_BID) return { ok: false, code: 'above_max', error: `The maximum is ${usd(MAX_BID)}.`, suggested: MAX_BID };
+  if (!Number.isInteger(amount)) return { ok: false, code: 'not_integer', error: t('boost.claimErr.notInteger') };
+  if (amount > MAX_BID) return { ok: false, code: 'above_max', error: t('boost.claimErr.aboveMax', { max: usd(MAX_BID) }), suggested: MAX_BID };
 
   const listing = findListingByKey(state, key);
   const boards: Record<BoardId, ReturnType<typeof getBoard>> = {
@@ -70,12 +70,12 @@ export function quoteClaim(
     return {
       ok: false,
       code: 'not_above_current',
-      error: `This listing already has ${usd(currentTotal)} on this board. Raise it to at least ${usd(currentTotal + 1)}.`,
+      error: t('boost.claimErr.notAboveCurrent', { current: usd(currentTotal), min: usd(currentTotal + 1) }),
       suggested: currentTotal + 1,
     };
   }
   if (amount < MIN_BID) {
-    return { ok: false, code: 'below_min', error: `The minimum bid is ${usd(MIN_BID)}.`, suggested: MIN_BID };
+    return { ok: false, code: 'below_min', error: t('boost.claimErr.belowMin', { min: usd(MIN_BID) }), suggested: MIN_BID };
   }
 
   const projection = projectRank(entries, amount, listing?.id, now);
@@ -83,14 +83,14 @@ export function quoteClaim(
     return {
       ok: false,
       code: 'top_premium',
-      error: `Taking #1 costs at least ${usd(projection.minForTop)} ($5 more than the current #1).`,
+      error: t('boost.claimErr.topPremium', { min: usd(projection.minForTop), premium: usd(5) }),
       suggested: projection.minForTop,
     };
   }
 
   const charge = amount - currentTotal;
   if (charge + (listing ? totalOnBoard(boards.all, listing.id) : 0) > MAX_BID) {
-    return { ok: false, code: 'above_max', error: `A listing's lifetime total can't exceed ${usd(MAX_BID)}.` };
+    return { ok: false, code: 'above_max', error: t('boost.claimErr.lifetimeMax', { max: usd(MAX_BID) }) };
   }
 
   const ranks = {} as Record<BoardId, RankChange>;

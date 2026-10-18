@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { num, usd } from '../lib/format';
 import { totalRevenue } from '../lib/stats';
 import { useApp } from '../store';
@@ -12,44 +13,44 @@ export function StatsModal({ onClose }: { onClose: () => void }) {
   const last = stats.history.length - 1;
 
   return (
-    <Modal onClose={onClose} label="Live traffic and click analytics" wide>
-      <h2>Live stats</h2>
-      <p className="modal__sub">Traffic and outbound clicks across the leaderboard. Days are UTC.</p>
+    <Modal onClose={onClose} label={t('boost.stats.label')} wide>
+      <h2>{t('boost.stats.title')}</h2>
+      <p className="modal__sub">{t('boost.stats.sub')}</p>
       <div className="stat-grid">
         <div className="stat">
           <small>
-            <span className="live-dot" /> Online now
+            <span className="live-dot" /> {t('boost.stats.online')}
           </small>
           <span className="num">{num(stats.online)}</span>
         </div>
         <div className="stat">
-          <small>Visitors today</small>
+          <small>{t('boost.stats.visitorsToday')}</small>
           <span className="num">{num(stats.visitorsToday)}</span>
         </div>
         <div className="stat">
-          <small>Clicks today</small>
+          <small>{t('boost.stats.clicksToday')}</small>
           <span className="num">{num(stats.clicksToday)}</span>
         </div>
         <div className="stat">
-          <small>Revenue all-time</small>
+          <small>{t('boost.stats.revenue')}</small>
           <span className="num">{usd(totalRevenue(state))}</span>
         </div>
       </div>
       <div className="stack" style={{ marginTop: 14 }}>
         <BarChart
-          title="Visitors per day"
-          subtitle="Unique visitors, last 14 days"
-          unit="visitors"
+          title={t('boost.stats.visitorsChart')}
+          subtitle={t('boost.stats.visitorsSub')}
+          unit={t('boost.stats.unitVisitors')}
           data={stats.history.map((d, i) => ({ label: d.day, value: d.visitors, partial: i === last }))}
         />
         <BarChart
-          title="Outbound clicks per day"
-          subtitle="Clicks from the leaderboard to listed sites"
-          unit="clicks"
+          title={t('boost.stats.clicksChart')}
+          subtitle={t('boost.stats.clicksSub')}
+          unit={t('boost.stats.unitClicks')}
           data={stats.history.map((d, i) => ({ label: d.day, value: d.clicks, partial: i === last }))}
         />
       </div>
-      <h3 className="section-title">Most clicked</h3>
+      <h3 className="section-title">{t('boost.stats.mostClicked')}</h3>
       <ul className="mini-list">
         {topClicked.map((l, i) => (
           <li key={l.id}>

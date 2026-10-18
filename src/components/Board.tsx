@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef } from 'react';
+import { t } from '../i18n';
 import { useApp } from '../store';
 import type { RankedEntry } from '../lib/types';
 import { ListingCard } from './ListingCard';
@@ -57,7 +58,7 @@ export function Board({ entries, allEntries, highlightId }: { entries: RankedEnt
   });
 
   return (
-    <ol className="board" aria-label="Leaderboard">
+    <ol className="board" aria-label={t('boost.board.label')}>
       {entries.map((e) => (
         <ListingCard
           key={e.listing.id}

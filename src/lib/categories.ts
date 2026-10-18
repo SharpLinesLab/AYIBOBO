@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import type { CategoryId } from './types';
 
 export interface Category {
@@ -6,20 +7,34 @@ export interface Category {
   icon: string;
 }
 
-export const CATEGORIES: Category[] = [
-  { id: 'streaming', label: 'Streaming & Discovery', icon: '📡' },
-  { id: 'daws', label: 'DAWs & Plugins', icon: '🎛️' },
-  { id: 'samples', label: 'Sample Packs & Sounds', icon: '🥁' },
-  { id: 'ai', label: 'AI Music Tools', icon: '✨' },
-  { id: 'artist', label: 'Artist Sites & EPKs', icon: '🎤' },
-  { id: 'labels', label: 'Indie Labels', icon: '💿' },
-  { id: 'beats', label: 'Beat Stores', icon: '🎧' },
-  { id: 'vinyl', label: 'Vinyl & Merch', icon: '📀' },
-  { id: 'live', label: 'Live & Ticketing', icon: '🎟️' },
-  { id: 'community', label: 'Music Communities', icon: '💬' },
-  { id: 'sync', label: 'Sync & Licensing', icon: '🎬' },
-  { id: 'synths', label: 'Synths & Gear', icon: '🎹' },
+const DEFS: [CategoryId, string][] = [
+  ['streaming', '📡'],
+  ['daws', '🎛️'],
+  ['samples', '🥁'],
+  ['ai', '✨'],
+  ['artist', '🎤'],
+  ['labels', '💿'],
+  ['beats', '🎧'],
+  ['vinyl', '📀'],
+  ['live', '🎟️'],
+  ['community', '💬'],
+  ['sync', '🎬'],
+  ['synths', '🎹'],
 ];
+
+/** Category label in the current interface language. */
+export function categoryLabel(id: CategoryId): string {
+  return t(`boost.cat.${id}`);
+}
+
+/** `label` is resolved on every read, so it always follows the current language. */
+export const CATEGORIES: Category[] = DEFS.map(([id, icon]) => ({
+  id,
+  icon,
+  get label() {
+    return categoryLabel(id);
+  },
+}));
 
 const BY_ID = new Map(CATEGORIES.map((c) => [c.id, c]));
 

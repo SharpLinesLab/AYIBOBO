@@ -1,6 +1,7 @@
 import { forwardRef } from 'react';
 import { categoryById } from '../lib/categories';
-import { num, relativeTime, usd } from '../lib/format';
+import { plural, t } from '../i18n';
+import { relativeTime, rich, usd } from '../lib/format';
 import { minBidForRank } from '../lib/ranking';
 import type { Listing, RankedEntry } from '../lib/types';
 import { useApp } from '../store';
@@ -55,14 +56,14 @@ export const ListingCard = forwardRef<HTMLLIElement, Props>(function ListingCard
         <span className="sep">·</span>
         <span>{listing.display}</span>
         <span className="sep">·</span>
-        <span className="num">{num(listing.clicks)} clicks</span>
+        <span className="num">{plural('boost.card.clicks', listing.clicks)}</span>
         <span className="sep">·</span>
         <button type="button" className="link-btn" onClick={() => openDetail(listing.id)}>
-          see details
+          {t('boost.card.details')}
         </button>
         <span className="sep">·</span>
         <button type="button" className="link-btn link-btn--accent" onClick={() => prefillHero({ amount: claimFor })}>
-          claim this rank for <span className="num">{usd(claimFor)}</span>
+          {rich(t('boost.card.claimFor'), { amount: <span className="num">{usd(claimFor)}</span> })}
         </button>
       </div>
     </li>
@@ -75,12 +76,12 @@ export function QuickPlayThumb({ listing }: { listing: Listing }) {
   const playing = player.playingId === listing.id;
   return (
     <div className={`thumb-wrap${playing ? ' is-playing' : ''}`}>
-      <Thumb art={listing.artwork} label={`${listing.title} artwork`} />
+      <Thumb art={listing.artwork} label={t('boost.card.artwork', { title: listing.title })} />
       {listing.preview && (
         <button
           type="button"
           className="thumb-play"
-          aria-label={playing ? `Pause ${listing.title}` : `Quick play ${listing.title}`}
+          aria-label={playing ? t('common.action.pauseName', { name: listing.title }) : t('boost.card.quickPlay', { title: listing.title })}
           onClick={() => togglePreview(listing)}
         >
           {playing ? <PauseIcon /> : <PlayIcon />}

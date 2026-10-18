@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { togglePreview } from '../lib/audio';
-import { categoryById } from '../lib/categories';
-import { usd } from '../lib/format';
+import { t } from '../i18n';
+import { categoryLabel } from '../lib/categories';
+import { rich, usd } from '../lib/format';
 import { minBidForRank } from '../lib/ranking';
 import type { Listing } from '../lib/types';
 import { useApp } from '../store';
@@ -24,22 +25,22 @@ export function FeaturedCarousel() {
 
   useEffect(() => {
     if (paused || playingHere || count < 2 || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
-    const t = window.setTimeout(() => setIndex((i) => (i + 1) % count), INTERVAL);
-    return () => clearTimeout(t);
+    const timer = window.setTimeout(() => setIndex((i) => (i + 1) % count), INTERVAL);
+    return () => clearTimeout(timer);
   }, [index, paused, playingHere, count]);
 
   if (!count) return null;
   const go = (i: number) => setIndex(((i % count) + count) % count);
 
   const share = async (l: Listing) => {
-    const data = { title: `${l.title} on ASF Charts`, text: l.tagline, url: l.url };
+    const data = { title: t('boost.featured.shareTitle', { title: l.title }), text: l.tagline, url: l.url };
     try {
       if (navigator.share) {
         await navigator.share(data);
         return;
       }
       await navigator.clipboard.writeText(l.url);
-      toast('Link copied to clipboard.');
+      toast(t('boost.featured.copied'));
     } catch {
       /* share sheet dismissed */
     }
@@ -49,7 +50,7 @@ export function FeaturedCarousel() {
     <section
       className="featured"
       aria-roledescription="carousel"
-      aria-label="Featured listings"
+      aria-label={t('boost.featured.label')}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
@@ -77,7 +78,7 @@ export function FeaturedCarousel() {
             className={`featured__slide${active ? ' is-active' : ''}`}
             aria-hidden={!active}
             aria-roledescription="slide"
-            aria-label={`${i + 1} of ${count}`}
+            aria-label={t('boost.featured.slide', { i: i + 1, n: count })}
             style={{ ['--art-from' as string]: l.artwork.from, ['--art-to' as string]: l.artwork.to }}
           >
             <div className="featured__art" aria-hidden>
@@ -85,7 +86,7 @@ export function FeaturedCarousel() {
             </div>
             <div className="featured__body">
               <span className="featured__kicker">
-                Featured · #{e.rank} {board === 'all' ? 'all-time' : 'today'} · {categoryById(l.category).label}
+                {t(board === 'all' ? 'boost.featured.kickerAll' : 'boost.featured.kickerToday', { rank: e.rank, category: categoryLabel(l.category) })}
               </span>
               <h2 className="featured__title">{l.title}</h2>
               <p className="featured__desc">{l.tagline || l.description}</p>
@@ -93,11 +94,11 @@ export function FeaturedCarousel() {
                 {l.preview && (
                   <button className="btn-watch" tabIndex={active ? 0 : -1} onClick={() => togglePreview(l)}>
                     {playing ? <PauseIcon width={12} height={12} /> : <PlayIcon width={12} height={12} />}
-                    {playing ? 'Pause' : 'Play preview'}
+                    {playing ? t('common.action.pause') : t('boost.featured.playPreview')}
                   </button>
                 )}
                 <button className="btn-ghost" tabIndex={active ? 0 : -1} onClick={() => share(l)}>
-                  <ShareIcon width={15} height={15} /> Share
+                  <ShareIcon width={15} height={15} /> {t('common.action.share')}
                 </button>
                 <a
                   className="btn-ghost"
@@ -107,16 +108,16 @@ export function FeaturedCarousel() {
                   rel="noopener noreferrer nofollow sponsored"
                   onClick={() => backend.click(l.id)}
                 >
-                  Visit ↗
+                  {t('boost.featured.visit')} ↗
                 </a>
               </div>
               <div className="featured__meta">
                 <span className="featured__amount num">{usd(e.total)}</span>
                 <button className="link-btn" tabIndex={active ? 0 : -1} onClick={() => openDetail(l.id)}>
-                  see details
+                  {t('boost.card.details')}
                 </button>
                 <button className="link-btn link-btn--accent" tabIndex={active ? 0 : -1} onClick={() => prefillHero({ amount: minBidForRank(boards[board], e.rank) })}>
-                  take #{e.rank} for <span className="num">{usd(minBidForRank(boards[board], e.rank))}</span>
+                  {rich(t('boost.featured.take', { rank: e.rank }), { amount: <span className="num">{usd(minBidForRank(boards[board], e.rank))}</span> })}
                 </button>
               </div>
             </div>
@@ -124,13 +125,13 @@ export function FeaturedCarousel() {
         );
       })}
       {count > 1 && (
-        <div className="featured__dots" role="tablist" aria-label="Choose slide">
+        <div className="featured__dots" role="tablist" aria-label={t('boost.featured.choose')}>
           {entries.map((e, i) => (
             <button
               key={e.listing.id}
               role="tab"
               aria-selected={i === current}
-              aria-label={`Show #${e.rank} ${e.listing.title}`}
+              aria-label={t('boost.featured.show', { rank: e.rank, title: e.listing.title })}
               className={i === current ? 'is-active' : ''}
               onClick={() => go(i)}
             >

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { fmtCompact, fmtDate, t } from '../i18n';
 import { num } from '../lib/format';
 
 export interface Bar {
@@ -15,8 +16,7 @@ function niceMax(v: number): number {
   return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * mag;
 }
 
-const shortDay = (key: string) =>
-  new Date(`${key}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+const shortDay = (key: string) => fmtDate(new Date(`${key}T00:00:00Z`), { day: true, month: 'short', utc: true });
 
 /** Single-series bar chart with per-bar hover tooltip and a hidden data table for screen readers. */
 export function BarChart({ title, subtitle, data, unit }: { title: string; subtitle?: string; data: Bar[]; unit: string }) {
@@ -39,12 +39,12 @@ export function BarChart({ title, subtitle, data, unit }: { title: string; subti
     <figure className="chart" style={{ margin: 0 }} ref={figRef}>
       <h4>{title}</h4>
       {subtitle && <p>{subtitle}</p>}
-      <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${title}, last ${data.length} days`} onMouseLeave={() => setHover(null)}>
-        {ticks.map((t) => (
-          <g key={t}>
-            <line className="grid-line" x1={padL} x2={W} y1={y(t)} y2={y(t)} />
-            <text className="axis-label" x={padL - 6} y={y(t) + 3} textAnchor="end">
-              {t >= 1000 ? `${Math.round(t / 100) / 10}k` : Math.round(t)}
+      <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t('boost.chart.label', { title, n: data.length })} onMouseLeave={() => setHover(null)}>
+        {ticks.map((tick) => (
+          <g key={tick}>
+            <line className="grid-line" x1={padL} x2={W} y1={y(tick)} y2={y(tick)} />
+            <text className="axis-label" x={padL - 6} y={y(tick) + 3} textAnchor="end">
+              {fmtCompact(Math.round(tick))}
             </text>
           </g>
         ))}
@@ -63,7 +63,7 @@ export function BarChart({ title, subtitle, data, unit }: { title: string; subti
               {path && <path d={path} className={`bar${d.partial ? ' is-partial' : ''}${hover !== null && hover !== i ? ' is-dim' : ''}`} />}
               {(i === 0 || i === data.length - 1 || i === Math.floor(data.length / 2)) && (
                 <text className="axis-label" x={cx} y={H - 4} textAnchor="middle">
-                  {i === data.length - 1 ? 'Today' : shortDay(d.label)}
+                  {i === data.length - 1 ? t('boost.chart.today') : shortDay(d.label)}
                 </text>
               )}
             </g>
@@ -78,7 +78,7 @@ export function BarChart({ title, subtitle, data, unit }: { title: string; subti
         const top = box.top - fig.top + y(data[hover].value) * scale;
         return (
           <div className="tooltip" style={{ left, top }}>
-            {hover === data.length - 1 ? 'Today (so far)' : shortDay(data[hover].label)} · <span className="num">{num(data[hover].value)}</span> {unit}
+            {hover === data.length - 1 ? t('boost.chart.todaySoFar') : shortDay(data[hover].label)} · <span className="num">{num(data[hover].value)}</span> {unit}
           </div>
         );
       })()}
@@ -87,7 +87,7 @@ export function BarChart({ title, subtitle, data, unit }: { title: string; subti
         <tbody>
           {data.map((d) => (
             <tr key={d.label}>
-              <th>{d.label}</th>
+              <th>{shortDay(d.label)}</th>
               <td>{d.value}</td>
             </tr>
           ))}

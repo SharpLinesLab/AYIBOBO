@@ -1,3 +1,4 @@
+import { Fragment, createElement, type ReactNode } from 'react';
 import { fmtDate, fmtNumber, fmtRelative, fmtUsd } from '../i18n';
 
 /** Money and numbers in the current interface language. */
@@ -18,4 +19,15 @@ export function untilUtcMidnight(now: number): string {
   const next = Math.floor(now / 86_400_000 + 1) * 86_400_000;
   const mins = Math.max(0, Math.floor((next - now) / 60_000));
   return `${Math.floor(mins / 60)}h ${String(mins % 60).padStart(2, '0')}m`;
+}
+
+/**
+ * Fill `{name}` placeholders in an already-translated string with React nodes, so markup (bold
+ * amounts, links) can sit anywhere the translation puts it: `rich(t('x'), { amount: <b>$5</b> })`.
+ */
+export function rich(s: string, nodes: Record<string, ReactNode>): ReactNode[] {
+  return s.split(/(\{\w+\})/g).map((part, i) => {
+    const m = /^\{(\w+)\}$/.exec(part);
+    return createElement(Fragment, { key: i }, m && m[1] in nodes ? nodes[m[1]] : part);
+  });
 }

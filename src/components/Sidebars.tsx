@@ -1,6 +1,7 @@
 import { useMemo, useRef } from 'react';
-import { relativeTime, untilUtcMidnight, usd } from '../lib/format';
-import { computeBoard, rankOnBoard } from '../lib/ranking';
+import { t } from '../i18n';
+import { relativeTime, rich, untilUtcMidnight, usd } from '../lib/format';
+import { MIN_BID, computeBoard, rankOnBoard } from '../lib/ranking';
 import { useApp } from '../store';
 import { Thumb } from './Thumb';
 import { togglePreview } from '../lib/audio';
@@ -15,7 +16,7 @@ function MiniPlay({ listing }: { listing: Listing }) {
   return (
     <button
       className={`mini-play${playing ? ' is-playing' : ''}`}
-      aria-label={playing ? `Pause ${listing.title}` : `Play ${listing.title} preview`}
+      aria-label={playing ? t('common.action.pauseName', { name: listing.title }) : t('boost.preview.playShort', { title: listing.title })}
       onClick={() => togglePreview(listing)}
     >
       {playing ? <PauseIcon /> : <PlayIcon />}
@@ -29,7 +30,7 @@ export function TodayWidget() {
   return (
     <section className="widget" aria-labelledby="today-title">
       <div className="widget__head">
-        <h3 id="today-title">Today’s ranking</h3>
+        <h3 id="today-title">{t('boost.today.title')}</h3>
         <button
           className="link-btn link-btn--accent"
           onClick={() => {
@@ -38,12 +39,12 @@ export function TodayWidget() {
             window.setTimeout(() => document.getElementById('board')?.scrollIntoView({ behavior: 'smooth' }), 50);
           }}
         >
-          See all
+          {t('boost.today.seeAll')}
         </button>
       </div>
       {top.length === 0 ? (
         <p className="muted" style={{ fontSize: 13, margin: 0 }}>
-          No bids yet today. The first <span className="num">$10</span> takes #1.
+          {rich(t('boost.today.empty'), { amount: <span className="num">{usd(MIN_BID)}</span> })}
         </p>
       ) : (
         <ol className="mini-list">
@@ -64,7 +65,7 @@ export function TodayWidget() {
         </ol>
       )}
       <p className="hero__fine" style={{ marginTop: 10 }}>
-        Resets at 00:00 UTC · <span className="num">{untilUtcMidnight(now)}</span> left
+        {rich(t('boost.today.resets'), { time: <span className="num">{untilUtcMidnight(now)}</span> })}
       </p>
     </section>
   );
@@ -100,10 +101,10 @@ export function ActivityFeed({ limit = 10 }: { limit?: number }) {
   return (
     <section className="widget" aria-labelledby="activity-title">
       <div className="widget__head">
-        <h3 id="activity-title">Latest activity</h3>
+        <h3 id="activity-title">{t('boost.activity.title')}</h3>
         <small>
           <span className="live-dot" style={{ display: 'inline-block', marginRight: 6 }} />
-          live
+          {t('boost.activity.live')}
         </small>
       </div>
       <ul className="feed" aria-live="polite">
@@ -116,7 +117,7 @@ export function ActivityFeed({ limit = 10 }: { limit?: number }) {
               </button>
               {listing.tagline && <span className="muted"> — {listing.tagline}</span>}
               <div className="feed__meta">
-                {isNew ? 'joined' : 'at'} <b>#{rankAfter}</b> · <b>{usd(payment.amount)}</b> · {relativeTime(payment.at, now)}
+                {rich(t(isNew ? 'boost.activity.joined' : 'boost.activity.at'), { rank: <b>#{rankAfter}</b> })} · <b>{usd(payment.amount)}</b> · {relativeTime(payment.at, now)}
                 {jump > 0 && <span className="jump">↑{jump}</span>}
               </div>
             </div>

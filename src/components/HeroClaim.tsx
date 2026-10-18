@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 import { CATEGORIES } from '../lib/categories';
-import { usd } from '../lib/format';
+import { fmtNumber, t } from '../i18n';
+import { rich, usd } from '../lib/format';
 import { normalizeInput } from '../lib/normalize';
 import { MAX_BID, MIN_BID, clampBid, minBidForRank, projectRank, stepAmount, totalOnBoard } from '../lib/ranking';
 import type { CategoryId } from '../lib/types';
@@ -119,7 +120,7 @@ export function HeroClaim() {
 
   const submit = () => {
     if (!input.trim()) {
-      setError('Paste your music website URL, release link, or @handle first.');
+      setError(t('boost.hero.pasteFirst'));
       inputRef.current?.focus();
       return;
     }
@@ -135,57 +136,51 @@ export function HeroClaim() {
     openCheckout({ input: input.trim(), amount: value, board, category: category === 'auto' ? undefined : category });
   };
 
-  const display = draftAmount ?? value.toLocaleString('en-US');
+  const display = draftAmount ?? fmtNumber(value);
   const urlStatus = !target
     ? null
     : !target.ok
       ? target.code === 'shortener'
-        ? { text: 'short link · will resolve', bad: false }
-        : { text: target.code === 'invalid' ? 'invalid' : 'not allowed', bad: true }
+        ? { text: t('boost.hero.status.short'), bad: false }
+        : { text: target.code === 'invalid' ? t('boost.hero.status.invalid') : t('boost.hero.status.blocked'), bad: true }
       : existing
-        ? { text: currentTotal > 0 ? `listed · ${usd(currentTotal)}` : 'listed', bad: false }
-        : { text: 'new listing', bad: false };
+        ? { text: currentTotal > 0 ? t('boost.hero.status.listedAmount', { amount: usd(currentTotal) }) : t('boost.hero.status.listed'), bad: false }
+        : { text: t('boost.hero.status.new'), bad: false };
 
   let hint: ReactNode;
   if (projection.belowTopPremium) {
-    hint = (
-      <>
-        Taking #1 costs at least <b className="num">{usd(projection.minForTop)}</b> — $5 more than the current #1.
-      </>
-    );
+    hint = rich(t('boost.hero.hint.top'), { amount: <b className="num">{usd(projection.minForTop)}</b>, premium: usd(5) });
   } else if (existing && currentTotal > 0) {
-    hint = (
-      <>
-        <b>{existing.title}</b> already has <span className="num">{usd(currentTotal)}</span> here — raise it to{' '}
-        <span className="num">{usd(value)}</span> and pay only <b className="num accent">{usd(charge)}</b>.
-      </>
-    );
+    hint = rich(t('boost.hero.hint.raise'), {
+      title: <b>{existing.title}</b>,
+      current: <span className="num">{usd(currentTotal)}</span>,
+      target: <span className="num">{usd(value)}</span>,
+      charge: <b className="num accent">{usd(charge)}</b>,
+    });
   } else if (board === 'today') {
-    hint = <>Today’s board counts spend since 00:00 UTC and resets at midnight.</>;
+    hint = t('boost.hero.hint.today');
   } else {
-    hint = (
-      <>
-        Rank is strictly what you pay. Min <span className="num">{usd(MIN_BID)}</span> · max <span className="num">{usd(MAX_BID)}</span>.
-      </>
-    );
+    hint = rich(t('boost.hero.hint.default'), { min: <span className="num">{usd(MIN_BID)}</span>, max: <span className="num">{usd(MAX_BID)}</span> });
   }
 
   return (
     <section className="hero" ref={rootRef} aria-labelledby="hero-title">
-      <p className="hero__tagline">No algorithms, no playlist gatekeepers, no ad networks. Claim a rank on the public music leaderboard — rank is strictly what you pay.</p>
+      <p className="hero__tagline">{t('boost.hero.tagline')}</p>
       <h1 className="hero__headline" id="hero-title">
         <span>
-          Claim{' '}
-          <span key={bump} className={`hero__rank${bump ? ' bump' : ''}`}>
-            #{projection.rank}
-          </span>{' '}
-          for
+          {rich(t('boost.hero.headline'), {
+            rank: (
+              <span key={bump} className={`hero__rank${bump ? ' bump' : ''}`}>
+                #{projection.rank}
+              </span>
+            ),
+          })}
         </span>
         <span className="amount">
           <button
             type="button"
             className="stepper"
-            aria-label="Decrease bid by $1"
+            aria-label={t('boost.hero.decrease', { step: usd(1) })}
             disabled={value <= floor}
             onPointerDown={startHold(-1)}
             onPointerUp={stopHold}
@@ -201,7 +196,7 @@ export function HeroClaim() {
             </span>
             <input
               className="amount__input"
-              aria-label="Bid amount in US dollars"
+              aria-label={t('boost.hero.amountLabel')}
               inputMode="numeric"
               value={display}
               style={{ width: `${Math.max(3, display.length) + 0.15}ch` }}
@@ -225,7 +220,7 @@ export function HeroClaim() {
           <button
             type="button"
             className="stepper"
-            aria-label="Increase bid by $1"
+            aria-label={t('boost.hero.increase', { step: usd(1) })}
             disabled={value >= MAX_BID}
             onPointerDown={startHold(1)}
             onPointerUp={stopHold}
@@ -254,7 +249,7 @@ export function HeroClaim() {
       >
         <label className={`url-pill${error ? ' is-error' : ''}`} key={error ?? 'ok'}>
           <span className="url-pill__icon">{existing ? <Thumb art={existing.artwork} size="sm" /> : <WaveGlobeIcon />}</span>
-          <span className="sr-only">Music website URL, release link, or @handle</span>
+          <span className="sr-only">{t('boost.hero.urlLabel')}</span>
           <input
             ref={inputRef}
             value={input}
@@ -262,7 +257,7 @@ export function HeroClaim() {
               setInput(e.target.value);
               setError(null);
             }}
-            placeholder="Your music website URL, release link, or @handle"
+            placeholder={t('boost.hero.placeholder')}
             autoComplete="url"
             autoCapitalize="none"
             spellCheck={false}
@@ -275,9 +270,9 @@ export function HeroClaim() {
             {error}
           </p>
         )}
-        <div className={`cat-select${focused || category !== 'auto' ? ' is-open' : ''}`} role="radiogroup" aria-label="Category">
+        <div className={`cat-select${focused || category !== 'auto' ? ' is-open' : ''}`} role="radiogroup" aria-label={t('boost.hero.category')}>
           <button type="button" role="radio" aria-checked={category === 'auto'} className={`cat-chip${category === 'auto' ? ' is-active' : ''}`} onClick={() => setCategory('auto')}>
-            ✨ Auto-detect
+            ✨ {t('boost.hero.autoDetect')}
           </button>
           {CATEGORIES.map((c) => (
             <button
@@ -293,7 +288,7 @@ export function HeroClaim() {
           ))}
         </div>
         <button type="submit" className="cta">
-          {existing && currentTotal > 0 ? `Raise rank · pay ${usd(charge)}` : 'Claim rank'}
+          {existing && currentTotal > 0 ? t('boost.hero.raiseCta', { amount: usd(charge) }) : t('boost.hero.claimCta')}
         </button>
       </form>
     </section>

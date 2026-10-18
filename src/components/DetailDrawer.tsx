@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { categoryById } from '../lib/categories';
+import { fmtDate, t } from '../i18n';
 import { num, relativeTime, usd } from '../lib/format';
 import { minBidForRank, totalOnBoard } from '../lib/ranking';
 import { listingClickSeries } from '../lib/stats';
@@ -32,9 +33,9 @@ export function DetailDrawer({ listingId, onClose }: { listingId: string; onClos
   const raiseTo = nextRank ? minBidForRank(boards.all, nextRank) : totalOnBoard(boards.all, listing.id) + 1;
 
   return (
-    <Modal onClose={onClose} label={`${listing.title} details`} variant="drawer">
+    <Modal onClose={onClose} label={t('boost.detail.label', { title: listing.title })} variant="drawer">
       <div className="detail-head">
-        <Thumb art={listing.artwork} size="lg" label={`${listing.title} artwork`} />
+        <Thumb art={listing.artwork} size="lg" label={t('boost.card.artwork', { title: listing.title })} />
         <div style={{ minWidth: 0 }}>
           <h2>{listing.title}</h2>
           <div className="muted" style={{ fontSize: 14 }}>
@@ -55,7 +56,7 @@ export function DetailDrawer({ listingId, onClose }: { listingId: string; onClos
           rel="noopener noreferrer nofollow sponsored"
           onClick={() => backend.click(listing.id)}
         >
-          Visit {listing.display.length > 26 ? 'site' : listing.display} <ArrowUpRight width={16} height={16} />
+          {listing.display.length > 26 ? t('boost.detail.visitSite') : t('boost.detail.visit', { site: listing.display })} <ArrowUpRight width={16} height={16} />
         </a>
         <PreviewButton listing={listing} />
       </div>
@@ -64,21 +65,21 @@ export function DetailDrawer({ listingId, onClose }: { listingId: string; onClos
 
       <div className="stat-grid">
         <div className="stat">
-          <small>🏆 All-time</small>
+          <small>🏆 {t('boost.board.all')}</small>
           <span className="num accent">{all ? `#${all.rank}` : '—'}</span>
           <small>{usd(all?.total ?? 0)}</small>
         </div>
         <div className="stat">
-          <small>● Today</small>
+          <small>● {t('boost.board.today')}</small>
           <span className="num accent">{today ? `#${today.rank}` : '—'}</span>
           <small>{usd(today?.total ?? 0)}</small>
         </div>
         <div className="stat">
-          <small>Outbound clicks</small>
+          <small>{t('boost.detail.outbound')}</small>
           <span className="num">{num(listing.clicks)}</span>
         </div>
         <div className="stat">
-          <small>Listed</small>
+          <small>{t('boost.detail.listed')}</small>
           <span className="num" style={{ fontSize: 16 }}>
             {relativeTime(listing.createdAt, now)}
           </span>
@@ -94,19 +95,19 @@ export function DetailDrawer({ listingId, onClose }: { listingId: string; onClos
             onClose();
           }}
         >
-          {nextRank ? `Raise to #${nextRank} for ${usd(raiseTo)}` : `Raise this listing (+$1 → ${usd(raiseTo)})`}
+          {nextRank ? t('boost.detail.raiseTo', { rank: nextRank, amount: usd(raiseTo) }) : t('boost.detail.raiseBy', { step: usd(1), amount: usd(raiseTo) })}
         </button>
       </div>
 
-      <h3 className="section-title">Daily outbound clicks</h3>
-      <BarChart title="Outbound clicks per day" subtitle="Last 14 days (UTC)" data={series.map((d, i) => ({ label: d.day, value: d.clicks, partial: i === series.length - 1 }))} unit="clicks" />
+      <h3 className="section-title">{t('boost.detail.dailyClicks')}</h3>
+      <BarChart title={t('boost.stats.clicksChart')} subtitle={t('boost.detail.chartSub')} data={series.map((d, i) => ({ label: d.day, value: d.clicks, partial: i === series.length - 1 }))} unit={t('boost.stats.unitClicks')} />
 
-      <h3 className="section-title">Bid history</h3>
+      <h3 className="section-title">{t('boost.detail.history')}</h3>
       <ul className="history">
         {history.map((p) => (
           <li key={p.id}>
             <span>
-              {new Date(p.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}{' '}
+              {fmtDate(p.at, { day: true, month: 'short', year: true, utc: true })}{' '}
               <span className="muted">· {relativeTime(p.at, now)}</span>
             </span>
             <span className="num accent">+{usd(p.amount)}</span>

@@ -11,6 +11,8 @@
  *  - private chat invites and adult sites are refused
  */
 
+import { t } from '../i18n';
+
 export type NormalizeErrorCode = 'empty' | 'invalid' | 'blocked_invite' | 'blocked_nsfw' | 'shortener';
 
 export interface NormalizedTarget {
@@ -232,7 +234,7 @@ const HANDLE_RE = /^@([a-z0-9_.]{2,30})$/i;
 
 export function normalizeInput(raw: string): NormalizeResult {
   const input = raw.trim();
-  if (!input) return { ok: false, code: 'empty', error: 'Enter a music website URL, release link, or @handle.' };
+  if (!input) return { ok: false, code: 'empty', error: t('boost.url.empty') };
 
   const handle = HANDLE_RE.exec(input);
   if (handle) {
@@ -247,7 +249,7 @@ export function normalizeInput(raw: string): NormalizeResult {
     };
   }
   if (input.startsWith('@')) {
-    return { ok: false, code: 'invalid', error: 'Handles can use letters, numbers, dots and underscores (2–30 characters).' };
+    return { ok: false, code: 'invalid', error: t('boost.url.handle') };
   }
 
   let parsed: URL;
@@ -255,13 +257,13 @@ export function normalizeInput(raw: string): NormalizeResult {
     const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(input) ? input : `https://${input}`;
     parsed = new URL(withScheme);
   } catch {
-    return { ok: false, code: 'invalid', error: "That doesn't look like a valid URL." };
+    return { ok: false, code: 'invalid', error: t('boost.url.invalid') };
   }
   if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
-    return { ok: false, code: 'invalid', error: 'Only http(s) links can be listed.' };
+    return { ok: false, code: 'invalid', error: t('boost.url.httpOnly') };
   }
   if (parsed.username || parsed.password) {
-    return { ok: false, code: 'invalid', error: 'URLs with embedded credentials are not allowed.' };
+    return { ok: false, code: 'invalid', error: t('boost.url.credentials') };
   }
 
   const host = cleanHost(parsed.hostname);
@@ -270,7 +272,7 @@ export function normalizeInput(raw: string): NormalizeResult {
     host === 'localhost' ||
     /^\d+(\.\d+){3}$/.test(host)
   ) {
-    return { ok: false, code: 'invalid', error: 'Use a public website domain (e.g. yourlabel.com).' };
+    return { ok: false, code: 'invalid', error: t('boost.url.publicDomain') };
   }
 
   const path = parsed.pathname.replace(/\/{2,}/g, '/');
@@ -278,17 +280,17 @@ export function normalizeInput(raw: string): NormalizeResult {
     return {
       ok: false,
       code: 'blocked_invite',
-      error: 'Private chat invite links (Discord, Telegram, WhatsApp, …) are not allowed. List your public site instead.',
+      error: t('boost.url.invite'),
     };
   }
   if (isNsfwHost(host)) {
-    return { ok: false, code: 'blocked_nsfw', error: 'Adult / NSFW links are not allowed on the leaderboard.' };
+    return { ok: false, code: 'blocked_nsfw', error: t('boost.url.nsfw') };
   }
   if (isShortenerHost(host)) {
     return {
       ok: false,
       code: 'shortener',
-      error: 'Short links are resolved to their destination before listing.',
+      error: t('boost.url.shortener'),
     };
   }
 
@@ -350,33 +352,33 @@ export async function resolveAndNormalize(raw: string, resolver?: Resolver, maxH
     const result = normalizeInput(current);
     if (result.ok || result.code !== 'shortener') return result;
     if (!resolver) {
-      return { ok: false, code: 'shortener', error: 'Short links can’t be resolved here — paste the destination URL instead.' };
+      return { ok: false, code: 'shortener', error: t('boost.url.shortenerHere') };
     }
     let next: string;
     try {
       const withScheme = /^[a-z]+:\/\//i.test(current) ? current : `https://${current}`;
       next = await resolver(withScheme);
     } catch {
-      return { ok: false, code: 'shortener', error: 'We couldn’t resolve that short link. Paste the destination URL instead.' };
+      return { ok: false, code: 'shortener', error: t('boost.url.shortenerFailed') };
     }
     if (!next || next === current) {
       // Linktree pages don't redirect — they are landing pages. Key them by path.
       if (/linktr\.ee/i.test(current)) return normalizeLinktree(current);
-      return { ok: false, code: 'shortener', error: 'That short link doesn’t redirect anywhere. Paste the destination URL instead.' };
+      return { ok: false, code: 'shortener', error: t('boost.url.shortenerNoRedirect') };
     }
     current = next;
   }
-  return { ok: false, code: 'shortener', error: 'Too many redirects.' };
+  return { ok: false, code: 'shortener', error: t('boost.url.tooManyRedirects') };
 }
 
 function normalizeLinktree(raw: string): NormalizeResult {
   try {
     const u = new URL(/^[a-z]+:\/\//i.test(raw) ? raw : `https://${raw}`);
     const name = u.pathname.split('/').filter(Boolean)[0]?.toLowerCase();
-    if (!name) return { ok: false, code: 'invalid', error: 'Add the Linktree username, e.g. linktr.ee/yourname.' };
+    if (!name) return { ok: false, code: 'invalid', error: t('boost.url.linktree') };
     const key = `linktr.ee/${name}`;
     return { ok: true, kind: 'url', key, url: `https://${key}`, display: key, host: 'linktr.ee' };
   } catch {
-    return { ok: false, code: 'invalid', error: "That doesn't look like a valid URL." };
+    return { ok: false, code: 'invalid', error: t('boost.url.invalid') };
   }
 }
