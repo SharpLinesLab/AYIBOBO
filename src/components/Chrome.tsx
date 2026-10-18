@@ -1,11 +1,20 @@
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { BRAND, socialUrl } from '../brand';
+import { t } from '../i18n';
 import { CATEGORIES } from '../lib/categories';
 import { num, usd } from '../lib/format';
 import { totalRevenue } from '../lib/stats';
 import type { BoardId } from '../lib/types';
 import { useApp, type Filter } from '../store';
 import { AsfLogo, FacebookIcon, InstagramIcon, XIcon, YoutubeIcon } from './icons';
+
+/** Fill `{name}` placeholders in a translated string with React nodes (links, <code>, <strong>…). */
+export function rich(s: string, nodes: Record<string, ReactNode>): ReactNode[] {
+  return s.split(/(\{\w+\})/).map((part, i) => {
+    const m = /^\{(\w+)\}$/.exec(part);
+    return m && m[1] in nodes ? <Fragment key={i}>{nodes[m[1]]}</Fragment> : part;
+  });
+}
 
 export function SocialLinks({ size = 20 }: { size?: number }) {
   const items = [
@@ -17,7 +26,7 @@ export function SocialLinks({ size = 20 }: { size?: number }) {
   return (
     <span className="social">
       {items.map(({ k, label, Icon }) => (
-        <a key={k} href={socialUrl(k)} target="_blank" rel="noopener noreferrer" aria-label={`${BRAND.short} on ${label}`} className="social__link">
+        <a key={k} href={socialUrl(k)} target="_blank" rel="noopener noreferrer" aria-label={t('boost.footer.socialOn', { brand: BRAND.short, network: label })} className="social__link">
           <Icon width={size} height={size} />
         </a>
       ))}
@@ -39,10 +48,10 @@ export function CategoryBar() {
   );
   return (
     <div className="filter-bar">
-      <div className="filter-bar__track" role="toolbar" aria-label="Filter listings">
-        {chip('all', 'All')}
-        {chip('leaderboards', 'Leaderboards')}
-        {chip('explore', 'Explore')}
+      <div className="filter-bar__track" role="toolbar" aria-label={t('boost.pages.bar.filter')}>
+        {chip('all', t('boost.pages.bar.all'))}
+        {chip('leaderboards', t('boost.pages.bar.leaderboards'))}
+        {chip('explore', t('boost.pages.bar.explore'))}
         <span className="chip__divider" aria-hidden />
         {CATEGORIES.map((c) => chip(c.id, c.label, c.icon))}
       </div>
@@ -55,16 +64,12 @@ export function LivePill() {
   return (
     <div className="live-pill" role="status">
       <span className="live-dot" aria-hidden />
-      <span>
-        <b className="num">{num(snapshot.stats.online)}</b> online
-      </span>
+      <span>{rich(t('boost.pages.live.online'), { n: <b className="num">{num(snapshot.stats.online)}</b> })}</span>
       <span aria-hidden>·</span>
-      <span>
-        <span className="num">{num(snapshot.stats.visitorsToday)}</span> visitors today
-      </span>
+      <span>{rich(t('boost.pages.live.visitors'), { n: <span className="num">{num(snapshot.stats.visitorsToday)}</span> })}</span>
       <span aria-hidden>·</span>
       <button className="live-pill__stats" onClick={openStats}>
-        stats →
+        {t('boost.pages.live.stats')}
       </button>
     </div>
   );
@@ -78,12 +83,12 @@ export function BoardToggle() {
     </button>
   );
   return (
-    <div className="segmented" role="tablist" aria-label="Leaderboard timeframe">
-      {opt('all', <>🏆 All-time</>)}
+    <div className="segmented" role="tablist" aria-label={t('boost.pages.toggle.label')}>
+      {opt('all', <>🏆 {t('boost.pages.board.allTime')}</>)}
       {opt(
         'today',
         <>
-          <span className="dot" /> Today
+          <span className="dot" /> {t('boost.pages.board.today')}
         </>,
       )}
     </div>
@@ -99,38 +104,38 @@ export function Footer({ showStats = true }: { showStats?: boolean }) {
       <div className="milestones">
         <div className="milestone">
           <span className="num">{num(stats.visitorsLifetime)}</span>
-          <small>visitors</small>
+          <small>{t('boost.footer.visitors')}</small>
         </div>
         <div className="milestone">
           <span className="num">{usd(totalRevenue(state))}</span>
-          <small>total revenue</small>
+          <small>{t('boost.footer.revenue')}</small>
         </div>
         <div className="milestone">
           <span className="num">{num(state.listings.length)}</span>
-          <small>music websites listed</small>
+          <small>{t('boost.footer.listed')}</small>
         </div>
       </div>
       )}
       <div className="footer__brand">
         <AsfLogo />
       </div>
-      <nav className="footer__links" aria-label="Footer">
-        <a href="#/leaderboard">Boost Board</a>
-        <a href="#/upload">Upload</a>
-        <a href="#/about">Advertise</a>
-        <a href="#/rules">Terms &amp; Rules</a>
-        <a href="#/faq">FAQ</a>
-        <button onClick={openStats}>Live stats</button>
-        <a href="#/daily">Daily archive</a>
-        <a href={BRAND.contactEmail ? `mailto:${BRAND.contactEmail}` : '#/about'}>Contact</a>
+      <nav className="footer__links" aria-label={t('boost.footer.nav')}>
+        <a href="#/leaderboard">{t('common.nav.boost')}</a>
+        <a href="#/upload">{t('common.top.upload')}</a>
+        <a href="#/about">{t('boost.footer.advertise')}</a>
+        <a href="#/rules">{t('boost.footer.terms')}</a>
+        <a href="#/faq">{t('boost.footer.faq')}</a>
+        <button onClick={openStats}>{t('boost.footer.liveStats')}</button>
+        <a href="#/daily">{t('boost.pages.board.daily')}</a>
+        <a href={BRAND.contactEmail ? `mailto:${BRAND.contactEmail}` : '#/about'}>{t('boost.footer.contact')}</a>
         {backend.reset && (
           <button
             onClick={() => {
               backend.reset!();
-              toast('Demo data reset.');
+              toast(t('boost.footer.resetDone'));
             }}
           >
-            Reset demo
+            {t('boost.footer.resetDemo')}
           </button>
         )}
       </nav>
@@ -139,11 +144,11 @@ export function Footer({ showStats = true }: { showStats?: boolean }) {
       </div>
       <p className="footer__fine">
         <span className="mode-badge">
-          {backend.mode === 'local' ? '● Demo mode — payments simulated, saved in this browser' : backend.stripe ? '● Live — payments via Stripe' : '● Server mode — payments simulated'}
+          {t(backend.mode === 'local' ? 'boost.footer.modeDemo' : backend.stripe ? 'boost.footer.modeLive' : 'boost.footer.modeServer')}
         </span>
       </p>
       <p className="footer__fine">
-        © {new Date().getFullYear()} {BRAND.short} — {BRAND.name}. All rights reserved. Listings shown in the demo are fictional.
+        {t('boost.footer.rights', { year: new Date().getFullYear(), short: BRAND.short, name: BRAND.name })}
       </p>
     </footer>
   );

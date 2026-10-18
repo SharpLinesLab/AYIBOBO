@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { t, plural } from '../i18n';
 import { CATEGORIES, categoryById } from '../lib/categories';
 import { formatDayKey, usd } from '../lib/format';
 import { MAX_BID, MIN_BID, getArchiveBoard, getBoard, shiftDayKey, utcDayKey } from '../lib/ranking';
 import type { CategoryId } from '../lib/types';
 import { useApp } from '../store';
 import { Board } from './Board';
-import { BoardToggle, LivePill } from './Chrome';
+import { BoardToggle, LivePill, rich } from './Chrome';
 import { FeaturedCarousel } from './FeaturedCarousel';
 import { HeroClaim } from './HeroClaim';
 import { ChevronLeft, ChevronRight } from './icons';
@@ -34,17 +35,17 @@ export function HomePage() {
         <section id="board" aria-labelledby="board-title">
           <div className="board-head">
             <h2 id="board-title">
-              {board === 'all' ? 'All-time leaderboard' : 'Today’s leaderboard'}
+              {t(board === 'all' ? 'boost.pages.home.allTime' : 'boost.pages.home.today')}
               {isCategory && <span className="muted"> · {categoryById(filter as CategoryId).label}</span>}
             </h2>
-            <span>{board === 'all' ? 'lifetime spend' : 'since 00:00 UTC'}</span>
+            <span>{t(board === 'all' ? 'boost.pages.home.lifetimeSpend' : 'boost.pages.home.sinceMidnight')}</span>
           </div>
           {visible.length ? (
             <Board entries={visible} allEntries={entries} highlightId={highlightId} />
           ) : (
             <div className="empty">
-              <b>{board === 'today' ? 'Nobody has bid today yet' : 'No listings here yet'}</b>
-              Claim #1 for <span className="num">{usd(MIN_BID)}</span> — be the first.
+              <b>{t(board === 'today' ? 'boost.pages.home.emptyToday' : 'boost.pages.home.emptyAll')}</b>
+              {rich(t('boost.pages.home.emptyCta'), { amount: <span className="num">{usd(MIN_BID)}</span> })}
             </div>
           )}
         </section>
@@ -59,9 +60,9 @@ function CategoryLeaderboards() {
   return (
     <section aria-labelledby="lb-title">
       <div className="section-head">
-        <h2 id="lb-title">Leaderboards by category</h2>
+        <h2 id="lb-title">{t('boost.pages.lb.title')}</h2>
         <span className="muted" style={{ fontSize: 12.5 }}>
-          {board === 'all' ? 'all-time' : 'today'} · global ranks
+          {t(board === 'all' ? 'boost.pages.lb.subAll' : 'boost.pages.lb.subToday')}
         </span>
       </div>
       <div className="cat-grid">
@@ -74,7 +75,7 @@ function CategoryLeaderboards() {
                   {c.icon} {c.label}
                 </h2>
                 <button className="link-btn link-btn--accent" onClick={() => setFilter(c.id)}>
-                  View all
+                  {t('common.action.viewAll')}
                 </button>
               </div>
               {top.length ? (
@@ -95,7 +96,7 @@ function CategoryLeaderboards() {
                 </ol>
               ) : (
                 <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-                  Open spot — be the first {c.label.toLowerCase()} listing.
+                  {t('boost.pages.lb.openSpot', { category: c.label.toLowerCase(), name: c.label })}
                 </p>
               )}
             </div>
@@ -119,7 +120,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="hrow">
       {!edges.start && (
-        <button className="hrow__arrow hrow__arrow--prev" onClick={() => page(-1)} aria-label={`Scroll ${label} left`}>
+        <button className="hrow__arrow hrow__arrow--prev" onClick={() => page(-1)} aria-label={t('boost.pages.row.scrollLeft', { label })}>
           <ChevronLeft />
         </button>
       )}
@@ -127,7 +128,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
         {children}
       </div>
       {!edges.end && (
-        <button className="hrow__arrow hrow__arrow--next" onClick={() => page(1)} aria-label={`Scroll ${label} right`}>
+        <button className="hrow__arrow hrow__arrow--next" onClick={() => page(1)} aria-label={t('boost.pages.row.scrollRight', { label })}>
           <ChevronRight />
         </button>
       )}
@@ -170,16 +171,16 @@ function Explore() {
   return (
     <section aria-labelledby="explore-title">
       <div className="section-head">
-        <h2 id="explore-title">Rising this week</h2>
+        <h2 id="explore-title">{t('boost.pages.explore.rising')}</h2>
         <span className="muted" style={{ fontSize: 12.5 }}>
-          most spend in the last 7 days
+          {t('boost.pages.explore.risingSub')}
         </span>
       </div>
-      <Row label="Rising this week">{rising.map((e) => tile(e.listing.id))}</Row>
+      <Row label={t('boost.pages.explore.rising')}>{rising.map((e) => tile(e.listing.id))}</Row>
       <div className="section-head">
-        <h2>Newest listings</h2>
+        <h2>{t('boost.pages.explore.newest')}</h2>
       </div>
-      <Row label="Newest listings">{newest.map((l) => tile(l.id))}</Row>
+      <Row label={t('boost.pages.explore.newest')}>{newest.map((l) => tile(l.id))}</Row>
     </section>
   );
 }
@@ -193,20 +194,17 @@ export function DailyPage({ day }: { day?: string }) {
 
   return (
     <div className="prose" style={{ maxWidth: 680 }}>
-      <h1>Daily archive</h1>
-      <p>
-        Every UTC calendar day gets its own frozen board. Each payment counts toward the day it was made, the Today board and the
-        All-time board at the same time.
-      </p>
+      <h1>{t('boost.pages.board.daily')}</h1>
+      <p>{t('boost.pages.daily.intro')}</p>
       <div className="daily-nav">
-        <button className="icon-btn" disabled={key <= firstDay} onClick={() => navigate(`#/daily/${shiftDayKey(key, -1)}`)} aria-label="Previous day">
+        <button className="icon-btn" disabled={key <= firstDay} onClick={() => navigate(`#/daily/${shiftDayKey(key, -1)}`)} aria-label={t('boost.pages.daily.prev')}>
           <ChevronLeft />
         </button>
         <strong>
           {formatDayKey(key)}
-          {key === today && <span className="badge" style={{ marginLeft: 8 }}>live</span>}
+          {key === today && <span className="badge" style={{ marginLeft: 8 }}>{t('boost.pages.daily.live')}</span>}
         </strong>
-        <button className="icon-btn" disabled={key >= today} onClick={() => navigate(`#/daily/${shiftDayKey(key, 1)}`)} aria-label="Next day">
+        <button className="icon-btn" disabled={key >= today} onClick={() => navigate(`#/daily/${shiftDayKey(key, 1)}`)} aria-label={t('boost.pages.daily.next')}>
           <ChevronRight />
         </button>
       </div>
@@ -214,8 +212,8 @@ export function DailyPage({ day }: { day?: string }) {
         <Board entries={entries} allEntries={entries} highlightId={null} />
       ) : (
         <div className="empty">
-          <b>No bids on this day</b>
-          Days without payments have an empty board.
+          <b>{t('boost.pages.daily.emptyTitle')}</b>
+          {t('boost.pages.daily.emptyBody')}
         </div>
       )}
     </div>
@@ -226,8 +224,8 @@ export function CategoriesPage() {
   const { boards, setFilter, navigate } = useApp();
   return (
     <div className="prose" style={{ maxWidth: 980 }}>
-      <h1>Categories</h1>
-      <p>Twelve corners of music on the web. Ranks are global — a category view simply filters the main board.</p>
+      <h1>{t('boost.pages.cats.title')}</h1>
+      <p>{t('boost.pages.cats.intro')}</p>
       <div className="cat-grid" style={{ marginTop: 20 }}>
         {CATEGORIES.map((c) => {
           const list = boards.all.filter((e) => e.listing.category === c.id);
@@ -250,17 +248,18 @@ export function CategoriesPage() {
                   <h2 className="cat-card__h">{c.label}</h2>
                 </span>
                 <span className="muted num" style={{ fontSize: 12.5 }}>
-                  {list.length} listed
+                  {plural('boost.pages.cats.listed', list.length)}
                 </span>
               </div>
               <span className="muted" style={{ fontSize: 13 }}>
                 {top ? (
-                  <>
-                    Top: <b style={{ color: 'var(--text)' }}>{top.listing.title}</b> at <span className="accent num">#{top.rank}</span> ·{' '}
-                    <span className="num">{usd(spend)}</span> total
-                  </>
+                  rich(t('boost.pages.cats.top'), {
+                    title: <b style={{ color: 'var(--text)' }}>{top.listing.title}</b>,
+                    rank: <span className="accent num">#{top.rank}</span>,
+                    amount: <span className="num">{usd(spend)}</span>,
+                  })
                 ) : (
-                  'No listings yet — claim the first spot.'
+                  t('boost.pages.cats.empty')
                 )}
               </span>
             </button>
@@ -274,140 +273,119 @@ export function CategoriesPage() {
 export function AboutPage() {
   return (
     <div className="prose">
-      <h1>A leaderboard you can simply buy your way onto.</h1>
-      <p>
-        <strong>soundbid.lol</strong> is a public, pay-to-rank leaderboard for music on the web — standalone artist sites, browser DAWs and
-        VSTs, sample libraries, indie labels, beat stores, pressing plants, sync libraries and the communities around them.
-      </p>
-      <p>
-        There’s no algorithm deciding who gets seen, no playlist curator to win over and no ad network in the middle. The rule is the same for a
-        bedroom producer and a funded startup: <strong>rank is strictly what you pay.</strong>
-      </p>
-      <h2>How it works</h2>
+      <h1>{t('boost.pages.about.title')}</h1>
+      <p>{rich(t('boost.pages.about.p1'), { site: <strong>soundbid.lol</strong> })}</p>
+      <p>{rich(t('boost.pages.about.p2'), { rule: <strong>{t('boost.pages.about.rule')}</strong> })}</p>
+      <h2>{t('boost.pages.about.howTitle')}</h2>
       <ol>
-        <li>Paste your site, release link (Bandcamp, Spotify, SoundCloud…) or @handle.</li>
-        <li>
-          Pick an amount — the headline tells you which rank it buys in real time. #1 costs the current #1 plus <code>$5</code>.
-        </li>
-        <li>Pay. Your listing animates into place on the All-time board, today’s board and today’s archive.</li>
-        <li>Want to climb later? Enter the same link again and pay only the difference.</li>
+        <li>{t('boost.pages.about.how1')}</li>
+        <li>{rich(t('boost.pages.about.how2'), { step: <code>{usd(5)}</code> })}</li>
+        <li>{t('boost.pages.about.how3')}</li>
+        <li>{t('boost.pages.about.how4')}</li>
       </ol>
-      <h2>Why music?</h2>
-      <p>
-        Discovery for independent music is mediated by recommendation engines that reward scale. A transparent, pay-what-it-takes board is
-        crude — and that’s the point. Everyone can see exactly why a listing is where it is.
-      </p>
-      <h2>Listening, not just reading</h2>
-      <p>
-        Listings can include a short audio preview — a synth preset demo, a sample pack teaser or a featured track — playable right on the
-        board without leaving the page.
-      </p>
+      <h2>{t('boost.pages.about.whyTitle')}</h2>
+      <p>{t('boost.pages.about.why')}</p>
+      <h2>{t('boost.pages.about.listenTitle')}</h2>
+      <p>{t('boost.pages.about.listen')}</p>
     </div>
   );
 }
 
+const codes = (items: string[]) =>
+  items.map((c, i) => (
+    <Fragment key={c}>
+      {i > 0 && ', '}
+      <code>{c}</code>
+    </Fragment>
+  ));
+
+const FAQ = [
+  ['boost.pages.faq.q1', 'boost.pages.faq.a1'],
+  ['boost.pages.faq.q2', 'boost.pages.faq.a2'],
+  ['boost.pages.faq.q3', 'boost.pages.faq.a3'],
+  ['boost.pages.faq.q4', 'boost.pages.faq.a4'],
+  ['boost.pages.faq.q5', 'boost.pages.faq.a5'],
+  ['boost.pages.faq.q6', 'boost.pages.faq.a6'],
+] as const;
+
 export function RulesPage() {
+  const step = <code>{usd(1)}</code>;
   return (
     <div className="prose">
-      <h1>Rules</h1>
-      <p>The same rules apply to every listing. They are enforced by the server at checkout, not just by the interface.</p>
+      <h1>{t('boost.pages.rules.title')}</h1>
+      <p>{t('boost.pages.rules.intro')}</p>
 
-      <h2>1. One payment, three boards</h2>
+      <h2>{t('boost.pages.rules.r1Title')}</h2>
       <div className="rule-card">
         <ul>
           <li>
-            <strong>All-time</strong> — lifetime cumulative spend per listing. Never expires.
+            <strong>{t('boost.pages.board.allTime')}</strong> {t('boost.pages.rules.r1AllTime')}
           </li>
           <li>
-            <strong>Today</strong> — spend since 00:00 UTC today. Resets at midnight UTC.
+            <strong>{t('boost.pages.board.today')}</strong> {t('boost.pages.rules.r1Today')}
           </li>
           <li>
-            <strong>Daily archive</strong> — a frozen snapshot of every UTC calendar day.
+            <strong>{t('boost.pages.board.daily')}</strong> {t('boost.pages.rules.r1Daily')}
           </li>
         </ul>
       </div>
 
-      <h2>2. Amounts & outbidding</h2>
+      <h2>{t('boost.pages.rules.r2Title')}</h2>
       <div className="rule-card">
         <ul>
+          <li>{rich(t('boost.pages.rules.r2Whole'), { min: <code>{usd(MIN_BID)}</code>, max: <code>{usd(MAX_BID)}</code>, step })}</li>
           <li>
-            Whole US dollars only. Minimum <code>{usd(MIN_BID)}</code> for a new listing, maximum <code>{usd(MAX_BID)}</code>, <code>$1</code>{' '}
-            increments.
+            {rich(t('boost.pages.rules.r2First'), {
+              label: <strong>{t('boost.pages.rules.r2FirstLabel')}</strong>,
+              step: <code>{usd(5)}</code>,
+              from: <code>{usd(17_001)}</code>,
+              to: <code>{usd(17_006)}</code>,
+            })}
           </li>
           <li>
-            <strong>Taking #1</strong> costs at least <code>$5</code> more than the current #1 on that board (#1 at <code>$17,001</code> →{' '}
-            <code>$17,006</code>).
+            {rich(t('boost.pages.rules.r2Other'), {
+              label: <strong>{t('boost.pages.rules.r2OtherLabel')}</strong>,
+              step,
+              from: <code>{usd(13_005)}</code>,
+              to: <code>{usd(13_006)}</code>,
+            })}
           </li>
-          <li>
-            <strong>Any other rank</strong> costs at least <code>$1</code> more than the listing holding it (#4 at <code>$13,005</code> →{' '}
-            <code>$13,006</code>).
-          </li>
-          <li>
-            <strong>Ties</strong> stay in chronological order — the listing that got there first keeps the higher rank.
-          </li>
+          <li>{rich(t('boost.pages.rules.r2Ties'), { label: <strong>{t('boost.pages.rules.r2TiesLabel')}</strong> })}</li>
         </ul>
       </div>
 
-      <h2>3. Raising your rank</h2>
+      <h2>{t('boost.pages.rules.r3Title')}</h2>
       <div className="rule-card">
         <ul>
-          <li>Enter a link that’s already listed and it’s recognized automatically.</li>
-          <li>
-            Choose a new total at least <code>$1</code> above the current one; you’re charged only the difference.
-          </li>
-          <li>
-            A different link always pays its full amount — nobody can take over someone else’s spend by paying the difference.
-          </li>
+          <li>{t('boost.pages.rules.r3Recognized')}</li>
+          <li>{rich(t('boost.pages.rules.r3NewTotal'), { step })}</li>
+          <li>{t('boost.pages.rules.r3Different')}</li>
         </ul>
       </div>
 
-      <h2>4. Links</h2>
+      <h2>{t('boost.pages.rules.r4Title')}</h2>
       <div className="rule-card">
         <ul>
+          <li>{rich(t('boost.pages.rules.r4Tracking'), { params: codes(['utm_*', 'ref', 'si', 'fbclid']) })}</li>
+          <li>{rich(t('boost.pages.rules.r4Short'), { links: codes(['bit.ly', 'linktr.ee', 'ffm.to', 'lnk.to']) })}</li>
           <li>
-            Tracking, referral and affiliate parameters (<code>utm_*</code>, <code>ref</code>, <code>si</code>, <code>fbclid</code>…) are removed.
+            {rich(t('boost.pages.rules.r4Keyed'), {
+              examples: codes(['artist.bandcamp.com', 'open.spotify.com/artist/…', 'soundcloud.com/artist', 'splice.com/sounds/packs/…', 'gumroad.com/l/…']),
+            })}
           </li>
-          <li>
-            Short links (<code>bit.ly</code>, <code>linktr.ee</code>, <code>ffm.to</code>, <code>lnk.to</code>…) are resolved to their destination.
-          </li>
-          <li>
-            Regular sites are keyed by domain. Shared music platforms are keyed by path, so every artist, release, pack and plugin gets its own
-            listing: <code>artist.bandcamp.com</code>, <code>open.spotify.com/artist/…</code>, <code>soundcloud.com/artist</code>,{' '}
-            <code>splice.com/sounds/packs/…</code>, <code>gumroad.com/l/…</code>.
-          </li>
-          <li>
-            <code>@handles</code> are listed as X profiles.
-          </li>
-          <li>Private chat invites (Discord, Telegram, WhatsApp, Signal…) and NSFW / adult links are not allowed.</li>
+          <li>{rich(t('boost.pages.rules.r4Handles'), { handles: <code>@handles</code> })}</li>
+          <li>{t('boost.pages.rules.r4Private')}</li>
         </ul>
       </div>
 
-      <h2 id="faq">FAQ</h2>
+      <h2 id="faq">{t('boost.pages.faq.title')}</h2>
       <div className="rule-card">
-        <details className="faq">
-          <summary>Can I get a refund if someone outbids me?</summary>
-          <p>No. Payments are final and rank is never guaranteed — that’s the game. Your spend stays on your listing forever on the All-time board.</p>
-        </details>
-        <details className="faq">
-          <summary>Do I need an account?</summary>
-          <p>No. Your listing is identified by its normalized link. Anyone can top up any listing — which only ever moves it up.</p>
-        </details>
-        <details className="faq">
-          <summary>Can I change my title, description or audio preview?</summary>
-          <p>Metadata is scraped from your site at first claim. Contact us from the domain’s email to request an update.</p>
-        </details>
-        <details className="faq">
-          <summary>What counts as a click?</summary>
-          <p>Every outbound click from the board or a details page to your link. The counter is public.</p>
-        </details>
-        <details className="faq">
-          <summary>Why did my rank change without me doing anything?</summary>
-          <p>Someone else paid more. Higher cumulative payments rank higher automatically.</p>
-        </details>
-        <details className="faq">
-          <summary>Which currency and payment methods?</summary>
-          <p>US dollars via Stripe Checkout — cards, Apple Pay and Google Pay where available.</p>
-        </details>
+        {FAQ.map(([q, a]) => (
+          <details className="faq" key={q}>
+            <summary>{t(q)}</summary>
+            <p>{t(a)}</p>
+          </details>
+        ))}
       </div>
     </div>
   );
