@@ -1,5 +1,6 @@
 import { BRAND, socialUrl } from '../../brand';
 import { t } from '../../i18n';
+import { LEGAL_PAGES } from '../../pages/legal/pages';
 import { AsfLogo, FacebookIcon, InstagramIcon, XIcon, YoutubeIcon } from '../icons';
 
 export function SocialLinks({ size = 20 }: { size?: number }) {
@@ -43,6 +44,13 @@ export function Footer() {
           </a>
         ))}
         {BRAND.contactEmail && <a href={`mailto:${BRAND.contactEmail}`}>{t('common.footer.contact')}</a>}
+      </nav>
+      <nav className="footer__links footer__legal" aria-label={t('common.footer.legal')}>
+        {LEGAL_PAGES.map((l) => (
+          <a key={l.href} href={l.href}>
+            {t(l.title)}
+          </a>
+        ))}
       </nav>
       <div className="footer__social">
         <SocialLinks size={18} />

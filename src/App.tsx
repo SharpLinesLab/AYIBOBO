@@ -18,6 +18,9 @@ import { SubscribeModal } from './components/SubscribeModal';
 import { Sidebar } from './components/shell/Sidebar';
 import { TopBar } from './components/shell/TopBar';
 import { SettingsPage } from './pages/Settings';
+import { PrivacyPage } from './pages/legal/Privacy';
+import { TermsPage } from './pages/legal/Terms';
+import { CopyrightPage } from './pages/legal/Copyright';
 import { PaletteHost } from './components/shell/PaletteHost';
 import { t, useLang } from './i18n';
 import { ShareHost } from './components/music/Share';
@@ -154,6 +157,15 @@ function Shell() {
       break;
     case 'settings':
       page = <SettingsPage />;
+      break;
+    case 'privacy':
+      page = <PrivacyPage />;
+      break;
+    case 'terms':
+      page = <TermsPage />;
+      break;
+    case 'copyright':
+      page = <CopyrightPage />;
       break;
     case 'studio':
       page = <StudioPage artistId={route.artistId} />;

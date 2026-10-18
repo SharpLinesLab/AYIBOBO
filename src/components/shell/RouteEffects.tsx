@@ -42,6 +42,12 @@ function titleFor(route: Route, m: ReturnType<typeof useMusic>): string {
       const a = route.artistId ? m.artist(route.artistId) : undefined;
       return a ? `${a.name} · ${t('common.nav.studio')}` : t('common.nav.studio');
     }
+    case 'privacy':
+      return t('legal.privacy.title');
+    case 'terms':
+      return t('legal.terms.title');
+    case 'copyright':
+      return t('legal.copyright.title');
     case 'notfound':
       return t('player.title.pageNotFound');
   }

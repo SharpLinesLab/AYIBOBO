@@ -140,6 +140,7 @@ export const common: { [K in keyof typeof En]: string } = {
   'common.subscribe.welcome': 'Vous êtes abonné à {brand}. Bienvenue !',
   'common.footer.nav': 'Pied de page',
   'common.footer.socialOn': '{brand} sur {network}',
+  'common.footer.legal': 'Informations juridiques',
   'common.footer.contact': 'Contact',
   'common.footer.rights': '© {year} {short} — {name}. Tous droits réservés. Le catalogue musical présenté dans cette démo est fictif.',
 

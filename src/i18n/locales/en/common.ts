@@ -139,6 +139,7 @@ export const common = {
   'common.subscribe.welcome': 'You’re subscribed to {brand} — welcome!',
   'common.footer.nav': 'Footer',
   'common.footer.socialOn': '{brand} on {network}',
+  'common.footer.legal': 'Legal',
   'common.footer.contact': 'Contact',
   'common.footer.rights': '© {year} {short} — {name}. All rights reserved. The music catalog shown in this demo is fictional.',
 

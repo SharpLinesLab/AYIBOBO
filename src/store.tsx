@@ -15,6 +15,9 @@ export type Route =
   | { page: 'upload' }
   | { page: 'settings' }
   | { page: 'studio'; artistId?: string }
+  | { page: 'privacy' }
+  | { page: 'terms' }
+  | { page: 'copyright' }
   | { page: 'notfound' };
 
 export function parseRoute(hash: string): Route {
@@ -55,6 +58,12 @@ export function parseRoute(hash: string): Route {
       return { page: 'settings' };
     case 'studio':
       return { page: 'studio', artistId: a };
+    case 'privacy':
+      return { page: 'privacy' };
+    case 'terms':
+      return { page: 'terms' };
+    case 'copyright':
+      return { page: 'copyright' };
     case undefined:
     case 'discover':
       return { page: 'home' };

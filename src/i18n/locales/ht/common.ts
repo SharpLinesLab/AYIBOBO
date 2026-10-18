@@ -140,6 +140,7 @@ export const common: { [K in keyof typeof En]: string } = {
   'common.subscribe.welcome': 'Ou abòne nan {brand}. Byenveni!',
   'common.footer.nav': 'Pye paj',
   'common.footer.socialOn': '{brand} sou {network}',
+  'common.footer.legal': 'Enfòmasyon legal',
   'common.footer.contact': 'Kontak',
   'common.footer.rights': '© {year} {short} — {name}. Tout dwa rezève. Katalòg mizik ki nan demo sa a pa reyèl.',
 
