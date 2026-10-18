@@ -187,7 +187,8 @@ function startSynth(recipe: SynthRecipe, duration: number, from: number) {
   const myBus = bus;
   const schedule = () => {
     if (bus !== myBus || !ac) return;
-    const horizon = ac.currentTime + 0.8;
+    // Background tabs throttle timers to ~1s, so schedule further ahead while hidden.
+    const horizon = ac.currentTime + (document.hidden ? 3 : 0.8);
     while (nextBar < totalBars && trackT0 + nextBar * barDur < horizon) {
       const t = trackT0 + nextBar * barDur;
       renderBar(ac, myBus, recipe, nextBar, totalBars, t, startAt);

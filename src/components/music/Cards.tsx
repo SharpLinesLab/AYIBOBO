@@ -8,7 +8,7 @@ export function TrackCard({ track, context, rank }: { track: Track; context?: Tr
   const m = useMusic();
   const { current } = useIsCurrent([track.id]);
   return (
-    <article className={`mcard${current ? ' is-current' : ''}`} role="listitem">
+    <div className={`mcard${current ? ' is-current' : ''}`} role="listitem">
       <a className="mcard__art" href={`#/song/${track.id}`} aria-label={track.title}>
         <Cover spec={track.cover} />
         {rank !== undefined && <span className="mcard__rank">{rank}</span>}
@@ -24,7 +24,7 @@ export function TrackCard({ track, context, rank }: { track: Track; context?: Tr
         <ArtistLinks track={track} />
       </span>
       <span className="mcard__meta">{compact(m.totalPlays(track))} plays</span>
-    </article>
+    </div>
   );
 }
 
@@ -62,7 +62,7 @@ export function AlbumCard({ album }: { album: Album }) {
   const artist = m.artist(album.artistId);
   const tracks = m.tracksOf(album.trackIds);
   return (
-    <article className="mcard" role="listitem">
+    <div className="mcard" role="listitem">
       <a className="mcard__art" href={`#/album/${album.id}`} aria-label={album.title}>
         <Cover spec={album.cover} />
       </a>
@@ -76,7 +76,7 @@ export function AlbumCard({ album }: { album: Album }) {
       <span className="mcard__meta">
         {album.type === 'ep' ? 'EP' : album.type === 'mixtape' ? 'Mixtape' : 'Album'} · {new Date(album.releasedAt).getFullYear()}
       </span>
-    </article>
+    </div>
   );
 }
 
@@ -84,7 +84,7 @@ export function PlaylistCard({ playlist }: { playlist: Playlist }) {
   const m = useMusic();
   const tracks = m.tracksOf(playlist.trackIds);
   return (
-    <article className="mcard" role="listitem">
+    <div className="mcard" role="listitem">
       <a className="mcard__art" href={`#/playlist/${playlist.id}`} aria-label={playlist.title}>
         <Cover spec={playlist.cover} />
       </a>
@@ -96,7 +96,7 @@ export function PlaylistCard({ playlist }: { playlist: Playlist }) {
       </a>
       <span className="mcard__sub">{playlist.curator}</span>
       <span className="mcard__meta">{playlist.trackIds.length} songs</span>
-    </article>
+    </div>
   );
 }
 
@@ -104,7 +104,7 @@ export function ArtistCard({ artist }: { artist: Artist }) {
   const m = useMusic();
   const following = m.library.follows.includes(artist.id);
   return (
-    <article className="mcard mcard--artist" role="listitem">
+    <div className="mcard mcard--artist" role="listitem">
       <a className="mcard__art" href={`#/artist/${artist.id}`} aria-label={artist.name}>
         <Cover spec={artist.avatar} round />
         <span className="mcard__initials" aria-hidden>
@@ -123,7 +123,7 @@ export function ArtistCard({ artist }: { artist: Artist }) {
       <button type="button" className={`follow-btn${following ? ' is-on' : ''}`} onClick={() => m.toggleFollow(artist.id)}>
         {following ? 'Following' : 'Follow'}
       </button>
-    </article>
+    </div>
   );
 }
 
@@ -145,7 +145,7 @@ export function GenreTile({ id }: { id: Parameters<typeof genreById>[0] }) {
   const g = genreById(id);
   const lead = [...m.catalog.artists].filter((a) => a.genres[0] === id || a.genres.includes(id)).sort((a, b) => b.followers - a.followers)[0];
   return (
-    <a className="genre-tile" href={`#/genres/${g.id}`} role="listitem" style={{ ['--g1' as string]: g.colors[0], ['--g2' as string]: g.colors[1] }}>
+    <a className="genre-tile" href={`#/genres/${g.id}`} style={{ ['--g1' as string]: g.colors[0], ['--g2' as string]: g.colors[1] }}>
       {lead && <Cover spec={lead.poster} className="genre-tile__img" />}
       <span>{g.label}</span>
     </a>
@@ -158,7 +158,7 @@ export function PosterCard({ artist }: { artist: Artist }) {
   const following = m.library.follows.includes(artist.id);
   const top = m.artistTracks(artist.id).filter((t) => t.artistId === artist.id);
   return (
-    <article className="poster" role="listitem">
+    <div className="poster" role="listitem">
       <a href={`#/artist/${artist.id}`} className="poster__link" aria-label={artist.name}>
         <Cover spec={artist.poster} className="poster__img" />
         <span className="poster__shade" aria-hidden />
@@ -174,6 +174,6 @@ export function PosterCard({ artist }: { artist: Artist }) {
           {following ? 'Following' : 'Follow'}
         </button>
       </span>
-    </article>
+    </div>
   );
 }

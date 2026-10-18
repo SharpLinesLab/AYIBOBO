@@ -180,11 +180,11 @@ export function SearchPage({ q }: { q: string }) {
     return (
       <div className="page-music">
         <PageHead kicker="Search" title="Browse all" sub="Press / anywhere to search." />
-        <div className="genre-strip genre-strip--grid" role="list">
+        <nav className="genre-strip genre-strip--grid" aria-label="Genres">
           {GENRES.map((g) => (
             <GenreTile key={g.id} id={g.id} />
           ))}
-        </div>
+        </nav>
       </div>
     );
   }

@@ -2079,7 +2079,8 @@ details.faq p {
   gap: 8px;
 }
 
-.cat-card__head h3 {
+.cat-card__head h3,
+.cat-card__head h2 {
   margin: 0;
   font-size: 15px;
   font-weight: 800;

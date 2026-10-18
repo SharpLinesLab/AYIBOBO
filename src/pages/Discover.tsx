@@ -22,7 +22,7 @@ function HeroCarousel({ items }: { items: Feature[] }) {
   const [hold, setHold] = useState(false);
   const n = items.length;
   useEffect(() => {
-    if (hold || n < 2) return;
+    if (hold || n < 2 || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
     const t = window.setTimeout(() => setI((x) => (x + 1) % n), 7000);
     return () => clearTimeout(t);
   }, [i, hold, n]);
@@ -164,11 +164,11 @@ export function DiscoverPage() {
     <div className="page-music">
       <HeroCarousel items={data.features} />
 
-      <div className="genre-strip" role="list" aria-label="Genres">
+      <nav className="genre-strip" aria-label="Genres">
         {GENRES.map((g) => (
           <GenreTile key={g.id} id={g.id} />
         ))}
-      </div>
+      </nav>
 
       {recent.length > 0 && (
         <Shelf title="Jump back in" subtitle="Recently played" href="#/library/recent">

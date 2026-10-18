@@ -30,6 +30,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.5.0",
+    "axe-core": "^4.10.3",
     "esbuild": "^0.25.5",
     "tsx": "^4.20.0",
     "typescript": "^5.8.3",

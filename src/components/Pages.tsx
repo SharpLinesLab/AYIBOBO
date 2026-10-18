@@ -70,9 +70,9 @@ function CategoryLeaderboards() {
           return (
             <div className="cat-card" key={c.id}>
               <div className="cat-card__head">
-                <h3>
+                <h2 className="cat-card__h">
                   {c.icon} {c.label}
-                </h3>
+                </h2>
                 <button className="link-btn link-btn--accent" onClick={() => setFilter(c.id)}>
                   View all
                 </button>
@@ -247,7 +247,7 @@ export function CategoriesPage() {
                   <span className="cat-card__icon" aria-hidden>
                     {c.icon}
                   </span>
-                  <h3>{c.label}</h3>
+                  <h2 className="cat-card__h">{c.label}</h2>
                 </span>
                 <span className="muted num" style={{ fontSize: 12.5 }}>
                   {list.length} listed

@@ -1,0 +1,15 @@
+{
+  "name": "ASF — Ayiti Sakap Fet Music",
+  "short_name": "ASF",
+  "description": "Stream kompa, rap kreyòl, afrobeats and more from Haiti and the diaspora.",
+  "start_url": "/#/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#08090b",
+  "theme_color": "#08090b",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -28,7 +28,7 @@ export function Sidebar() {
       <a href="#/" className="side__brand" aria-label="ASF home">
         <AsfLogo />
       </a>
-      <nav className="side__group">
+      <nav className="side__group" aria-label="Browse">
         {MAIN_NAV.map(({ href, label, page, Icon }) => (
           <a key={href} href={href} className={`side__link${active(page) ? ' is-active' : ''}`} aria-current={active(page) ? 'page' : undefined}>
             <Icon />
@@ -38,7 +38,7 @@ export function Sidebar() {
         ))}
       </nav>
       <div className="side__label">Your library</div>
-      <nav className="side__group">
+      <nav className="side__group" aria-label="Your library">
         {LIB_NAV.map(({ href, label, tab, Icon }) => {
           const on = route.page === 'library' && route.tab === tab;
           const count = tab === 'likes' ? m.library.likes.length : tab === 'uploads' ? m.library.uploads.length : 0;
@@ -54,7 +54,7 @@ export function Sidebar() {
       {m.library.playlists.length > 0 && (
         <>
           <div className="side__label">Your playlists</div>
-          <nav className="side__group side__playlists">
+          <nav className="side__group side__playlists" aria-label="Your playlists">
             {m.library.playlists.slice(0, 8).map((p) => (
               <a key={p.id} href={`#/playlist/${p.id}`} className={`side__pl${route.page === 'playlist' && route.id === p.id ? ' is-active' : ''}`}>
                 <Cover spec={p.cover} size={32} />

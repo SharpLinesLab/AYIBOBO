@@ -210,22 +210,42 @@ export function NowPlaying({ onClose }: { onClose: () => void }) {
   const cur = s.current;
   const track = cur ? m.track(cur.id) : undefined;
   const [tab, setTab] = useState<'wave' | 'queue'>('wave');
+  const closeBtn = useRef<HTMLButtonElement>(null);
+  const dialog = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
   useEffect(() => {
-    const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', esc);
+    // Modal behaviour: focus inside on open, trap Tab, Escape closes, focus returns on close.
+    const prev = document.activeElement as HTMLElement | null;
+    closeBtn.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeRef.current();
+      if (e.key !== 'Tab' || !dialog.current) return;
+      const f = [...dialog.current.querySelectorAll<HTMLElement>('a[href],button:not([disabled]),input,[tabindex]:not([tabindex="-1"])')].filter((n) => n.offsetParent !== null);
+      if (!f.length) return;
+      if (e.shiftKey && document.activeElement === f[0]) {
+        e.preventDefault();
+        f[f.length - 1].focus();
+      } else if (!e.shiftKey && document.activeElement === f[f.length - 1]) {
+        e.preventDefault();
+        f[0].focus();
+      }
+    };
+    window.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
     return () => {
-      window.removeEventListener('keydown', esc);
+      window.removeEventListener('keydown', onKey);
       document.body.style.overflow = '';
+      prev?.focus?.({ preventScroll: true });
     };
-  }, [onClose]);
+  }, []);
   if (!cur) return null;
   return (
-    <div className="np" role="dialog" aria-modal="true" aria-label="Now playing">
+    <div className="np" role="dialog" aria-modal="true" aria-label="Now playing" ref={dialog}>
       <div className="np__bg" style={{ backgroundImage: cur.artwork ? `url("${cur.artwork}")` : undefined }} />
       <div className="np__inner">
         <header className="np__head">
-          <button className="round-btn" onClick={onClose} aria-label="Close now playing">
+          <button className="round-btn" onClick={onClose} aria-label="Close now playing" ref={closeBtn}>
             <CollapseIcon />
           </button>
           <span className="np__label">Now playing</span>

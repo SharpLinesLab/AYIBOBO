@@ -7,13 +7,13 @@ export function Thumb({ art, size = 'md', label }: { art: Artwork; size?: 'sm' |
   const style = { background: `linear-gradient(135deg, ${art.from}, ${art.to})` };
   if (art.imageUrl && !failed) {
     return (
-      <span className={cls} style={style} role="img" aria-label={label}>
+      <span className={cls} style={style} {...(label ? { role: 'img', 'aria-label': label } : { 'aria-hidden': true })}>
         <img src={art.imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} />
       </span>
     );
   }
   return (
-    <span className={cls} style={style} role="img" aria-label={label}>
+    <span className={cls} style={style} {...(label ? { role: 'img', 'aria-label': label } : { 'aria-hidden': true })}>
       <span>{art.glyph}</span>
       {size !== 'sm' && (
         <svg className="thumb__wave" viewBox="0 0 56 14" preserveAspectRatio="none" aria-hidden>

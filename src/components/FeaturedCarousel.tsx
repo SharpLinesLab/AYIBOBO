@@ -23,7 +23,7 @@ export function FeaturedCarousel() {
   const playingHere = entries.some((e) => e.listing.id === player.playingId);
 
   useEffect(() => {
-    if (paused || playingHere || count < 2) return;
+    if (paused || playingHere || count < 2 || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
     const t = window.setTimeout(() => setIndex((i) => (i + 1) % count), INTERVAL);
     return () => clearTimeout(t);
   }, [index, paused, playingHere, count]);

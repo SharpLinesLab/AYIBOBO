@@ -9,16 +9,16 @@ import { TrackList, TrackRow } from '../components/music/TrackRow';
 
 function GenreChips({ base, active }: { base: string; active?: string }) {
   return (
-    <div className="chips" role="list">
-      <a href={base} className={`chip2${!active ? ' is-active' : ''}`} role="listitem">
+    <nav className="chips" aria-label="Filter">
+      <a href={base} className={`chip2${!active ? ' is-active' : ''}`} aria-current={!active ? 'page' : undefined}>
         All genres
       </a>
       {GENRES.map((g) => (
-        <a key={g.id} href={`${base}/${g.id}`} className={`chip2${active === g.id ? ' is-active' : ''}`} role="listitem">
+        <a key={g.id} href={`${base}/${g.id}`} className={`chip2${active === g.id ? ' is-active' : ''}`} aria-current={active === g.id ? 'page' : undefined}>
           {g.label}
         </a>
       ))}
-    </div>
+    </nav>
   );
 }
 
@@ -84,13 +84,13 @@ export function ChartsPage({ kind, window }: { kind: 'songs' | 'albums'; window:
           </div>
         </div>
       </PageHead>
-      <div className="chips" role="list">
+      <nav className="chips" aria-label="Filter">
         {WINDOWS.map((w) => (
-          <a key={w.id} href={`#/charts/${kind}/${w.id}`} className={`chip2${window === w.id ? ' is-active' : ''}`} role="listitem">
+          <a key={w.id} href={`#/charts/${kind}/${w.id}`} className={`chip2${window === w.id ? ' is-active' : ''}`} aria-current={window === w.id ? 'page' : undefined}>
             {w.label}
           </a>
         ))}
-      </div>
+      </nav>
       {kind === 'songs' ? (
         <div className="tlist" role="list">
           {rows.map((r) => (
@@ -104,7 +104,7 @@ export function ChartsPage({ kind, window }: { kind: 'songs' | 'albums'; window:
             return (
               <li key={a.id} className="alist__row">
                 <span className="alist__rank num">{i + 1}</span>
-                <a href={`#/album/${a.id}`}>
+                <a href={`#/album/${a.id}`} aria-label={a.title} tabIndex={-1}>
                   <Cover spec={a.cover} size={56} />
                 </a>
                 <span className="alist__main">
@@ -137,7 +137,7 @@ export function GenresPage() {
           return (
             <a key={g.id} href={`#/genres/${g.id}`} className="genre-card" style={{ ['--g1' as string]: g.colors[0], ['--g2' as string]: g.colors[1] }}>
               {artists[0] && <Cover spec={artists[0].poster} className="genre-card__img" />}
-              <h3>{g.label}</h3>
+              <h2>{g.label}</h2>
               <p>{g.blurb}</p>
               <span className="genre-card__faces">
                 {artists.map((a) => (
@@ -212,7 +212,7 @@ export function NotFound({ what }: { what: string }) {
   return (
     <div className="page-music">
       <div className="empty-state">
-        <h2>We couldn’t find that {what}</h2>
+        <h1>We couldn’t find that {what}</h1>
         <p>It may have been removed, or the link is wrong.</p>
         <a className="btn-accent" href="#/">
           Back to Discover

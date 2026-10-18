@@ -83,7 +83,7 @@ async function demoResolver(url: string): Promise<string> {
   throw new Error('unresolvable');
 }
 
-function createLocalBackend(): Backend {
+export function createLocalBackend(): Backend {
   const sessionStart = Date.now();
   const seed = createSeedState(sessionStart);
   let persisted = readPersisted();

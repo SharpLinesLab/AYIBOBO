@@ -1,23 +1,40 @@
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
-import { createBackend, type Backend, type Snapshot } from './backend';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { createBackend, createLocalBackend, type Backend, type Snapshot } from './backend';
 import { stopPreview } from './lib/audio';
 import type { BoardId } from './lib/types';
 import { MusicProvider } from './music';
 import * as player from './player/engine';
 import { AppProvider, parseRoute, useBoards, useNow, type AppContextValue, type Filter, type HeroPrefill } from './store';
 import { CategoryBar, Footer } from './components/Chrome';
-import { CheckoutModal, type CheckoutRequestState } from './components/CheckoutModal';
-import { DetailDrawer } from './components/DetailDrawer';
-import { AboutPage, CategoriesPage, DailyPage, HomePage as LeaderboardHome, RulesPage } from './components/Pages';
-import { ActivityFeed, TodayWidget } from './components/Sidebars';
-import { StatsModal } from './components/StatsModal';
+import type { CheckoutRequestState } from './components/CheckoutModal';
+
+// The Boost Board and its dialogs are split into their own chunks; the music app loads without them.
+const CheckoutModal = lazy(() => import('./components/CheckoutModal').then((m) => ({ default: m.CheckoutModal })));
+const DetailDrawer = lazy(() => import('./components/DetailDrawer').then((m) => ({ default: m.DetailDrawer })));
+const StatsModal = lazy(() => import('./components/StatsModal').then((m) => ({ default: m.StatsModal })));
+const LeaderboardHome = lazy(() => import('./components/Pages').then((m) => ({ default: m.HomePage })));
+const DailyPage = lazy(() => import('./components/Pages').then((m) => ({ default: m.DailyPage })));
+const CategoriesPage = lazy(() => import('./components/Pages').then((m) => ({ default: m.CategoriesPage })));
+const AboutPage = lazy(() => import('./components/Pages').then((m) => ({ default: m.AboutPage })));
+const RulesPage = lazy(() => import('./components/Pages').then((m) => ({ default: m.RulesPage })));
+const TodayWidget = lazy(() => import('./components/Sidebars').then((m) => ({ default: m.TodayWidget })));
+const ActivityFeed = lazy(() => import('./components/Sidebars').then((m) => ({ default: m.ActivityFeed })));
+
+function PageLoading() {
+  return (
+    <div className="page-loading" role="status" aria-live="polite">
+      <span className="spinner" aria-hidden /> <span className="sr-only">Loading…</span>
+    </div>
+  );
+}
 import { SubscribeModal } from './components/SubscribeModal';
 import { Sidebar } from './components/shell/Sidebar';
 import { TopBar } from './components/shell/TopBar';
 import { NowPlaying, PlayerBar } from './components/shell/Player';
 import { MobileTabs } from './components/shell/MobileTabs';
 import { DiscoverPage } from './pages/Discover';
-import { ChartsPage, GenrePage, GenresPage, TrendingPage } from './pages/Browse';
+import { ChartsPage, GenrePage, GenresPage, NotFound, TrendingPage } from './pages/Browse';
+import { ErrorBoundary, RouteEffects } from './components/shell/RouteEffects';
 import { AlbumPage, ArtistPage, PlaylistPage, SongPage } from './pages/Detail';
 import { LibraryPage, SearchPage, UploadPage } from './pages/Library';
 
@@ -57,8 +74,16 @@ export function App() {
     let cancelled = false;
     (async () => {
       try {
-        const b = await createBackend();
-        const s = await b.load();
+        let b = await createBackend();
+        let s: Snapshot;
+        try {
+          s = await b.load();
+        } catch (err) {
+          // The API is down: keep the app (and all the music) working on the local demo backend.
+          console.warn('Boost Board API unavailable, using local mode', err);
+          b = createLocalBackend();
+          s = await b.load();
+        }
         if (cancelled) return;
         setBackend(b);
         setSnapshot(s);
@@ -131,15 +156,6 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
     const t = window.setTimeout(() => setToastMsg(null), 3200);
     return () => clearTimeout(t);
   }, [toastMsg]);
-
-  // Scroll to top on page change; jump to the FAQ for #/faq.
-  useEffect(() => {
-    if (hash.startsWith('#/faq')) {
-      window.setTimeout(() => document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' }), 30);
-    } else {
-      window.scrollTo({ top: 0 });
-    }
-  }, [route.page, hash]);
 
   // Stripe return: ?checkout=success|cancel
   useEffect(() => {
@@ -273,6 +289,9 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
     case 'rules':
       page = <RulesPage />;
       break;
+    case 'notfound':
+      page = <NotFound what="page" />;
+      break;
     case 'leaderboard':
       page = (
         <div className="lb">
@@ -296,15 +315,25 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
   return (
     <AppProvider value={value}>
       <MusicProvider now={now}>
-        <a href="#content" className="sr-only">
+        <RouteEffects hash={hash} />
+        <a
+          href="#content"
+          className="skip-link"
+          onClick={(e) => {
+            e.preventDefault();
+            document.getElementById('content')?.focus();
+          }}
+        >
           Skip to content
         </a>
         <div className={`app${hasPlayer ? ' has-player' : ''}`}>
           <Sidebar />
           <div className="app__main">
             <TopBar theme={theme} onToggleTheme={toggleTheme} onSubscribe={() => setSubscribeOpen(true)} />
-            <main id="content" className="content" key={route.page === 'leaderboard' ? 'lb' : hash}>
-              {page}
+            <main id="content" className="content" tabIndex={-1} key={route.page === 'leaderboard' ? 'lb' : hash}>
+              <ErrorBoundary resetKey={hash}>
+                <Suspense fallback={<PageLoading />}>{page}</Suspense>
+              </ErrorBoundary>
             </main>
             <Footer showStats={route.page === 'leaderboard'} />
           </div>
@@ -313,6 +342,7 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
         </div>
         {npOpen && <NowPlaying onClose={() => setNpOpen(false)} />}
 
+        <Suspense fallback={null}>
         {checkout && (
           <CheckoutModal
             req={checkout}
@@ -325,6 +355,7 @@ function Shell({ backend, snapshot, setSnapshot }: { backend: Backend; snapshot:
         )}
         {detailId && <DetailDrawer listingId={detailId} onClose={() => setDetailId(null)} />}
         {statsOpen && <StatsModal onClose={() => setStatsOpen(false)} />}
+        </Suspense>
         {subscribeOpen && <SubscribeModal onClose={() => setSubscribeOpen(false)} />}
         {toastMsg && (
           <div className="toast" role="status">

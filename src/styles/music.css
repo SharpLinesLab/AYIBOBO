@@ -1136,7 +1136,7 @@ a.tag:hover {
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
 }
 
-.genre-card h3 {
+.genre-card h2 {
   margin: 0;
   font-size: 24px;
   font-weight: 800;

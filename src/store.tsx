@@ -22,7 +22,8 @@ export type Route =
   | { page: 'daily'; day?: string }
   | { page: 'categories' }
   | { page: 'about' }
-  | { page: 'rules' };
+  | { page: 'rules' }
+  | { page: 'notfound' };
 
 export function parseRoute(hash: string): Route {
   const [path] = hash.replace(/^#\/?/, '').split('?');
@@ -70,8 +71,11 @@ export function parseRoute(hash: string): Route {
     case 'rules':
     case 'faq':
       return { page: 'rules' };
-    default:
+    case undefined:
+    case 'discover':
       return { page: 'home' };
+    default:
+      return { page: 'notfound' };
   }
 }
 
