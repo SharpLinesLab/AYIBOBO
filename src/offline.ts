@@ -4,6 +4,7 @@
  * both play offline once the app shell is cached; streamed audio files are saved to Cache Storage.
  */
 import { useEffect, useState, useSyncExternalStore } from 'react';
+import { t } from './i18n';
 
 export const AUDIO_CACHE = 'asf-audio-v1';
 export const MEDIA_CACHE = 'asf-media-v1';
@@ -92,7 +93,7 @@ export async function isCached(url: string): Promise<boolean> {
 
 /** Save audio files (and their artwork) for offline use. Reports progress per file. */
 export async function saveForOffline(audio: string[], images: string[], onProgress?: (done: number, total: number) => void) {
-  if (!hasCaches()) throw new Error('Offline storage isn’t available in this browser.');
+  if (!hasCaches()) throw new Error(t('pages.offline.unavailable'));
   const audioCache = await caches.open(AUDIO_CACHE);
   const media = await caches.open(MEDIA_CACHE);
   let done = 0;
@@ -100,7 +101,7 @@ export async function saveForOffline(audio: string[], images: string[], onProgre
   for (const url of audio) {
     if (!(await audioCache.match(url))) {
       const res = await fetch(url);
-      if (!res.ok) throw new Error(`Download failed (${res.status})`);
+      if (!res.ok) throw new Error(t('pages.offline.failedStatus', { status: res.status }));
       await audioCache.put(url, res);
     }
     onProgress?.(++done, audio.length);

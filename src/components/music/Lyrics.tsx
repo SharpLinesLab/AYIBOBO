@@ -4,6 +4,19 @@ import type { Track } from '../../catalog/types';
 import { fmtTime, useMusic, usePlayerState } from '../../music';
 import { getPosition, pause, resume, seek, subscribePosition } from '../../player/engine';
 import { Modal } from '../Modal';
+import { plural, t } from '../../i18n';
+
+/** Render a translated sentence with a bold button name in place of `{button}`. */
+function withButton(text: string, button: string) {
+  const [before, after = ''] = text.split('{button}');
+  return (
+    <>
+      {before}
+      <b>{button}</b>
+      {after}
+    </>
+  );
+}
 
 /** Index of the line being sung, updated only when it changes (not every frame). */
 function useActiveIndex(lines: LyricLine[], enabled: boolean): number {
@@ -49,17 +62,17 @@ export function LyricsView({ track, variant }: { track: Track; variant: 'full' |
   if (!lyrics) {
     return (
       <div className={`lyr lyr--${variant} lyr--empty`}>
-        <p className="muted">{track.uploaded ? 'No lyrics added for this song yet.' : 'Instrumental — no lyrics for this one.'}</p>
+        <p className="muted">{track.uploaded ? t('pages.lyrics.noneUploaded') : t('pages.lyrics.instrumental')}</p>
       </div>
     );
   }
 
-  const playFrom = (t: number | null) => {
-    if (t === null) return;
+  const playFrom = (at: number | null) => {
+    if (at === null) return;
     if (isCurrent) {
-      seek(t);
+      seek(at);
       if (!s.playing) resume();
-    } else m.play([track], 0, t);
+    } else m.play([track], 0, at);
   };
   const markUser = () => (userScrolled.current = Date.now());
 
@@ -71,10 +84,10 @@ export function LyricsView({ track, variant }: { track: Track; variant: 'full' |
       onTouchMove={markUser}
       onKeyDown={markUser}
       tabIndex={variant === 'page' ? undefined : 0}
-      aria-label={variant === 'page' ? undefined : `Lyrics for ${track.title}`}
+      aria-label={variant === 'page' ? undefined : t('pages.lyrics.regionLabel', { name: track.title })}
       role={variant === 'page' ? undefined : 'region'}
     >
-      {!synced && <p className="lyr__note">These lyrics aren’t synced to the song yet.</p>}
+      {!synced && <p className="lyr__note">{t('pages.lyrics.notSynced')}</p>}
       {lyrics.lines.map((l, i) => {
         const state = !isCurrent || !synced ? '' : i === idx ? ' is-active' : i < idx ? ' is-past' : '';
         return (
@@ -86,7 +99,7 @@ export function LyricsView({ track, variant }: { track: Track; variant: 'full' |
             onClick={() => playFrom(l.time)}
           >
             {l.text || (
-              <span className="lyr__dots" role="img" aria-label="Instrumental">
+              <span className="lyr__dots" role="img" aria-label={t('pages.lyrics.instrumentalBreak')}>
                 <i />
                 <i />
                 <i />
@@ -95,7 +108,7 @@ export function LyricsView({ track, variant }: { track: Track; variant: 'full' |
           </p>
         );
       })}
-      {lyrics.source === 'lrc' && track.uploaded && <p className="lyr__credit">Synced by the artist</p>}
+      {lyrics.source === 'lrc' && track.uploaded && <p className="lyr__credit">{t('pages.lyrics.syncedByArtist')}</p>}
     </div>
   );
 }
@@ -120,7 +133,7 @@ export function LyricsEditor({ track, onClose }: { track: Track; onClose: () => 
   const finish = (all: number[]) => {
     pause();
     setSyncing(false);
-    if (all.length) setText(toLrc(lines.slice(0, all.length).map((t, i) => ({ text: t, time: all[i] }))) + (all.length < lines.length ? `\n${lines.slice(all.length).join('\n')}` : ''));
+    if (all.length) setText(toLrc(lines.slice(0, all.length).map((line, i) => ({ text: line, time: all[i] }))) + (all.length < lines.length ? `\n${lines.slice(all.length).join('\n')}` : ''));
   };
   const startSync = () => {
     setStamps([]);
@@ -149,33 +162,31 @@ export function LyricsEditor({ track, onClose }: { track: Track; onClose: () => 
   }, [stamps, syncing, lines.length]);
 
   return (
-    <Modal onClose={onClose} label="Edit lyrics" wide>
+    <Modal onClose={onClose} label={t('pages.lyrics.edit')} wide>
       <div className="lyred">
-        <h2>Lyrics · {track.title}</h2>
+        <h2>{t('pages.lyrics.titleFor', { name: track.title })}</h2>
         {!syncing ? (
           <>
-            <p className="muted">
-              Paste your lyrics, one line per row. Then press <b>Sync to song</b> and tap along as it plays to time each line. You can also paste an LRC file.
-            </p>
+            <p className="muted">{withButton(t('pages.lyrics.editHint'), t('pages.lyrics.sync'))}</p>
             <textarea
               className="input lyred__text"
               rows={14}
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder={'First line of the song\nSecond line…'}
-              aria-label="Lyrics"
+              placeholder={t('pages.lyrics.placeholder')}
+              aria-label={t('pages.lyrics.title')}
               data-autofocus
             />
             <p className="muted lyred__status">
-              {parsed ? (parsed.synced ? `Synced · ${parsed.lines.length} lines` : `${lines.length} lines · not synced yet`) : 'No lyrics yet'}
+              {parsed ? (parsed.synced ? plural('pages.lyrics.statusSynced', parsed.lines.length) : plural('pages.lyrics.statusUnsynced', lines.length)) : t('pages.lyrics.none')}
             </p>
             <div className="row lyred__actions">
               <button className="btn-glass" onClick={startSync} disabled={!lines.length || !track.audioUrl}>
-                Sync to song
+                {t('pages.lyrics.sync')}
               </button>
               <span className="grow" />
               <button className="btn-glass" onClick={onClose}>
-                Cancel
+                {t('common.action.cancel')}
               </button>
               <button
                 className="btn-accent"
@@ -184,14 +195,14 @@ export function LyricsEditor({ track, onClose }: { track: Track; onClose: () => 
                   onClose();
                 }}
               >
-                Save lyrics
+                {t('pages.lyrics.save')}
               </button>
             </div>
           </>
         ) : (
           <div className="lyred__sync">
             <p className="muted">
-              Tap <b>Next line</b> (or press Space) the moment each line starts. Backspace undoes. {stamps.length}/{lines.length}
+              {withButton(t('pages.lyrics.tapHint'), t('pages.lyrics.nextLine'))} {stamps.length}/{lines.length}
             </p>
             <ol className="lyred__lines">
               {lines.map((l, i) => (
@@ -202,15 +213,15 @@ export function LyricsEditor({ track, onClose }: { track: Track; onClose: () => 
             </ol>
             <div className="row lyred__actions">
               <button className="btn-glass" onClick={() => setStamps((st) => st.slice(0, -1))} disabled={!stamps.length}>
-                Undo
+                {t('pages.lyrics.undo')}
               </button>
               <span className="grow" />
               <button className="btn-glass" onClick={() => finish(stamps)}>
-                Stop
+                {t('pages.lyrics.stop')}
               </button>
               {/* Keyboard Space is handled above; ignore the synthetic click it would also fire. */}
               <button className="btn-accent btn-lg" onClick={(e) => e.detail > 0 && tap()}>
-                Next line
+                {t('pages.lyrics.nextLine')}
               </button>
             </div>
           </div>

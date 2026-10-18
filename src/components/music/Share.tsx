@@ -7,6 +7,7 @@ import { getPosition, getState } from '../../player/engine';
 import { useApp } from '../../store';
 import { Modal } from '../Modal';
 import { Cover } from './bits';
+import { t } from '../../i18n';
 
 export interface ShareTarget {
   kind: 'Song' | 'Album' | 'Playlist' | 'Artist';
@@ -20,8 +21,11 @@ export interface ShareTarget {
   peaks?: number[];
 }
 
+const KIND_LABEL = { Song: 'common.kind.song', Album: 'common.kind.album', Playlist: 'common.kind.playlist', Artist: 'common.kind.artist' } as const;
+const KIND_KICKER = { Song: 'pages.share.kicker.song', Album: 'pages.share.kicker.album', Playlist: 'pages.share.kicker.playlist', Artist: 'pages.share.kicker.artist' } as const;
+
 /** Open the share sheet from anywhere. */
-export const openShare = (t: ShareTarget) => window.dispatchEvent(new CustomEvent<ShareTarget>('asf:share', { detail: t }));
+export const openShare = (target: ShareTarget) => window.dispatchEvent(new CustomEvent<ShareTarget>('asf:share', { detail: target }));
 
 export function ShareHost() {
   const [target, setTarget] = useState<ShareTarget | null>(null);
@@ -63,15 +67,15 @@ function wrapLines(ctx: CanvasRenderingContext2D, text: string, max: number, lin
 }
 
 /** 1080×1920 story card: blurred artwork backdrop, cover, title, waveform and the link. */
-async function renderCard(t: ShareTarget, url: string): Promise<Blob | null> {
+async function renderCard(tg: ShareTarget, url: string): Promise<Blob | null> {
   const W = 1080;
   const H = 1920;
   const c = document.createElement('canvas');
   c.width = W;
   c.height = H;
   const ctx = c.getContext('2d')!;
-  const [a, b] = paletteOf(t.cover);
-  const art = await loadImage(coverUrl(t.cover));
+  const [a, b] = paletteOf(tg.cover);
+  const art = await loadImage(coverUrl(tg.cover));
   await document.fonts?.ready;
 
   const g = ctx.createLinearGradient(0, 0, 0, H);
@@ -96,13 +100,13 @@ async function renderCard(t: ShareTarget, url: string): Promise<Blob | null> {
   ctx.shadowBlur = 80;
   ctx.shadowOffsetY = 30;
   ctx.beginPath();
-  ctx.roundRect(x, y, size, size, t.kind === 'Artist' ? size / 2 : 36);
+  ctx.roundRect(x, y, size, size, tg.kind === 'Artist' ? size / 2 : 36);
   ctx.fillStyle = b;
   ctx.fill();
   ctx.restore();
   ctx.save();
   ctx.beginPath();
-  ctx.roundRect(x, y, size, size, t.kind === 'Artist' ? size / 2 : 36);
+  ctx.roundRect(x, y, size, size, tg.kind === 'Artist' ? size / 2 : 36);
   ctx.clip();
   ctx.drawImage(art, x, y, size, size);
   ctx.restore();
@@ -112,25 +116,25 @@ async function renderCard(t: ShareTarget, url: string): Promise<Blob | null> {
   ctx.textAlign = 'center';
   ctx.font = "800 30px 'Inter', sans-serif";
   ctx.globalAlpha = 0.75;
-  ctx.fillText(t.kind.toUpperCase(), W / 2, y + size + 110);
+  ctx.fillText(t(KIND_LABEL[tg.kind]).toLocaleUpperCase(), W / 2, y + size + 110);
   ctx.globalAlpha = 1;
   ctx.font = "800 84px 'Inter Tight', 'Inter', sans-serif";
-  const lines = wrapLines(ctx, t.title, W - 160);
+  const lines = wrapLines(ctx, tg.title, W - 160);
   lines.forEach((l, i) => ctx.fillText(l, W / 2, y + size + 210 + i * 96));
   ctx.font = "600 44px 'Inter', sans-serif";
   ctx.globalAlpha = 0.8;
-  ctx.fillText(wrapLines(ctx, t.subtitle, W - 160, 1)[0] ?? '', W / 2, y + size + 210 + lines.length * 96 + 20);
+  ctx.fillText(wrapLines(ctx, tg.subtitle, W - 160, 1)[0] ?? '', W / 2, y + size + 210 + lines.length * 96 + 20);
   ctx.globalAlpha = 1;
 
   // Waveform
-  if (t.peaks?.length) {
+  if (tg.peaks?.length) {
     const n = 64;
     const bw = 9;
     const gap = 5;
     const total = n * (bw + gap) - gap;
     const wy = 1600;
     for (let i = 0; i < n; i++) {
-      const p = t.peaks[Math.floor((i / n) * t.peaks.length)] ?? 0.3;
+      const p = tg.peaks[Math.floor((i / n) * tg.peaks.length)] ?? 0.3;
       const h = 16 + p * 110;
       ctx.fillStyle = i < n * 0.35 ? '#2ed573' : 'rgba(255,255,255,0.45)';
       ctx.beginPath();
@@ -144,7 +148,7 @@ async function renderCard(t: ShareTarget, url: string): Promise<Blob | null> {
   ctx.fillText('ASF', W / 2, 1790);
   ctx.font = "600 30px 'Inter', sans-serif";
   ctx.globalAlpha = 0.7;
-  ctx.fillText(`Listen on ASF · ${url.replace(/^https?:\/\//, '').slice(0, 52)}`, W / 2, 1846);
+  ctx.fillText(t('pages.share.listenOn', { url: url.replace(/^https?:\/\//, '').slice(0, 52) }), W / 2, 1846);
   ctx.globalAlpha = 1;
 
   return new Promise((resolve) => {
@@ -167,7 +171,7 @@ export function ShareSheet({ target, onClose }: { target: ShareTarget; onClose: 
 
   const base = `${location.origin}${location.pathname}`;
   const url = `${base}${target.href}${atTime && pos > 0 ? `?t=${pos}` : ''}`;
-  const text = `${target.title} — ${target.subtitle} on ASF`;
+  const text = t('pages.share.text', { title: target.title, subtitle: target.subtitle });
 
   useEffect(() => {
     let live = true;
@@ -189,9 +193,9 @@ export function ShareSheet({ target, onClose }: { target: ShareTarget; onClose: 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(url);
-      toast('Link copied');
+      toast(t('pages.share.copied'));
     } catch {
-      toast('Couldn’t copy — long-press the link to copy it');
+      toast(t('pages.share.copyFailed'));
     }
   };
   const file = card ? new File([card.blob], `${target.title.replace(/[^\w\- ]+/g, '').trim() || 'asf'}-asf.png`, { type: 'image/png' }) : null;
@@ -212,11 +216,11 @@ export function ShareSheet({ target, onClose }: { target: ShareTarget; onClose: 
   ];
 
   return (
-    <Modal onClose={onClose} label={`Share ${target.title}`} wide>
+    <Modal onClose={onClose} label={t('pages.detail.shareName', { name: target.title })} wide>
       <div className="share">
         <div className="share__preview">
           {card ? (
-            <img src={card.url} alt={`Share card for ${target.title}`} />
+            <img src={card.url} alt={t('pages.share.cardAlt', { name: target.title })} />
           ) : cardFailed ? (
             <Cover spec={target.cover} />
           ) : (
@@ -224,7 +228,7 @@ export function ShareSheet({ target, onClose }: { target: ShareTarget; onClose: 
           )}
         </div>
         <div className="share__side">
-          <span className="phead__kicker">Share {target.kind.toLowerCase()}</span>
+          <span className="phead__kicker">{t(KIND_KICKER[target.kind])}</span>
           <h2>{target.title}</h2>
           <p className="muted">{target.subtitle}</p>
 
@@ -242,28 +246,28 @@ export function ShareSheet({ target, onClose }: { target: ShareTarget; onClose: 
                 <span className="share__dot" aria-hidden>
                   ⋯
                 </span>
-                More
+                {t('common.nav.more')}
               </button>
             )}
           </div>
 
           <div className="share__link">
-            <input readOnly value={url} aria-label="Link" onFocus={(e) => e.currentTarget.select()} />
+            <input readOnly value={url} aria-label={t('pages.share.link')} onFocus={(e) => e.currentTarget.select()} />
             <button className="btn-accent btn-sm" onClick={() => void copy()}>
-              Copy
+              {t('common.action.copy')}
             </button>
           </div>
           {playingThis && pos > 0 && (
             <label className="check">
-              <input type="checkbox" checked={atTime} onChange={(e) => setAtTime(e.target.checked)} /> Start at {fmtTime(pos)}
+              <input type="checkbox" checked={atTime} onChange={(e) => setAtTime(e.target.checked)} /> {t('pages.share.startAt', { time: fmtTime(pos) })}
             </label>
           )}
           {card && (
             <a className="btn-glass" href={card.url} download={file?.name}>
-              Download story image
+              {t('pages.share.downloadImage')}
             </a>
           )}
-          <p className="muted share__hint">Post the image to Instagram, TikTok or WhatsApp Status with the link in your bio or caption.</p>
+          <p className="muted share__hint">{t('pages.share.hint')}</p>
         </div>
       </div>
     </Modal>
