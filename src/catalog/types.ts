@@ -13,7 +13,8 @@ export type GenreId =
   | 'rara'
   | 'electronic';
 
-export type CoverTemplate = 'orb' | 'sun' | 'rings' | 'waves' | 'grid' | 'type' | 'split';
+/** `photo` = album cover built around the artist's portrait; `portrait`/`poster`/`stage` = artist imagery. */
+export type CoverTemplate = 'orb' | 'sun' | 'rings' | 'waves' | 'grid' | 'type' | 'split' | 'photo' | 'portrait' | 'poster' | 'stage';
 
 export interface CoverSpec {
   template: CoverTemplate;
@@ -22,6 +23,10 @@ export interface CoverSpec {
   /** Optional typography printed on the cover. */
   text?: string;
   subtext?: string;
+  /** Real artwork (photo, poster, cover). Takes precedence over the generated design. */
+  imageUrl?: string;
+  /** Seed of the artist whose silhouette appears on `photo` covers. */
+  figureSeed?: number;
 }
 
 export interface Artist {
@@ -36,6 +41,8 @@ export interface Artist {
   followers: number;
   avatar: CoverSpec;
   banner: CoverSpec;
+  /** 3:4 tour-poster image. */
+  poster: CoverSpec;
 }
 
 export interface SynthRecipe {

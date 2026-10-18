@@ -3,6 +3,7 @@
  * curated palette and one of several editorial templates — no image assets required.
  */
 import { mulberry32 } from '../lib/metadata';
+import { renderPortrait } from './poster';
 import type { CoverSpec, CoverTemplate } from './types';
 
 export const PALETTES: [string, string, string][] = [
@@ -27,6 +28,7 @@ export const TEMPLATES: CoverTemplate[] = ['orb', 'sun', 'rings', 'waves', 'grid
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
 function render(spec: CoverSpec): string {
+  if (spec.template === 'portrait' || spec.template === 'poster' || spec.template === 'stage') return renderPortrait(spec.seed, spec.palette, spec.template);
   const [bg, mid, hi] = spec.palette;
   const r = mulberry32(spec.seed);
   const S = 400;
@@ -96,6 +98,11 @@ function render(spec: CoverSpec): string {
 <circle cx="${(140 + r() * 120).toFixed(0)}" cy="${(140 + r() * 120).toFixed(0)}" r="${(60 + r() * 50).toFixed(0)}" fill="${hi}"/>`;
       break;
     }
+    case 'photo': {
+      const inner = renderPortrait(spec.figureSeed ?? spec.seed, spec.palette, 'cover').replace('<svg ', '<svg width="400" height="400" ');
+      body = inner;
+      break;
+    }
     case 'type':
     default: {
       body = `<defs><linearGradient id="${id}t" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${bg}"/><stop offset="1" stop-color="${mid}"/></linearGradient></defs>
@@ -118,7 +125,13 @@ const cache = new Map<string, string>();
 
 /** Data URI for an `<img>` (cached). */
 export function coverUrl(spec: CoverSpec): string {
-  const key = `${spec.template}|${spec.palette.join()}|${spec.seed}|${spec.text ?? ''}|${spec.subtext ?? ''}`;
+  if (spec.imageUrl) return spec.imageUrl;
+  return generatedCoverUrl(spec);
+}
+
+/** Always the generated design (used as the fallback when a real image fails to load). */
+export function generatedCoverUrl(spec: CoverSpec): string {
+  const key = `${spec.template}|${spec.palette.join()}|${spec.seed}|${spec.figureSeed ?? ''}|${spec.text ?? ''}|${spec.subtext ?? ''}`;
   let url = cache.get(key);
   if (!url) {
     url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(render(spec))}`;

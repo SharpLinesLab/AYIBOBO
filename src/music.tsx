@@ -134,9 +134,11 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
     (async () => {
       const add: Record<string, string> = {};
       for (const id of ids) {
-        if (uploadUrls[id]) continue;
-        const blob = await loadAudio(id);
-        if (blob) add[id] = URL.createObjectURL(blob);
+        for (const key of [id, `${id}:cover`]) {
+          if (uploadUrls[key]) continue;
+          const blob = await loadAudio(key);
+          if (blob) add[key] = URL.createObjectURL(blob);
+        }
       }
       if (cancelled) {
         Object.values(add).forEach((u) => URL.revokeObjectURL(u));
@@ -144,8 +146,9 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
       }
       setUploadUrls((prev) => {
         const next: Record<string, string> = {};
-        for (const id of ids) if (prev[id] || add[id]) next[id] = prev[id] ?? add[id];
-        for (const [id, u] of Object.entries(prev)) if (!next[id]) URL.revokeObjectURL(u);
+        for (const id of ids)
+          for (const key of [id, `${id}:cover`]) if (prev[key] || add[key]) next[key] = prev[key] ?? add[key];
+        for (const [key, u] of Object.entries(prev)) if (!next[key]) URL.revokeObjectURL(u);
         return next;
       });
     })();
@@ -155,7 +158,10 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
   }, [uploadIds]);
 
   const catalog: Catalog = useMemo(() => {
-    const uploads = library.uploads.map((t) => ({ ...t, audioUrl: uploadUrls[t.id] }));
+    const uploads = library.uploads.map((t) => {
+      const art = uploadUrls[`${t.id}:cover`];
+      return { ...t, audioUrl: uploadUrls[t.id], cover: art ? { ...t.cover, imageUrl: art } : t.cover };
+    });
     return {
       artists: seed.artists,
       tracks: [...uploads, ...seed.tracks],
@@ -271,6 +277,7 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
       addUpload: (t) => update((l) => ({ ...l, uploads: [t, ...l.uploads] })),
       deleteUpload: async (id) => {
         await deleteAudio(id);
+        await deleteAudio(`${id}:cover`);
         update((l) => ({ ...l, uploads: l.uploads.filter((t) => t.id !== id), likes: l.likes.filter((x) => x !== id) }));
       },
       setDisplayName: (n) => update((l) => ({ ...l, displayName: n.trim().slice(0, 40) })),

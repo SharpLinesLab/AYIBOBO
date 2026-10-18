@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { GENRES, genreById, isGenreId } from '../catalog/genres';
 import { WINDOW_DAYS, playsInWindow, trackChart, trending, type ChartWindow } from '../catalog/plays';
+import { coverUrl } from '../catalog/covers';
 import { compact, useMusic } from '../music';
 import { Cover, PlayAll, Shelf } from '../components/music/bits';
 import { AlbumCard, ArtistCard, PlaylistCard } from '../components/music/Cards';
@@ -132,9 +133,10 @@ export function GenresPage() {
       <PageHead kicker="Browse" title="Genres & moods" sub="From kompa to drill — dive into the sounds of Haiti and the diaspora." />
       <div className="genre-grid">
         {GENRES.map((g) => {
-          const artists = m.catalog.artists.filter((a) => a.genres.includes(g.id)).slice(0, 3);
+          const artists = m.catalog.artists.filter((a) => a.genres.includes(g.id)).sort((a, b) => b.followers - a.followers).slice(0, 3);
           return (
-            <a key={g.id} href={`#/genres/${g.id}`} className="genre-card" style={{ background: `linear-gradient(135deg, ${g.colors[0]}, ${g.colors[1]})` }}>
+            <a key={g.id} href={`#/genres/${g.id}`} className="genre-card" style={{ ['--g1' as string]: g.colors[0], ['--g2' as string]: g.colors[1] }}>
+              {artists[0] && <Cover spec={artists[0].poster} className="genre-card__img" />}
               <h3>{g.label}</h3>
               <p>{g.blurb}</p>
               <span className="genre-card__faces">
@@ -155,12 +157,13 @@ export function GenrePage({ id }: { id: string }) {
   if (!isGenreId(id)) return <NotFound what="genre" />;
   const g = genreById(id);
   const tracks = trending(m.catalog.tracks.filter((t) => t.genre === id && !t.uploaded), m.now);
-  const artists = m.catalog.artists.filter((a) => a.genres.includes(id));
+  const artists = m.catalog.artists.filter((a) => a.genres.includes(id)).sort((a, b) => b.followers - a.followers);
   const albums = m.catalog.albums.filter((a) => m.tracksOf(a.trackIds).some((t) => t.genre === id));
   const playlists = m.catalog.playlists.filter((p) => p.editorial && m.tracksOf(p.trackIds).some((t) => t.genre === id));
   return (
     <div className="page-music">
-      <header className="ghead" style={{ background: `linear-gradient(135deg, ${g.colors[0]}, ${g.colors[1]})` }}>
+      <header className="ghead" style={{ ['--g1' as string]: g.colors[0], ['--g2' as string]: g.colors[1] }}>
+        {artists[0] && <div className="ghead__img" style={{ backgroundImage: `url("${coverUrl(artists[0].banner)}")` }} />}
         <span className="phead__kicker">Genre</span>
         <h1>{g.label}</h1>
         <p>{g.blurb}</p>

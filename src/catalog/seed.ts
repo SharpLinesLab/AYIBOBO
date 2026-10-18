@@ -3,7 +3,9 @@
  * from each track's recipe, and artwork is generated (see covers.ts).
  */
 import { hashString, mulberry32 } from '../lib/metadata';
+import { applyArtwork } from './artwork';
 import { PALETTES, makeCover } from './covers';
+import { STAGE_PALETTES } from './poster';
 import type { Album, Artist, Catalog, GenreId, Playlist, Track } from './types';
 
 const DAY = 86_400_000;
@@ -128,7 +130,7 @@ export function createCatalog(now: number): Catalog {
     const id = `ar-${slug(a.name)}`;
     const seed = hashString(id);
     const r = mulberry32(seed);
-    const palette = PALETTES[ai % PALETTES.length];
+    const stage = STAGE_PALETTES[ai % STAGE_PALETTES.length];
     artists.push({
       id,
       name: a.name,
@@ -138,8 +140,9 @@ export function createCatalog(now: number): Catalog {
       genres: a.genres,
       verified: !!a.verified,
       followers: a.followers,
-      avatar: makeCover(seed, { template: r() < 0.5 ? 'orb' : 'rings', palette }),
-      banner: makeCover(seed + 7, { template: 'waves', palette }),
+      avatar: { template: 'portrait', palette: stage, seed },
+      banner: { template: 'stage', palette: stage, seed },
+      poster: { template: 'poster', palette: stage, seed },
     });
 
     const pop = a.followers / 100_000;
@@ -150,7 +153,11 @@ export function createCatalog(now: number): Catalog {
       const n = 4 + Math.floor(r() * 5);
       const released = now - Math.floor((k === 0 ? 3 + r() * 120 : 140 + r() * 400) * DAY);
       const type: Album['type'] = n <= 5 ? 'ep' : a.genres.includes('rap-kreyol') || a.genres.includes('drill') ? 'mixtape' : 'album';
-      const cover = makeCover(hashString(albumId), { palette: PALETTES[(ai + k * 5) % PALETTES.length], text: r() < 0.5 ? albumName : undefined, subtext: a.name });
+      // Lead releases are photo covers built around the artist; the rest use editorial designs.
+      const cover =
+        k === 0 || r() < 0.4
+          ? { template: 'photo' as const, palette: stage, seed: hashString(albumId), figureSeed: seed, text: albumName, subtext: a.name }
+          : makeCover(hashString(albumId), { palette: PALETTES[(ai + k * 5) % PALETTES.length], text: r() < 0.5 ? albumName : undefined, subtext: a.name });
       const ids: string[] = [];
       for (let t = 0; t < n; t++) {
         const tr = makeTrack(`${albumId}-${t + 1}`, nextTitle(), a, ai, id, released, pop * (t === 0 ? 1.6 : 1 - t * 0.06), cover, albumId);
@@ -173,7 +180,10 @@ export function createCatalog(now: number): Catalog {
       const sid = `tr-${slug(a.name)}-single-${s + 1}`;
       const released = now - Math.floor((s === 0 ? r() * 10 : 12 + r() * 200) * DAY);
       const title = nextTitle();
-      const cover = makeCover(hashString(sid), { text: r() < 0.35 ? title : undefined, subtext: r() < 0.35 ? a.name : undefined });
+      const cover =
+        s === 0 && r() < 0.6
+          ? { template: 'photo' as const, palette: stage, seed: hashString(sid), figureSeed: seed, text: title, subtext: a.name }
+          : makeCover(hashString(sid), { text: r() < 0.35 ? title : undefined, subtext: r() < 0.35 ? a.name : undefined });
       tracks.push(makeTrack(sid, title, a, ai, id, released, pop * (s === 0 ? 1.9 : 0.9), cover));
     }
   });
@@ -188,7 +198,7 @@ export function createCatalog(now: number): Catalog {
   }
 
   const playlists = createPlaylists(tracks);
-  return { artists, tracks, albums, playlists };
+  return applyArtwork({ artists, tracks, albums, playlists });
 }
 
 function makeTrack(

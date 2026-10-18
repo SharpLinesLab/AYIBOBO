@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { coverUrl } from '../../catalog/covers';
+import { generatedCoverUrl } from '../../catalog/covers';
 import type { CoverSpec, Track } from '../../catalog/types';
 import { useMusic, usePlayerState } from '../../music';
 import { pause, resume } from '../../player/engine';
 import { ChevronLeft, ChevronRight, PauseIcon, PlayIcon } from '../icons';
 
 export function Cover({ spec, size, round, className = '', alt = '' }: { spec: CoverSpec; size?: number; round?: boolean; className?: string; alt?: string }) {
+  const [failed, setFailed] = useState<string | null>(null);
+  const src = spec.imageUrl && failed !== spec.imageUrl ? spec.imageUrl : generatedCoverUrl(spec);
   return (
     <img
-      className={`cover${round ? ' cover--round' : ''} ${className}`}
-      src={coverUrl(spec)}
+      className={`cover${round ? ' cover--round' : ''}${spec.imageUrl && failed !== spec.imageUrl ? ' cover--photo' : ''} ${className}`}
+      src={src}
+      onError={() => spec.imageUrl && setFailed(spec.imageUrl)}
       alt={alt}
       width={size}
       height={size}

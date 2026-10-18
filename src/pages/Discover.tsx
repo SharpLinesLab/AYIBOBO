@@ -9,7 +9,7 @@ import { useApp } from '../store';
 import { usd } from '../lib/format';
 import { PauseIcon, PlayIcon } from '../components/icons';
 import { Cover, HeartIcon, Shelf } from '../components/music/bits';
-import { AlbumCard, ArtistCard, GenreTile, PlaylistCard, TrackCard, Verified } from '../components/music/Cards';
+import { AlbumCard, ArtistCard, GenreTile, PlaylistCard, PosterCard, TrackCard, Verified } from '../components/music/Cards';
 import { TrackRow } from '../components/music/TrackRow';
 import { Thumb } from '../components/Thumb';
 
@@ -42,7 +42,7 @@ function HeroCarousel({ items }: { items: Feature[] }) {
         const saved = f.kind === 'album' ? m.library.likedAlbums.includes(f.album.id) : m.isLiked(f.track.id);
         return (
           <article key={href} className={`hero2__slide${active ? ' is-active' : ''}`} aria-hidden={!active}>
-            <div className="hero2__bg" style={{ backgroundImage: `url("${coverUrl(cover)}")` }} />
+            <div className="hero2__bg" style={{ backgroundImage: `url("${coverUrl(artist ? artist.banner : cover)}")` }} />
             <a href={href} className="hero2__art" tabIndex={active ? 0 : -1}>
               <Cover spec={cover} alt={title} />
             </a>
@@ -147,7 +147,8 @@ export function DiscoverPage() {
     const releases = [...newAlbums.slice(0, 6).map((a) => ({ kind: 'album' as const, a })), ...byDate.filter((t) => !t.albumId).slice(0, 8).map((t) => ({ kind: 'track' as const, t }))].sort(
       (x, y) => (y.kind === 'album' ? y.a.releasedAt : y.t.releasedAt) - (x.kind === 'album' ? x.a.releasedAt : x.t.releasedAt),
     );
-    return { trend: trend.slice(0, 14), chart, features, rising: rising.slice(0, 10), releases };
+    const spotlight = [...catalog.artists].sort((a, b) => b.followers - a.followers).slice(0, 10);
+    return { trend: trend.slice(0, 14), chart, features, rising: rising.slice(0, 10), releases, spotlight };
   }, [catalog, now, library.plays, m]);
 
   const recent = m.tracksOf(library.recents).slice(0, 12);
@@ -180,6 +181,12 @@ export function DiscoverPage() {
       <Shelf title="Trending now" subtitle="The fastest-rising songs on ASF this week" href="#/trending">
         {data.trend.map((t, i) => (
           <TrackCard key={t.id} track={t} context={data.trend} rank={i + 1} />
+        ))}
+      </Shelf>
+
+      <Shelf title="Artist spotlight" subtitle="The voices defining the sound right now">
+        {data.spotlight.map((a) => (
+          <PosterCard key={a.id} artist={a} />
         ))}
       </Shelf>
 

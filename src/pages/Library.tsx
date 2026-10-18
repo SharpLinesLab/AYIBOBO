@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PALETTES, TEMPLATES, makeCover } from '../catalog/covers';
 import { GENRES } from '../catalog/genres';
 import { searchCatalog } from '../catalog/search';
@@ -285,7 +285,23 @@ export function UploadPage() {
   const [palette, setPalette] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [art, setArt] = useState<{ file: File; url: string } | null>(null);
+  useEffect(
+    () => () => {
+      if (art) URL.revokeObjectURL(art.url);
+    },
+    [art],
+  );
   const cover: CoverSpec = { ...makeCover(seed, { template, palette: PALETTES[palette] }), text: title.slice(0, 22) || undefined, subtext: m.library.displayName || undefined };
+  const shownCover: CoverSpec = art ? { ...cover, imageUrl: art.url } : cover;
+
+  const pickArt = (f: File | undefined) => {
+    if (!f) return;
+    if (!/^image\/(jpeg|png|webp|avif)$/.test(f.type)) return setError('Cover art must be a JPG, PNG, WebP or AVIF image.');
+    if (f.size > 8 * 1024 * 1024) return setError('Cover art can be up to 8 MB.');
+    setError(null);
+    setArt({ file: f, url: URL.createObjectURL(f) });
+  };
 
   const pick = async (f: File | undefined) => {
     setError(null);
@@ -310,6 +326,7 @@ export function UploadPage() {
     const id = `up-${Date.now().toString(36)}`;
     try {
       await saveAudio(id, file);
+      if (art) await saveAudio(`${id}:cover`, art.file);
     } catch {
       setBusy(false);
       return setError('Your browser blocked storage for the audio file. Free up space or allow site data and try again.');
@@ -404,7 +421,17 @@ export function UploadPage() {
         </section>
         <aside className="card-panel stack">
           <h2 className="panel-title">Cover art</h2>
-          <Cover spec={cover} className="upload__cover" />
+          <Cover spec={shownCover} className="upload__cover" />
+          <label className="btn-accent upload__art-btn">
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={(e) => pickArt(e.target.files?.[0])} hidden />
+            {art ? 'Replace your artwork' : 'Upload your own artwork'}
+          </label>
+          {art && (
+            <button className="btn-glass" onClick={() => setArt(null)}>
+              Use a generated design instead
+            </button>
+          )}
+          <p className="muted upload__hint">Square JPG/PNG, at least 1000×1000. Or design one below.</p>
           <div className="chips">
             {TEMPLATES.map((t) => (
               <button key={t} className={`chip2${template === t ? ' is-active' : ''}`} onClick={() => setTemplate(t)}>
