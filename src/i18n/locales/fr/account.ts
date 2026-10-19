@@ -70,6 +70,7 @@ export const account: { [K in keyof typeof En]: string } = {
   'account.upload.error.unreadable': 'Ce navigateur n’arrive pas à lire le fichier audio. Essayez un MP3 ou un WAV.',
   'account.upload.error.rate_limited': 'Vous avez envoyé beaucoup de titres. Réessayez dans une heure.',
   'account.upload.error.unknown': 'Le titre n’a pas pu être envoyé. Réessayez.',
+  'account.upload.error.unauthenticated': 'Votre session a expiré — reconnectez-vous pour mettre en ligne.',
 
   // Moderation (admins)
   'admin.kicker': 'Administration',

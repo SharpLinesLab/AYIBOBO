@@ -190,12 +190,16 @@ export function readCookie(req: Request, name: string): string | undefined {
   return undefined;
 }
 
-/** The session cookie: not readable by scripts, HTTPS-only, and not sent on cross-site requests. */
-export function sessionCookie(token: string, maxAgeMs: number): string {
-  return `${SESSION_COOKIE}=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${Math.floor(maxAgeMs / 1000)}`;
+/**
+ * The session cookie: not readable by scripts and not sent on cross-site requests. `secure` makes
+ * it HTTPS-only; pass it whenever the site is served over HTTPS (browsers drop Secure cookies
+ * set over plain HTTP).
+ */
+export function sessionCookie(token: string, maxAgeMs: number, secure: boolean): string {
+  return `${SESSION_COOKIE}=${token}; HttpOnly;${secure ? ' Secure;' : ''} SameSite=Lax; Path=/; Max-Age=${Math.floor(maxAgeMs / 1000)}`;
 }
 
-export const clearSessionCookie = () => `${SESSION_COOKIE}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
+export const clearSessionCookie = (secure: boolean) => `${SESSION_COOKIE}=; HttpOnly;${secure ? ' Secure;' : ''} SameSite=Lax; Path=/; Max-Age=0`;
 
 /** The signed-in user for this request, if any (set by `attachUser`). */
 export const currentUser = (res: Response): User | null => (res.locals.user as User | undefined) ?? null;

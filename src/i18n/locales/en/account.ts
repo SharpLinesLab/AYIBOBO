@@ -68,6 +68,7 @@ export const account = {
   'account.upload.error.unreadable': 'This browser couldn’t read the audio file. Try MP3 or WAV.',
   'account.upload.error.rate_limited': 'You’ve sent a lot of songs. Try again in an hour.',
   'account.upload.error.unknown': 'The song couldn’t be sent. Try again.',
+  'account.upload.error.unauthenticated': 'Your session expired — please sign in again to upload.',
 
   // Moderation (admins)
   'admin.kicker': 'Admin',

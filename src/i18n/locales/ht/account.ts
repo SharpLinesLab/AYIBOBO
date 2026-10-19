@@ -69,6 +69,7 @@ export const account: { [K in keyof typeof En]: string } = {
   'account.upload.error.unreadable': 'Navigatè sa a pa ka li fichye odyo a. Eseye yon MP3 oswa yon WAV.',
   'account.upload.error.rate_limited': 'Ou voye anpil chante. Eseye ankò nan yon èdtan.',
   'account.upload.error.unknown': 'Nou pa t ka voye chante a. Eseye ankò.',
+  'account.upload.error.unauthenticated': 'Sesyon ou an fini — konekte ankò pou w ka mete mizik.',
 
   // Moderation (admins)
   'admin.kicker': 'Administrasyon',

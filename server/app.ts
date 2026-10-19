@@ -119,7 +119,10 @@ export function createApp(cfg: AppConfig) {
 
   // --- accounts --------------------------------------------------------------------------------
 
-  const startSession = (res: Response, userId: string) => res.setHeader('Set-Cookie', sessionCookie(auth.createSession(userId), auth.ttl));
+  // Secure only when the site is served over HTTPS (PUBLIC_URL): over plain HTTP, e.g. a staging
+  // server, browsers would drop the cookie and nobody could stay signed in.
+  const secureCookies = (cfg.publicUrl ?? '').startsWith('https://');
+  const startSession = (res: Response, userId: string) => res.setHeader('Set-Cookie', sessionCookie(auth.createSession(userId), auth.ttl, secureCookies));
 
   app.post('/api/auth/signup', rateLimit('signup', 10, 60 * 60_000), sameOrigin, async (req, res) => {
     const out = await auth.signup(req.body ?? {});
@@ -144,7 +147,7 @@ export function createApp(cfg: AppConfig) {
 
   app.post('/api/auth/logout', rateLimit('logout', 30, 60_000), sameOrigin, (req, res) => {
     auth.destroySession(readCookie(req, SESSION_COOKIE));
-    res.setHeader('Set-Cookie', clearSessionCookie());
+    res.setHeader('Set-Cookie', clearSessionCookie(secureCookies));
     res.json({ ok: true });
   });
 
@@ -168,7 +171,7 @@ export function createApp(cfg: AppConfig) {
       return;
     }
     // Every session of the account was signed out, this browser's included.
-    res.setHeader('Set-Cookie', clearSessionCookie());
+    res.setHeader('Set-Cookie', clearSessionCookie(secureCookies));
     res.json({ ok: true });
   });
 

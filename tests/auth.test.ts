@@ -23,8 +23,19 @@ describe('accounts', () => {
     expect(JSON.stringify(body)).not.toMatch(/password|correct horse/);
     const set = r.headers.get('set-cookie') ?? '';
     expect(set).toMatch(/^asf_session=[\w-]{40,};/);
-    for (const flag of ['HttpOnly', 'Secure', 'SameSite=Lax', 'Path=/']) expect(set).toContain(flag);
+    for (const flag of ['HttpOnly', 'SameSite=Lax', 'Path=/']) expect(set).toContain(flag);
     expect((await (await c.get('/api/auth/me')).json()).user.email).toBe('artist@example.com');
+  });
+
+  it('marks the session cookie Secure only when the site is served over HTTPS', async () => {
+    for (const [publicUrl, secure] of [['https://asf.example', true], ['http://staging.asf.example', false], [undefined, false]] as const) {
+      const own = await startServer({ publicUrl });
+      const c = own.client();
+      const set = (await c.post('/api/auth/signup', { email: 'a@example.com', password: 'correct horse battery', displayName: 'A' })).headers.get('set-cookie') ?? '';
+      const cleared = (await c.post('/api/auth/logout')).headers.get('set-cookie') ?? '';
+      for (const cookie of [set, cleared]) expect(/;\s*Secure(;|$)/.test(cookie), `${publicUrl}: ${cookie}`).toBe(secure);
+      own.close();
+    }
   });
 
   it('stores only a bcrypt hash and only an HMAC of the session id', async () => {
