@@ -75,7 +75,7 @@ There are no payments in the app yet. Launch will use Stripe, starting with card
 
 ## API
 
-All responses are JSON with an `ok` field. Every POST, PUT and DELETE is rate-limited per IP.
+All responses are JSON with an `ok` field. Every POST, PUT, PATCH and DELETE is rate-limited per IP.
 
 **Accounts**
 
@@ -84,7 +84,7 @@ All responses are JSON with an `ok` field. Every POST, PUT and DELETE is rate-li
 | POST | `/api/auth/signup` | `{email, password, displayName, role}` (`listener` or `artist`). Signs you in. |
 | POST | `/api/auth/login` | `{email, password}` |
 | POST | `/api/auth/logout` | Ends this session. |
-| GET | `/api/auth/me` | The signed-in account (including the artist profile), or `user: null`. |
+| GET | `/api/auth/me` | The signed-in account (including the artist profile, `verified` and the listening `tier`: `free` or `premium`), or `user: null`. |
 | POST | `/api/auth/reset-request` | `{email}`. Creates a reset link (logged by the server until an email service is added); the answer is the same whether or not the account exists. |
 | POST | `/api/auth/reset` | `{token, password}`. Signs out every session of the account. |
 
@@ -96,6 +96,13 @@ All responses are JSON with an `ok` field. Every POST, PUT and DELETE is rate-li
 | POST | `/api/account/avatar` | Multipart `picture` (JPG, PNG, WebP or AVIF, up to 8 MB). |
 | DELETE | `/api/account/avatar` | Removes the picture. |
 | GET | `/api/artists/:id/avatar` | Public: the artist's picture. |
+
+**Verification** (artists and admins)
+
+| Method | Path | |
+|---|---|---|
+| GET | `/api/account/verification` | Your latest verification request (`pending`, `approved` or `rejected`), or `request: null`. |
+| POST | `/api/account/verification` | `{message}`: optional proof, up to 1000 characters. One pending request at a time (409 if one is pending or you're already verified). |
 
 **Uploads** (artists and admins)
 
@@ -129,6 +136,26 @@ All responses are JSON with an `ok` field. Every POST, PUT and DELETE is rate-li
 | GET | `/api/admin/uploads/:id/cover` | Preview the cover. |
 | POST | `/api/admin/uploads/:id/approve` | Publishes the song. |
 | POST | `/api/admin/uploads/:id/reject` | Deletes the files and keeps the decision on record. |
+| GET | `/api/admin/verification` | Pending verification requests, oldest first, with each artist's profile, email and proof. |
+| POST | `/api/admin/verification/:id/approve` | Marks the artist as verified. |
+| POST | `/api/admin/verification/:id/reject` | Rejects the request; the artist can ask again. |
+
+**Ads** (free tier)
+
+| Method | Path | |
+|---|---|---|
+| GET | `/api/ads/next` | The ad to play now (the play is logged), or 204 when none should: always for premium, and at most 3 plays per ad per listener per UTC day. Signed out, the `x-asf-listener` header identifies the browser. |
+| GET | `/api/ads/:id/audio` | An active ad's audio. |
+
+**Ad administration** (admins; everyone else gets 404)
+
+| Method | Path | |
+|---|---|---|
+| GET | `/api/admin/ads` | Every ad, with its plays per day for the last 7 days. |
+| POST | `/api/admin/ads` | Multipart: `audio` (up to 30 seconds), `title`, `advertiserName`, `duration`, and optional `weight` (1–100), `active`, `startsAt`, `endsAt` (ms). |
+| PATCH | `/api/admin/ads/:id` | Any of `title`, `advertiserName`, `weight`, `active`, `startsAt`, `endsAt` (`null` clears a date). |
+| DELETE | `/api/admin/ads/:id` | Deletes the ad, its audio and its play history. |
+| GET | `/api/admin/ads/:id/audio` | Preview the audio, active or not. |
 
 **Other**
 
@@ -141,7 +168,7 @@ All responses are JSON with an `ok` field. Every POST, PUT and DELETE is rate-li
 Server hardening:
 
 - A strict Content-Security-Policy (no inline scripts), `nosniff`, `X-Frame-Options: DENY` and a strict referrer policy.
-- Per-IP rate limits on every POST, PUT and DELETE (`RATE_LIMIT_MULTIPLIER` scales them for load tests).
+- Per-IP rate limits on every POST, PUT, PATCH and DELETE (`RATE_LIMIT_MULTIPLIER` scales them for load tests).
 - JSON body caps: 32 KB, or 1 MB for library sync.
 - Passwords are hashed with bcrypt. Sessions are httpOnly, SameSite=Lax cookies, and they're also Secure when `PUBLIC_URL` is https. Only an HMAC of each session id is stored.
 - Uploaded files are checked by their content, not their name, and capped in size while they stream in.

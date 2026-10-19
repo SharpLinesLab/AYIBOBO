@@ -56,6 +56,17 @@ describe('legal pages', () => {
     }
   });
 
+  it('describe the audio ads, their play log and the listener id, with no leftover "no ads" claims', () => {
+    for (const [lang, d] of LANGS) {
+      for (const k of ['legal.privacy.ads.h', 'legal.privacy.ads.p', 'legal.privacy.ads.p2', 'legal.privacy.ads.p3', 'legal.privacy.device.li5']) expect(d[k], `${lang} ${k}`).toBeTruthy();
+      expect(d['legal.privacy.ads.p2'], lang).toMatch(/\b3\b/); // the daily cap
+      expect(d['legal.privacy.ads.p'], lang).toMatch(/\b30\b/); // the longest ad
+    }
+    expect(en['legal.privacy.ads.p2']).toMatch(/random listener ID.*hashed version of your IP address/s);
+    expect(en['legal.privacy.logs.p2']).toMatch(/hashed/);
+    for (const [lang, d] of LANGS) expect(d['legal.privacy.short.li4'], lang).not.toMatch(/show ads|n’affichons pas de publicité|pa montre piblisite/);
+  });
+
   it('describe the accounts that now exist, with no leftover "no accounts" claims', () => {
     for (const [lang, d] of LANGS) {
       const all = Object.entries(d)

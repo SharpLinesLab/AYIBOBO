@@ -12,7 +12,7 @@ const SECTIONS: LegalSection[] = [
     title: 'legal.privacy.device.h',
     blocks: [
       { p: 'legal.privacy.device.p' },
-      { ul: ['legal.privacy.device.li1', 'legal.privacy.device.li2', 'legal.privacy.device.li3', 'legal.privacy.device.li4'] },
+      { ul: ['legal.privacy.device.li1', 'legal.privacy.device.li2', 'legal.privacy.device.li3', 'legal.privacy.device.li4', 'legal.privacy.device.li5'] },
       { p: 'legal.privacy.device.p2' },
       { p: 'legal.privacy.device.p3' },
     ],
@@ -41,6 +41,7 @@ const SECTIONS: LegalSection[] = [
   { id: 'uploads', title: 'legal.privacy.uploads.h', blocks: [{ p: 'legal.privacy.uploads.p' }, { p: 'legal.privacy.uploads.p2' }, { p: 'legal.privacy.uploads.p3' }] },
   { id: 'newsletter', title: 'legal.privacy.newsletter.h', blocks: [{ p: 'legal.privacy.newsletter.p' }, { p: 'legal.privacy.newsletter.p2' }] },
   { id: 'logs', title: 'legal.privacy.logs.h', blocks: [{ p: 'legal.privacy.logs.p' }, { p: 'legal.privacy.logs.p2' }] },
+  { id: 'ads', title: 'legal.privacy.ads.h', blocks: [{ p: 'legal.privacy.ads.p' }, { p: 'legal.privacy.ads.p2' }, { p: 'legal.privacy.ads.p3' }] },
   {
     id: 'not-collected',
     title: 'legal.privacy.notCollected.h',
