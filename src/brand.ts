@@ -2,12 +2,12 @@
 export const BRAND = {
   short: 'ASF',
   name: 'Ayiti Sakap Fet',
-  contactEmail: '',
+  contactEmail: 'Contact@ayitisakapfet.com',
   social: {
-    facebook: '',
-    instagram: '',
-    youtube: '',
-    x: '',
+    facebook: 'https://www.facebook.com/ayitisakapfet',
+    instagram: 'https://www.instagram.com/Ayitisakapfet',
+    youtube: 'https://www.youtube.com/@Ayitisakapfetmusic',
+    x: 'https://x.com/ayitisakapfet',
   },
 };
 

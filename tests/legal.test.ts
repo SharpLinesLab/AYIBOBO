@@ -65,8 +65,8 @@ describe('legal pages', () => {
       // The pre-accounts drafts said these; they are false now.
       for (const stale of ['has no sign-up', 'only personal information we store is your email address', 'uploads are stored only in your own browser', 'n’a pas d’inscription', 'ne demande aucune inscription', 'Pa gen enskripsyon sou ASF']) expect(all, `${lang}: ${stale}`).not.toContain(stale);
       expect(all, lang).toContain('bcrypt');
-      expect(all, lang).toContain('[CONTACT EMAIL]');
-      expect(all, lang).toContain('[COMPANY NAME]');
+      expect(all, lang).toContain('Contact@ayitisakapfet.com');
+      expect(all, lang).toContain('Ayitisakapfet LLC');
       expect(all, lang).toMatch(/\b13\b/);
       expect(all, lang).toMatch(/\b30\b/); // the sign-in cookie's lifetime
     }
