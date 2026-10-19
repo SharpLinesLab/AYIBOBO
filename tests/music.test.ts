@@ -27,7 +27,7 @@ const song = (id: string, title: string, artistId: string, artistName: string, g
   artistName,
   featuredArtists: null,
   explicit: false,
-  artist: { name: artistName, bio: null, avatarUrl: null },
+  artist: { name: artistName, bio: null, avatarUrl: null, verified: false },
   duration: 180,
   peaks: null,
   releasedAt: NOW - daysAgo * DAY,

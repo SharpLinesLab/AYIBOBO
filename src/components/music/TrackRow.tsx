@@ -1,7 +1,7 @@
 import type { Track } from '../../catalog/types';
 import { compact, fmtTime, useMusic } from '../../music';
 import { PauseIcon, PlayIcon } from '../icons';
-import { Cover, Eq, ExplicitBadge, LikeButton, useIsCurrent } from './bits';
+import { Cover, Eq, ExplicitBadge, LikeButton, useIsCurrent, Verified } from './bits';
 import { TrackMenu } from './TrackMenu';
 import { DownloadedMark } from './Offline';
 import { useOnline } from '../../offline';
@@ -29,6 +29,7 @@ export function ArtistLinks({ track }: { track: Track }) {
   return (
     <span className="artist-links">
       {main ? <a href={`#/artist/${main.id}`}>{name}</a> : <span>{name ?? (m.library.displayName || t('common.word.you'))}</span>}
+      {main?.verified && <Verified />}
       {track.featuredArtists && (
         <>
           {' '}

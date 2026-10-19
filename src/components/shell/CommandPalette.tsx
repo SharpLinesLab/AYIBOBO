@@ -7,7 +7,7 @@ import { LANGS, setLang, t, useLang } from '../../i18n';
 import { useMusic, usePlayerState } from '../../music';
 import * as player from '../../player/engine';
 import { useApp } from '../../store';
-import { Cover } from '../music/bits';
+import { Cover, Verified } from '../music/bits';
 import { SearchIcon } from '../icons';
 
 type Group = 'playback' | 'goto' | 'app' | 'lang';
@@ -118,11 +118,14 @@ export function CommandPalette({
     lang: t('common.lang.switch'),
   };
 
-  const entity = (key: string, title: string, sub: string, cover: CoverSpec, href: string, round = false) => (
+  const entity = (key: string, title: string, sub: string, cover: CoverSpec, href: string, round = false, verified = false) => (
     <Command.Item key={key} value={key} onSelect={() => go(href)} className="cmdk__item">
       <Cover spec={cover} size={36} round={round} />
       <span className="cmdk__text">
-        <b>{title}</b>
+        <b>
+          {title}
+          {verified && <Verified />}
+        </b>
         <small>{sub}</small>
       </span>
     </Command.Item>
@@ -172,6 +175,7 @@ export function CommandPalette({
                     <b>{tr.title}</b>
                     <small>
                       {t('common.kind.song')} · {m.artistNames(tr)}
+                      {m.artist(tr.artistId)?.verified && <Verified />}
                     </small>
                   </span>
                   <span className="cmdk__hint">{t('common.action.play')}</span>
@@ -181,7 +185,7 @@ export function CommandPalette({
           )}
           {res.artists.length > 0 && (
             <Command.Group heading={t('player.cmd.artists')} className="cmdk__group">
-              {res.artists.map((a) => entity(a.id, a.name, t('common.kind.artist'), a.avatar, `#/artist/${a.id}`, true))}
+              {res.artists.map((a) => entity(a.id, a.name, t('common.kind.artist'), a.avatar, `#/artist/${a.id}`, true, a.verified))}
             </Command.Group>
           )}
           {res.albums.length > 0 && (

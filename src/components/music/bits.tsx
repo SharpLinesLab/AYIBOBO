@@ -111,6 +111,19 @@ export function LikeButton({ id, withLabel }: { id: string; withLabel?: boolean 
   );
 }
 
+/** Checkmark for verified artists. */
+export function Verified() {
+  return (
+    <svg className="verified" viewBox="0 0 24 24" width="15" height="15" aria-label={t('common.word.verified')} role="img">
+      <path
+        fill="currentColor"
+        d="M12 1.5l2.4 1.8 3-.2.9 2.9 2.5 1.7-.9 2.9.9 2.9-2.5 1.7-.9 2.9-3-.2L12 22.5l-2.4-1.8-3 .2-.9-2.9-2.5-1.7.9-2.9-.9-2.9 2.5-1.7.9-2.9 3 .2z"
+      />
+      <path d="M8 12.2l2.6 2.6L16.2 9" fill="none" stroke="var(--accent-ink)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function ExplicitBadge() {
   return (
     <span className="explicit" title={t('common.word.explicit')} aria-label={t('common.word.explicit')}>

@@ -18,6 +18,8 @@ export interface User {
   bio: string | null;
   /** Profile picture, or null when none was uploaded. */
   avatarUrl: string | null;
+  /** Verified artist (an admin approved their verification request). */
+  verified: boolean;
 }
 
 export interface AuthConfig {
@@ -51,6 +53,7 @@ interface UserRow {
   bio: string | null;
   avatar_type: string | null;
   avatar_at: number | null;
+  verified: number;
 }
 
 /** Where an account's profile picture is served; the version changes with every new picture. */
@@ -65,6 +68,7 @@ const toUser = (r: UserRow): User => ({
   artistName: r.artist_name,
   bio: r.bio,
   avatarUrl: r.avatar_type && r.avatar_at ? avatarUrl(r.id, r.avatar_at) : null,
+  verified: r.verified === 1,
 });
 
 /** Why a new password can't be used, or null if it's fine. */
@@ -103,7 +107,7 @@ export function createAuth(db: Db, cfg: AuthConfig) {
     const name = typeof input.displayName === 'string' ? input.displayName.replace(/[\u0000-\u001f\u007f]/g, ' ').trim() : '';
     if (!name || name.length > 60) return 'invalid_name';
     if (byEmail(email)) return 'email_taken';
-    const user: User = { id: randomUUID(), email, role, displayName: name, createdAt: Date.now(), artistName: null, bio: null, avatarUrl: null };
+    const user: User = { id: randomUUID(), email, role, displayName: name, createdAt: Date.now(), artistName: null, bio: null, avatarUrl: null, verified: false };
     const hash = await bcrypt.hash(password, rounds);
     try {
       db.sql

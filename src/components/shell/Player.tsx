@@ -17,7 +17,7 @@ import {
   toggleShuffle,
 } from '../../player/engine';
 import { CloseIcon, ExpandIcon, MoonSleepIcon, MuteIcon, NextIcon, PauseIcon, PlayIcon, PrevIcon, QueueIcon, RepeatIcon, ShuffleIcon, VolumeIcon } from '../icons';
-import { ExplicitBadge, LikeButton } from '../music/bits';
+import { ExplicitBadge, LikeButton, Verified } from '../music/bits';
 import { useArtPalette } from '../../catalog/color';
 import type { CoverSpec } from '../../catalog/types';
 import { hasLyrics } from '../music/Lyrics';
@@ -273,6 +273,7 @@ export function PlayerBar({
           </a>
           <a href={cur.subtitleHref} className="pbar__sub">
             {cur.subtitle}
+            {track && m.artist(track.artistId)?.verified && <Verified />}
           </a>
         </div>
         {track && <LikeButton id={track.id} />}

@@ -220,7 +220,7 @@ export interface UploadRecord {
   featuredArtists: string | null;
   explicit: boolean;
   /** The uploader's artist profile, shown on their artist page. */
-  profile: { name: string; bio: string | null; avatarUrl: string | null };
+  profile: { name: string; bio: string | null; avatarUrl: string | null; verified: boolean };
   title: string;
   genre: GenreId;
   status: UploadStatus;
@@ -244,6 +244,7 @@ interface Row {
   profile_bio: string | null;
   avatar_type: string | null;
   avatar_at: number | null;
+  profile_verified: number;
   title: string;
   genre: GenreId;
   status: UploadStatus;
@@ -262,7 +263,7 @@ const toRecord = (r: Row): UploadRecord => ({
   artistName: r.artist_name ?? r.display_name,
   featuredArtists: r.featured_artists,
   explicit: r.explicit === 1,
-  profile: { name: r.profile_name ?? r.display_name, bio: r.profile_bio, avatarUrl: r.avatar_type && r.avatar_at ? avatarUrl(r.user_id, r.avatar_at) : null },
+  profile: { name: r.profile_name ?? r.display_name, bio: r.profile_bio, avatarUrl: r.avatar_type && r.avatar_at ? avatarUrl(r.user_id, r.avatar_at) : null, verified: r.profile_verified === 1 },
   title: r.title,
   genre: r.genre,
   status: r.status,
@@ -275,7 +276,7 @@ const toRecord = (r: Row): UploadRecord => ({
   reviewedAt: r.reviewed_at,
 });
 
-const SELECT = 'SELECT u.*, us.display_name, us.artist_name AS profile_name, us.bio AS profile_bio, us.avatar_type, us.avatar_at FROM uploads u JOIN users us ON us.id = u.user_id';
+const SELECT = 'SELECT u.*, us.display_name, us.artist_name AS profile_name, us.bio AS profile_bio, us.avatar_type, us.avatar_at, us.verified AS profile_verified FROM uploads u JOIN users us ON us.id = u.user_id';
 
 export function uploadRepo(db: Db) {
   return {

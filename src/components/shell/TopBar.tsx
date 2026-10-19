@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { searchCatalog } from '../../catalog/search';
+import type { CoverSpec } from '../../catalog/types';
 import { t } from '../../i18n';
 import { useMusic } from '../../music';
 import { LanguageMenu } from '../LanguagePicker';
@@ -7,7 +8,7 @@ import { useApp } from '../../store';
 import { SocialLinks } from './Footer';
 import { AsfLogo, ChevronLeft, ChevronRight, MoonIcon, SearchIcon, SunIcon, UploadIcon, UserIcon } from '../icons';
 import { useAccount } from '../../lib/account';
-import { Cover } from '../music/bits';
+import { Cover, Verified } from '../music/bits';
 
 /** Search box with instant, grouped suggestions (songs, artists, albums, playlists). */
 function GlobalSearch() {
@@ -20,9 +21,10 @@ function GlobalSearch() {
   const input = useRef<HTMLInputElement>(null);
   const res = useMemo(() => searchCatalog(m.catalog, q, 4), [m.catalog, q]);
   const items = useMemo(
-    () => [
-      ...res.tracks.map((x) => ({ key: x.id, href: `#/song/${x.id}`, title: x.title, sub: `${t('common.kind.song')} · ${m.artistNames(x)}`, cover: x.cover, round: false })),
-      ...res.artists.map((a) => ({ key: a.id, href: `#/artist/${a.id}`, title: a.name, sub: t('common.kind.artist'), cover: a.avatar, round: true })),
+    (): { key: string; href: string; title: string; sub: string; cover: CoverSpec; round: boolean; verified?: 'title' | 'sub' }[] => [
+      // `verified`: where the artist's checkmark goes (after the artist's name, or after the song's credit).
+      ...res.tracks.map((x) => ({ key: x.id, href: `#/song/${x.id}`, title: x.title, sub: `${t('common.kind.song')} · ${m.artistNames(x)}`, cover: x.cover, round: false, verified: m.artist(x.artistId)?.verified ? ('sub' as const) : undefined })),
+      ...res.artists.map((a) => ({ key: a.id, href: `#/artist/${a.id}`, title: a.name, sub: t('common.kind.artist'), cover: a.avatar, round: true, verified: a.verified ? ('title' as const) : undefined })),
       ...res.albums.map((a) => ({ key: a.id, href: `#/album/${a.id}`, title: a.title, sub: `${t('common.kind.album')} · ${m.artist(a.artistId)?.name ?? ''}`, cover: a.cover, round: false })),
       ...res.playlists.map((p) => ({ key: p.id, href: `#/playlist/${p.id}`, title: p.title, sub: `${t('common.kind.playlist')} · ${p.curator}`, cover: p.cover, round: false })),
     ],
@@ -96,8 +98,14 @@ function GlobalSearch() {
             <button key={it.key} className={`gsearch__item${active === i + 1 ? ' is-active' : ''}`} role="option" aria-selected={active === i + 1} onMouseEnter={() => setActive(i + 1)} onClick={() => go(it.href)}>
               <Cover spec={it.cover} size={40} round={it.round} />
               <span>
-                <b>{it.title}</b>
-                <small>{it.sub}</small>
+                <b>
+                  {it.title}
+                  {it.verified === 'title' && <Verified />}
+                </b>
+                <small>
+                  {it.sub}
+                  {it.verified === 'sub' && <Verified />}
+                </small>
               </span>
             </button>
           ))}

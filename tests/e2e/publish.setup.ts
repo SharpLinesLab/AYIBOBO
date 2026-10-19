@@ -57,4 +57,15 @@ setup('publish the test songs', async () => {
   for (const u of await pending()) if (titles.has(u.title)) await api(`/api/admin/uploads/${u.id}/approve`, admin, { method: 'POST' });
 
   expect((await approved()).map((t) => t.title).sort()).toEqual([...titles].sort());
+
+  // Artist A is verified the real way too (request, then an admin approves), so tests can check
+  // the checkmark; Artist B stays unverified.
+  const a = artists[ARTIST_A];
+  if (!(await api<{ user: { verified: boolean } }>('/api/auth/me', a)).user.verified) {
+    const mine = await api<{ request: { status: string } | null }>('/api/account/verification', a);
+    if (mine.request?.status !== 'pending') await api('/api/account/verification', a, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message: 'e2e' }) });
+    const queue = await api<{ requests: { id: string; email: string }[] }>('/api/admin/verification', admin);
+    for (const r of queue.requests) if (r.email === 'artist-a@e2e.test') await api(`/api/admin/verification/${r.id}/approve`, admin, { method: 'POST' });
+  }
+  expect((await api<{ user: { verified: boolean } }>('/api/auth/me', a)).user.verified).toBe(true);
 });

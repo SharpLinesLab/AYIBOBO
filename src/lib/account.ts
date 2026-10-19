@@ -18,6 +18,8 @@ export interface AccountUser {
   artistName: string | null;
   bio: string | null;
   avatarUrl: string | null;
+  /** Verified artist (an admin approved their verification request). */
+  verified: boolean;
 }
 
 export interface AccountState {

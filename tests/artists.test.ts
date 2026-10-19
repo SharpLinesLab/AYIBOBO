@@ -127,7 +127,7 @@ describe('artist profile', () => {
     await putProfile(artist, { artistName: 'Tiga Blaze', bio: 'Rap kreyòl from Okap.' });
     const user = await me(artist);
     const track = (await catalog())[0];
-    expect(track.artist).toEqual({ name: 'Tiga Blaze', bio: 'Rap kreyòl from Okap.', avatarUrl: user.avatarUrl });
+    expect(track.artist).toEqual({ name: 'Tiga Blaze', bio: 'Rap kreyòl from Okap.', avatarUrl: user.avatarUrl, verified: false });
     await putProfile(artist, { artistName: 'Someone Else' });
     expect((await catalog())[0]).toMatchObject({ artistName: 'Tiga Blaze', artist: { name: 'Someone Else' } });
   });

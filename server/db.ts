@@ -112,6 +112,20 @@ export const MIGRATIONS: string[] = [
    ALTER TABLE users ADD COLUMN bio TEXT;
    ALTER TABLE users ADD COLUMN avatar_type TEXT;
    ALTER TABLE users ADD COLUMN avatar_at INTEGER;`,
+  // 7: artist verification. Artists ask (with optional proof); an admin approves or rejects. At
+  // most one pending request per artist, enforced by the partial unique index.
+  `ALTER TABLE users ADD COLUMN verified INTEGER NOT NULL DEFAULT 0 CHECK (verified IN (0, 1));
+   CREATE TABLE verification_requests (
+     id TEXT PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     status TEXT NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')),
+     message TEXT,
+     requested_at INTEGER NOT NULL,
+     reviewed_at INTEGER,
+     reviewed_by TEXT REFERENCES users(id) ON DELETE SET NULL
+   );
+   CREATE UNIQUE INDEX verification_one_pending ON verification_requests(user_id) WHERE status = 'pending';
+   CREATE INDEX verification_status ON verification_requests(status, requested_at);`,
 ];
 
 export interface DbOptions {

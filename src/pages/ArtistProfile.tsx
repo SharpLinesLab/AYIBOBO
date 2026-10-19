@@ -3,6 +3,7 @@ import { t, type Key } from '../i18n';
 import { removeArtistPicture, saveArtistProfile, uploadArtistPicture, useAccount, type ProfileError } from '../lib/account';
 import { CATALOG_CHANGED } from '../lib/serverCatalog';
 import { useApp } from '../store';
+import { ArtistVerification } from './ArtistVerification';
 
 /**
  * On #/account for artists: the name songs are credited to by default, a picture and a bio.
@@ -100,6 +101,7 @@ export function ArtistProfile() {
           {busy ? t('account.busy') : t('account.profile.save')}
         </button>
       </form>
+      <ArtistVerification />
     </section>
   );
 }

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { t } from '../../i18n';
 import { useMusic, usePlayerState } from '../../music';
 import { CollapseIcon } from '../icons';
-import { ExplicitBadge, LikeButton } from '../music/bits';
+import { ExplicitBadge, LikeButton, Verified } from '../music/bits';
 import { LyricsView } from '../music/Lyrics';
 import { SoundButton } from '../music/SoundPanel';
 import { Waveform } from '../music/Waveform';
@@ -15,6 +15,7 @@ export function NowPlaying({ onClose, initialTab = 'wave' }: { onClose: () => vo
   const m = useMusic();
   const cur = s.current;
   const track = cur ? m.track(cur.id) : undefined;
+  const verified = !!track && !!m.artist(track.artistId)?.verified;
   const [tab, setTab] = useState<NpTab>(initialTab);
   const drag = useDragControls();
   const closeBtn = useRef<HTMLButtonElement>(null);
@@ -100,6 +101,7 @@ export function NowPlaying({ onClose, initialTab = 'wave' }: { onClose: () => vo
                   </a>
                   <a href={cur.subtitleHref} onClick={onClose} className="np__artist">
                     {cur.subtitle}
+                    {verified && <Verified />}
                   </a>
                 </div>
                 <Visualizer />
@@ -121,7 +123,10 @@ export function NowPlaying({ onClose, initialTab = 'wave' }: { onClose: () => vo
                     {cur.title}
                     {track?.explicit && <ExplicitBadge />}
                   </h2>
-                  <span className="np__artist">{cur.subtitle}</span>
+                  <span className="np__artist">
+                    {cur.subtitle}
+                    {verified && <Verified />}
+                  </span>
                 </div>
                 {track ? <LyricsView track={track} variant="full" /> : <p className="muted">{t('player.np.noLyrics')}</p>}
                 <SeekBar />

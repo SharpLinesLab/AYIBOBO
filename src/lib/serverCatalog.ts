@@ -16,7 +16,7 @@ export interface PublishedTrack {
   featuredArtists: string | null;
   explicit: boolean;
   /** The uploader's artist profile. */
-  artist: { name: string; bio: string | null; avatarUrl: string | null };
+  artist: { name: string; bio: string | null; avatarUrl: string | null; verified: boolean };
   duration: number;
   peaks: number[] | null;
   releasedAt: number;
@@ -59,7 +59,7 @@ export function toCatalog(list: PublishedTrack[]): { tracks: Track[]; artists: A
         bio: p.artist.bio ?? '',
         location: '',
         genres: [p.genre],
-        verified: false,
+        verified: p.artist.verified,
         followers: 0,
         avatar: p.artist.avatarUrl ? { ...avatar, imageUrl: p.artist.avatarUrl } : avatar,
         banner: spec('stage'),

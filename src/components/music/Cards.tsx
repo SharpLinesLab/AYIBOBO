@@ -2,7 +2,9 @@ import { genreById } from '../../catalog/genres';
 import type { Album, Artist, Playlist, Track } from '../../catalog/types';
 import { compact, useMusic } from '../../music';
 import { plural, t } from '../../i18n';
-import { Cover, ExplicitBadge, PlayAll, useIsCurrent } from './bits';
+import { Cover, ExplicitBadge, PlayAll, useIsCurrent, Verified } from './bits';
+
+export { Verified } from './bits';
 import { ArtistLinks } from './TrackRow';
 
 export function TrackCard({ track, context, rank }: { track: Track; context?: Track[]; rank?: number }) {
@@ -132,18 +134,6 @@ export function ArtistCard({ artist }: { artist: Artist }) {
   );
 }
 
-export function Verified() {
-  return (
-    <svg className="verified" viewBox="0 0 24 24" width="15" height="15" aria-label={t('common.word.verified')} role="img">
-      <path
-        fill="currentColor"
-        d="M12 1.5l2.4 1.8 3-.2.9 2.9 2.5 1.7-.9 2.9.9 2.9-2.5 1.7-.9 2.9-3-.2L12 22.5l-2.4-1.8-3 .2-.9-2.9-2.5-1.7.9-2.9-.9-2.9 2.5-1.7.9-2.9 3 .2z"
-      />
-      <path d="M8 12.2l2.6 2.6L16.2 9" fill="none" stroke="var(--accent-ink)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 /** Genre tile backed by the genre's lead artist imagery, tinted with the genre colors. */
 export function GenreTile({ id }: { id: Parameters<typeof genreById>[0] }) {
   const m = useMusic();
@@ -169,7 +159,10 @@ export function PosterCard({ artist }: { artist: Artist }) {
         <span className="poster__shade" aria-hidden />
         <span className="poster__text">
           <span className="poster__kicker">{genreById(artist.genres[0]).label} · {artist.location.split(',')[0]}</span>
-          <span className="poster__name">{artist.name}</span>
+          <span className="poster__name">
+            {artist.name}
+            {artist.verified && <Verified />}
+          </span>
           <span className="poster__meta">{plural('common.count.followers', m.followerCount(artist), { n: compact(m.followerCount(artist)) })}</span>
         </span>
       </a>

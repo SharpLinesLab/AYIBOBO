@@ -9,6 +9,7 @@ import { dict as fr } from '../src/i18n/locales/fr';
 import { dict as ht } from '../src/i18n/locales/ht';
 import { getAccount, refreshAccount } from '../src/lib/account';
 import { toCatalog, type PublishedTrack } from '../src/lib/serverCatalog';
+import { MusicProvider } from '../src/music';
 import { AdminPage } from '../src/pages/Admin';
 import { AppProvider, parseRoute } from '../src/store';
 
@@ -24,8 +25,11 @@ async function signedInAs(user: { role: string } | null, contentType = 'applicat
   await refreshAccount();
 }
 
+// Inside the same providers as the app (the verification queue checks for artist pages).
 const renderAdmin = () =>
-  renderToStaticMarkup(createElement(AppProvider, { value: { now: 0, route: { page: 'admin' }, navigate: () => {}, toast: () => {} }, children: createElement(AdminPage) }));
+  renderToStaticMarkup(
+    createElement(AppProvider, { value: { now: 0, route: { page: 'admin' }, navigate: () => {}, toast: () => {} }, children: createElement(MusicProvider, { now: 0, children: createElement(AdminPage) }) }),
+  );
 
 describe('account routes', () => {
   it('parse #/account and #/admin', () => {
@@ -59,15 +63,15 @@ describe('#/admin', () => {
 
 describe('published songs in the catalog', () => {
   const list: PublishedTrack[] = [
-    { id: 'a1', title: 'One', genre: 'kompa', artistId: 'u1', artistName: 'Tiga', featuredArtists: 'Wendyyy, Joé Dwèt Filé', explicit: true, artist: { name: 'Tiga Blaze', bio: 'From Okap.', avatarUrl: '/api/artists/u1/avatar?v=5' }, duration: 200, peaks: [0.5, 1], releasedAt: 10, audioUrl: '/api/audio/a1', coverUrl: '/api/covers/a1' },
-    { id: 'a2', title: 'Two', genre: 'zouk', artistId: 'u1', artistName: 'Tiga Blaze', featuredArtists: null, explicit: false, artist: { name: 'Tiga Blaze', bio: 'From Okap.', avatarUrl: '/api/artists/u1/avatar?v=5' }, duration: 150, peaks: null, releasedAt: 20, audioUrl: '/api/audio/a2', coverUrl: '/api/covers/a2' },
+    { id: 'a1', title: 'One', genre: 'kompa', artistId: 'u1', artistName: 'Tiga', featuredArtists: 'Wendyyy, Joé Dwèt Filé', explicit: true, artist: { name: 'Tiga Blaze', bio: 'From Okap.', avatarUrl: '/api/artists/u1/avatar?v=5', verified: true }, duration: 200, peaks: [0.5, 1], releasedAt: 10, audioUrl: '/api/audio/a1', coverUrl: '/api/covers/a1' },
+    { id: 'a2', title: 'Two', genre: 'zouk', artistId: 'u1', artistName: 'Tiga Blaze', featuredArtists: null, explicit: false, artist: { name: 'Tiga Blaze', bio: 'From Okap.', avatarUrl: '/api/artists/u1/avatar?v=5', verified: true }, duration: 150, peaks: null, releasedAt: 20, audioUrl: '/api/audio/a2', coverUrl: '/api/covers/a2' },
   ];
 
   it('become playable tracks under one artist per account', () => {
     const { tracks, artists } = toCatalog(list);
     expect(artists).toHaveLength(1);
     // The artist page uses the profile; each song keeps its own credit.
-    expect(artists[0]).toMatchObject({ id: 'ar-srv-u1', name: 'Tiga Blaze', bio: 'From Okap.', genres: ['kompa', 'zouk'] });
+    expect(artists[0]).toMatchObject({ id: 'ar-srv-u1', name: 'Tiga Blaze', bio: 'From Okap.', verified: true, genres: ['kompa', 'zouk'] });
     expect(artists[0].avatar.imageUrl).toBe('/api/artists/u1/avatar?v=5');
     expect(tracks.map((t) => [t.artistName, t.featuredArtists, t.explicit])).toEqual([
       ['Tiga', 'Wendyyy, Joé Dwèt Filé', true],
