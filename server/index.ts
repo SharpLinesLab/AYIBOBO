@@ -3,6 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createApp } from './app';
 import { Db } from './db';
+import { royaltiesRepo, startRoyaltySnapshots } from './royalties';
 import { LocalDiskStorage } from './storage';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -51,6 +52,9 @@ const app = createApp({
   // dist-server/index.js -> ../dist ; server/index.ts (tsx) -> ../dist
   staticDir: resolve(here, '../dist'),
 });
+
+// Monthly royalty snapshots (pre-launch): each closed month is written once to royalty_periods.
+startRoyaltySnapshots(royaltiesRepo(db));
 
 app.listen(port, () => {
   console.log(`ASF server listening on http://localhost:${port}`);

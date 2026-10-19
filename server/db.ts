@@ -152,6 +152,55 @@ export const MIGRATIONS: string[] = [
    );
    CREATE INDEX ad_plays_cap ON ad_plays(listener, ad_id, played_at);
    CREATE INDEX ad_plays_ad ON ad_plays(ad_id, played_at);`,
+  // 9: artist royalties, pre-launch (no money moves yet). library_plays only keeps a play count
+  // per song for each listener's history (merged in from devices, never timed), so every play is
+  // logged here once instead: the browser picks a random play_id and later reports for the same
+  // play update its row. A play is a royalty stream at 30+ seconds. Policy strikes block
+  // eligibility while active. royalty_periods (+ one row per artist) is the monthly snapshot,
+  // written once per month and never changed, so the numbers stay auditable.
+  `CREATE TABLE royalty_plays (
+     play_id TEXT PRIMARY KEY,
+     user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+     track_id TEXT NOT NULL,
+     artist_id TEXT NOT NULL,
+     played_at INTEGER NOT NULL,
+     seconds_listened INTEGER NOT NULL CHECK (seconds_listened >= 0),
+     listener_tier TEXT NOT NULL CHECK (listener_tier IN ('free', 'premium'))
+   );
+   CREATE INDEX royalty_plays_artist ON royalty_plays(artist_id, played_at);
+   CREATE INDEX royalty_plays_time ON royalty_plays(played_at);
+   CREATE TABLE policy_strikes (
+     id TEXT PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     reason TEXT NOT NULL,
+     issued_at INTEGER NOT NULL,
+     expires_at INTEGER,
+     lifted_at INTEGER
+   );
+   CREATE INDEX policy_strikes_user ON policy_strikes(user_id);
+   CREATE TABLE royalty_periods (
+     period TEXT PRIMARY KEY,
+     starts_at INTEGER NOT NULL,
+     ends_at INTEGER NOT NULL,
+     total_streams INTEGER NOT NULL,
+     premium_streams INTEGER NOT NULL,
+     eligible_artists INTEGER NOT NULL,
+     eligible_streams INTEGER NOT NULL,
+     created_at INTEGER NOT NULL
+   );
+   CREATE TABLE royalty_period_artists (
+     period TEXT NOT NULL REFERENCES royalty_periods(period),
+     artist_id TEXT NOT NULL,
+     artist_name TEXT NOT NULL,
+     streams INTEGER NOT NULL,
+     premium_streams INTEGER NOT NULL,
+     premium_streams_90d INTEGER NOT NULL,
+     published_tracks INTEGER NOT NULL,
+     verified INTEGER NOT NULL,
+     active_strikes INTEGER NOT NULL,
+     eligible INTEGER NOT NULL,
+     PRIMARY KEY (period, artist_id)
+   );`,
 ];
 
 export interface DbOptions {

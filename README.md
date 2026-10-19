@@ -157,6 +157,16 @@ All responses are JSON with an `ok` field. Every POST, PUT, PATCH and DELETE is 
 | DELETE | `/api/admin/ads/:id` | Deletes the ad, its audio and its play history. |
 | GET | `/api/admin/ads/:id/audio` | Preview the audio, active or not. |
 
+**Royalties** (pre-launch shadow mode: streams are counted, no money moves)
+
+| Method | Path | |
+|---|---|---|
+| POST | `/api/plays` | Signed in. `{playId, trackId, seconds}` for a published song: sent when it starts, at 30 seconds and when it stops; every report updates the same `royalty_plays` row. A play is a royalty stream at 30+ seconds. |
+| GET | `/api/account/royalties` | Artists: streams this month and in the last 90 days, plus the four eligibility criteria (verified, 500+ premium streams in 90 days, 3+ published songs, no active policy strikes). |
+| GET | `/api/admin/royalties?period=YYYY-MM` | Admins (everyone else gets 404), read-only: the month's streams, eligible artists, each artist's streams, and the monthly snapshots. |
+
+The server writes each closed month to `royalty_periods` once (at start-up and hourly; re-running changes nothing). `manage snapshot-royalties [YYYY-MM]` does the same by hand; `manage strike <email> <reason>` and `manage lift-strikes <email>` record and lift policy strikes.
+
 **Other**
 
 | Method | Path | |

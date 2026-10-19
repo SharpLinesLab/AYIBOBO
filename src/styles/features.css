@@ -1808,6 +1808,60 @@
   max-width: 820px;
 }
 
+.admin__royalties {
+  margin-top: 32px;
+  max-width: 980px;
+}
+
+.royalties__prelaunch {
+  margin: 8px 0 16px;
+  font-weight: 600;
+}
+
+.royalties__kpis {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  margin: 0 0 8px;
+}
+
+.royalties__checklist {
+  list-style: none;
+  margin: 8px 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.royalties__checklist li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  color: var(--muted);
+}
+
+.royalties__checklist li.is-met {
+  color: inherit;
+}
+
+.royalties__mark {
+  flex: none;
+  width: 1.2em;
+  font-weight: 700;
+}
+
+.royalties__checklist li.is-met .royalties__mark {
+  color: var(--green);
+}
+
+.royalties__scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 8px 0 16px;
+}
+
+.royalties__table th[scope='row'] {
+  font-weight: 600;
+}
+
 .admin__adform {
   margin: 14px 0 16px;
 }

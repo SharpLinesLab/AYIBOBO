@@ -3,6 +3,7 @@ import { t, type Key } from '../i18n';
 import { requestPasswordReset, signIn, signOut, signUp, useAccount, type AccountError } from '../lib/account';
 import { useApp } from '../store';
 import { ArtistProfile } from './ArtistProfile';
+import { ArtistRoyalties } from './ArtistRoyalties';
 import { ArtistUploads } from './ArtistUploads';
 import { PageHead } from './Browse';
 
@@ -208,6 +209,7 @@ export function AccountPage() {
           <>
             <ArtistProfile key={user.id} />
             <ArtistUploads />
+            <ArtistRoyalties />
           </>
         )}
       </>

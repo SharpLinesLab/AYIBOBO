@@ -9,6 +9,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { coverUrl, makeCover } from './catalog/covers';
 import { CATALOG_CHANGED, fetchPublished, toCatalog, type PublishedTrack } from './lib/serverCatalog';
 import { useAccount } from './lib/account';
+import { trackRoyaltyPlays } from './lib/royalties';
 import { librarySync } from './lib/librarySync';
 import { createMixes } from './catalog/mixes';
 import type { Album, Artist, Catalog, Playlist, Track } from './catalog/types';
@@ -183,6 +184,9 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
       window.removeEventListener('online', resume);
     };
   }, []);
+
+  // Royalty stream logging (pre-launch): plays of published songs, while signed in.
+  useEffect(() => (userId ? trackRoyaltyPlays() : undefined), [userId]);
 
   // Free tier (signed out too): ad breaks between songs, see player/adBreaks. Premium: no ads at all.
   const premium = account.user?.tier === 'premium';
