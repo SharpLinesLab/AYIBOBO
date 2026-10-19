@@ -146,7 +146,7 @@ export function TopBar({ theme, onToggleTheme, onSubscribe }: { theme: 'light' |
         <span className="topbar__social">
           <SocialLinks size={18} />
         </span>
-        <a className="btn-outline topbar__upload" href="#/upload">
+        <a className="btn-outline topbar__upload" href="#/account">
           <UploadIcon width={16} height={16} /> {t('common.top.upload')}
         </a>
         <LanguageMenu />

@@ -17,7 +17,6 @@ const ROUTES = [
   '#/library/downloads',
   '#/search/song',
   '#/search',
-  '#/upload',
   '#/settings',
   '#/studio',
   '#/account',

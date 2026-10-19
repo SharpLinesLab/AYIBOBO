@@ -26,7 +26,7 @@ const LINKS = [
   { href: '#/trending', label: 'common.nav.trending' },
   { href: '#/charts', label: 'common.nav.charts' },
   { href: '#/genres', label: 'common.nav.genres' },
-  { href: '#/upload', label: 'common.nav.uploadMusic' },
+  { href: '#/account', label: 'common.nav.uploadMusic' },
   { href: '#/studio', label: 'common.nav.studio' },
   { href: '#/settings', label: 'common.nav.settings' },
 ] as const;

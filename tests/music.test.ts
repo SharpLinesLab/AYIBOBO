@@ -103,8 +103,8 @@ describe('routes', () => {
     expect(parseRoute('#/genres/kompa')).toEqual({ page: 'genre', id: 'kompa' });
     expect(parseRoute('#/search/ayiti%20ch%C3%A9rie')).toEqual({ page: 'search', q: 'ayiti chérie' });
     expect(parseRoute('#/library')).toEqual({ page: 'library', tab: 'likes' });
-    // The retired Boost Board pages now show "page not found".
-    for (const old of ['#/leaderboard', '#/boost', '#/daily/2026-10-16', '#/categories', '#/about', '#/rules', '#/faq']) expect(parseRoute(old)).toEqual({ page: 'notfound' });
+    // The retired Boost Board pages and the old browser-only upload page now show "page not found".
+    for (const old of ['#/upload', '#/leaderboard', '#/boost', '#/daily/2026-10-16', '#/categories', '#/about', '#/rules', '#/faq']) expect(parseRoute(old)).toEqual({ page: 'notfound' });
   });
 });
 
@@ -118,7 +118,7 @@ describe('with nothing published yet', () => {
   it('Discover shows an empty state instead of shelves', () => {
     const html = render(createElement(DiscoverPage));
     expect(html).toContain(`<h1>${en['browse.empty.title']}</h1>`);
-    expect(html).toContain('href="#/upload"');
+    expect(html).toContain('href="#/account"');
     expect(html).not.toContain(en['browse.discover.trending']);
     expect(html).not.toContain('class="shelf"');
   });

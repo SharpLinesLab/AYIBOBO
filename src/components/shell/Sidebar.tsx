@@ -76,7 +76,7 @@ export function Sidebar() {
           <span>{t('common.nav.settings')}</span>
         </a>
       </nav>
-      <a className="side__upload" href="#/upload">
+      <a className="side__upload" href="#/account">
         <UploadIcon /> {t('common.nav.uploadMusic')}
       </a>
     </aside>

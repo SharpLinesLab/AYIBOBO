@@ -113,7 +113,6 @@ export interface MusicContextValue {
   removeFromPlaylist: (playlistId: string, trackId: string) => void;
   deletePlaylist: (playlistId: string) => void;
   addComment: (trackId: string, text: string, position?: number) => void;
-  addUpload: (t: Track) => void;
   deleteUpload: (id: string) => Promise<void>;
   setDisplayName: (n: string) => void;
   /** Lyrics (plain text or LRC) for one of your uploads. */
@@ -381,7 +380,6 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
             [tid]: [{ id: `c${Date.now().toString(36)}`, author: l.displayName || t('common.word.you'), text: text.trim().slice(0, 500), at: Date.now(), position }, ...(l.comments[tid] ?? [])],
           },
         })),
-      addUpload: (t) => update((l) => ({ ...l, uploads: [t, ...l.uploads] })),
       deleteUpload: async (id) => {
         await deleteAudio(id);
         await deleteAudio(`${id}:cover`);

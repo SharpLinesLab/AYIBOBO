@@ -141,7 +141,7 @@ export function DiscoverPage() {
         <div className="empty-state">
           <h1>{t('browse.empty.title')}</h1>
           <p>{t('browse.empty.body')}</p>
-          <a className="btn-accent" href="#/upload">
+          <a className="btn-accent" href="#/account">
             {t('common.nav.uploadMusic')}
           </a>
         </div>

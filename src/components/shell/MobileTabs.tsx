@@ -7,7 +7,7 @@ const TABS = [
   { href: '#/trending', label: 'common.nav.trending', pages: ['trending'], Icon: FlameIcon },
   { href: '#/charts', label: 'common.nav.chartsShort', pages: ['charts'], Icon: ChartIcon },
   { href: '#/genres', label: 'common.nav.genres', pages: ['genres', 'genre'], Icon: GridIcon },
-  { href: '#/library/likes', label: 'common.nav.library', pages: ['library', 'upload', 'settings', 'studio'], Icon: LibraryIcon },
+  { href: '#/library/likes', label: 'common.nav.library', pages: ['library', 'settings', 'studio'], Icon: LibraryIcon },
 ] as const;
 
 export function MobileTabs() {

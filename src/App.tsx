@@ -35,7 +35,7 @@ import { DiscoverPage } from './pages/Discover';
 import { ChartsPage, GenrePage, GenresPage, NotFound, TrendingPage } from './pages/Browse';
 import { ErrorBoundary, RouteEffects } from './components/shell/RouteEffects';
 import { AlbumPage, ArtistPage, PlaylistPage, SongPage } from './pages/Detail';
-import { LibraryPage, SearchPage, UploadPage } from './pages/Library';
+import { LibraryPage, SearchPage } from './pages/Library';
 
 type Theme = 'light' | 'dark';
 
@@ -157,9 +157,6 @@ function Shell() {
       break;
     case 'search':
       page = <SearchPage q={route.q} />;
-      break;
-    case 'upload':
-      page = <UploadPage />;
       break;
     case 'settings':
       page = <SettingsPage />;

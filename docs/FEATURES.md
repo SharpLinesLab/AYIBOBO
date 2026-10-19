@@ -7,7 +7,7 @@
   - **Song page:** a lyrics section.
   - **Player bar:** a microphone button opens the full-screen view.
 - **Click to seek:** clicking any line plays the song from that line.
-- **Format:** artists add lyrics when they upload, or later with **Edit lyrics** on their song page. They can paste:
+- **Format:** artists add lyrics with **Edit lyrics** on their song page. They can paste:
   - plain text, shown unsynced, or
   - an [LRC](https://en.wikipedia.org/wiki/LRC_(file_format)) file. Supported: `[mm:ss.xx]` stamps, several stamps on one line, `[offset:]`, and metadata tags.
 - **Tap-to-sync:** **Sync to song** plays the track. The artist presses Space (or **Next line**) as each line starts, and Backspace undoes. The result is saved as LRC.

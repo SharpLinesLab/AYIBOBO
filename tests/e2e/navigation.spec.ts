@@ -64,6 +64,6 @@ test('with nothing published yet, Discover shows an empty state', async ({ page 
   await page.route('**/api/catalog/uploads', (r) => r.fulfill({ json: { ok: true, tracks: [] } }));
   await open(page, '#/');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('No music yet');
-  await expect(page.getByRole('link', { name: 'Upload music' }).last()).toHaveAttribute('href', '#/upload');
+  await expect(page.getByRole('link', { name: 'Upload music' }).last()).toHaveAttribute('href', '#/account');
   await expect(page.locator('.shelf')).toHaveCount(0);
 });

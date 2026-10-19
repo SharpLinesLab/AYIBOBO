@@ -11,17 +11,6 @@ function open(): Promise<IDBDatabase> {
   });
 }
 
-export async function saveAudio(id: string, blob: Blob): Promise<void> {
-  const db = await open();
-  await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readwrite');
-    tx.objectStore(STORE).put(blob, id);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-  db.close();
-}
-
 export async function loadAudio(id: string): Promise<Blob | null> {
   try {
     const db = await open();

@@ -35,8 +35,6 @@ function titleFor(route: Route, m: ReturnType<typeof useMusic>, isAdmin: boolean
       return t('common.nav.yourLibrary');
     case 'search':
       return route.q ? t('player.title.search', { q: route.q }) : t('common.search.label');
-    case 'upload':
-      return t('common.nav.uploadMusic');
     case 'settings':
       return t('common.nav.settings');
     case 'studio':

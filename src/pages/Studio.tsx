@@ -299,7 +299,7 @@ export function StudioPage({ artistId }: { artistId?: string }) {
         <div className="empty-state card-panel">
           <h2>{t('player.studio.emptyTitle')}</h2>
           <p>{t('player.studio.emptyBody')}</p>
-          <a className="btn-accent" href="#/upload">
+          <a className="btn-accent" href="#/account">
             {t('common.nav.uploadMusic')}
           </a>
         </div>

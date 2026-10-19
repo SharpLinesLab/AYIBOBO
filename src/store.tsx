@@ -12,7 +12,6 @@ export type Route =
   | { page: 'playlist'; id: string }
   | { page: 'library'; tab: string }
   | { page: 'search'; q: string }
-  | { page: 'upload' }
   | { page: 'settings' }
   | { page: 'studio'; artistId?: string }
   | { page: 'privacy' }
@@ -55,8 +54,6 @@ export function parseRoute(hash: string): Route {
       return { page: 'library', tab: a ?? 'likes' };
     case 'search':
       return { page: 'search', q: a ?? '' };
-    case 'upload':
-      return { page: 'upload' };
     case 'settings':
       return { page: 'settings' };
     case 'studio':

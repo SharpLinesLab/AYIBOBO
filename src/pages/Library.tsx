@@ -1,17 +1,15 @@
 import { DownloadButton } from '../components/music/Offline';
-import { useEffect, useMemo, useState } from 'react';
-import { PALETTES, TEMPLATES, makeCover } from '../catalog/covers';
+import { useMemo, useState } from 'react';
 import { GENRES } from '../catalog/genres';
 import { searchCatalog } from '../catalog/search';
-import type { CoverSpec, GenreId, Track } from '../catalog/types';
-import { analyzeAudio, saveAudio } from '../catalog/uploads';
+import type { Track } from '../catalog/types';
 import { fmtTime, useMusic } from '../music';
 import { useApp } from '../store';
 import { Cover, PlayAll, Shelf } from '../components/music/bits';
 import { AlbumCard, ArtistCard, GenreTile, PlaylistCard, TrackCard } from '../components/music/Cards';
 import { TrackList } from '../components/music/TrackRow';
 import { PageHead } from './Browse';
-import { fmtNumber, plural, t, type Key } from '../i18n';
+import { plural, t, type Key } from '../i18n';
 
 const TABS = [
   { id: 'likes', label: 'common.nav.likes' },
@@ -155,7 +153,7 @@ export function LibraryPage({ tab }: { tab: string }) {
                 <input className="input" defaultValue={lib.displayName} placeholder={t('pages.library.artistNamePlaceholder')} onChange={(e) => m.setDisplayName(e.target.value)} />
               </div>
             </label>
-            <a className="btn-accent" href="#/upload">
+            <a className="btn-accent" href="#/account">
               {t('pages.library.uploadSong')}
             </a>
           </div>
@@ -187,7 +185,7 @@ export function LibraryPage({ tab }: { tab: string }) {
               </ul>
             </section>
           ) : (
-            empty('pages.library.uploadsEmptyTitle', 'pages.library.uploadsEmptyBody', '#/upload', 'common.nav.uploadMusic')
+            empty('pages.library.uploadsEmptyTitle', 'pages.library.uploadsEmptyBody', '#/account', 'common.nav.uploadMusic')
           )}
         </>
       )}
@@ -268,204 +266,6 @@ export function SearchPage({ q }: { q: string }) {
           ))}
         </Shelf>
       )}
-    </div>
-  );
-}
-
-const MAX_BYTES = 50 * 1024 * 1024;
-
-export function UploadPage() {
-  const m = useMusic();
-  const { navigate, toast } = useApp();
-  const [file, setFile] = useState<File | null>(null);
-  const [info, setInfo] = useState<{ duration: number; peaks: number[] } | null>(null);
-  const [title, setTitle] = useState('');
-  const [genre, setGenre] = useState<GenreId>('kompa');
-  const [description, setDescription] = useState('');
-  const [lyrics, setLyrics] = useState('');
-  const [explicit, setExplicit] = useState(false);
-  const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e6));
-  const [template, setTemplate] = useState(TEMPLATES[0]);
-  const [palette, setPalette] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [art, setArt] = useState<{ file: File; url: string } | null>(null);
-  useEffect(
-    () => () => {
-      if (art) URL.revokeObjectURL(art.url);
-    },
-    [art],
-  );
-  const cover: CoverSpec = { ...makeCover(seed, { template, palette: PALETTES[palette] }), text: title.slice(0, 22) || undefined, subtext: m.library.displayName || undefined };
-  const shownCover: CoverSpec = art ? { ...cover, imageUrl: art.url } : cover;
-
-  const pickArt = (f: File | undefined) => {
-    if (!f) return;
-    if (!/^image\/(jpeg|png|webp|avif)$/.test(f.type)) return setError(t('pages.upload.errArtType'));
-    if (f.size > 8 * 1024 * 1024) return setError(t('pages.upload.errArtSize'));
-    setError(null);
-    setArt({ file: f, url: URL.createObjectURL(f) });
-  };
-
-  const pick = async (f: File | undefined) => {
-    setError(null);
-    setInfo(null);
-    if (!f) return;
-    if (!f.type.startsWith('audio/')) return setError(t('pages.upload.errAudioType'));
-    if (f.size > MAX_BYTES) return setError(t('pages.upload.errAudioSize'));
-    setFile(f);
-    if (!title) setTitle(f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').slice(0, 80));
-    try {
-      setInfo(await analyzeAudio(f));
-    } catch {
-      setError(t('pages.upload.errDecode'));
-      setFile(null);
-    }
-  };
-
-  const submit = async () => {
-    if (!file || !info) return setError(t('pages.upload.errNoFile'));
-    if (!title.trim()) return setError(t('pages.upload.errNoTitle'));
-    setBusy(true);
-    const id = `up-${Date.now().toString(36)}`;
-    try {
-      await saveAudio(id, file);
-      if (art) await saveAudio(`${id}:cover`, art.file);
-    } catch {
-      setBusy(false);
-      return setError(t('pages.upload.errStorage'));
-    }
-    const track: Track = {
-      id,
-      title: title.trim().slice(0, 80),
-      artistId: 'me',
-      genre,
-      duration: info.duration,
-      recipe: { genre, bpm: 100, root: 48, seed, scale: 'minor' },
-      popularity: 0,
-      releasedAt: Date.now(),
-      cover,
-      explicit,
-      description: description.trim().slice(0, 400) || t('pages.upload.defaultDescription'),
-      lyrics: lyrics.trim().slice(0, 20_000) || undefined,
-      uploaded: true,
-      peaks: info.peaks,
-    };
-    m.addUpload(track);
-    setBusy(false);
-    toast(t('pages.upload.done'));
-    navigate(`#/song/${id}`);
-  };
-
-  return (
-    <div className="page-music">
-      <PageHead kicker={t('common.nav.creators')} title={t('common.nav.uploadMusic')} sub={t('pages.upload.sub')} />
-      <div className="upload">
-        <section className="card-panel stack">
-          <label
-            className={`dropzone${file ? ' has-file' : ''}`}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              void pick(e.dataTransfer.files[0]);
-            }}
-          >
-            <input type="file" accept="audio/*" onChange={(e) => void pick(e.target.files?.[0])} />
-            {file ? (
-              <>
-                <b>{file.name}</b>
-                <span className="muted">{info ? `${fmtTime(info.duration)} · ${t('pages.upload.fileSize', { size: fmtNumber(file.size / 1048576, 1) })}` : t('pages.upload.analyzing')}</span>
-                {info && (
-                  <span className="dropzone__wave" aria-hidden>
-                    {info.peaks.filter((_, i) => i % 2 === 0).map((p, i) => (
-                      <i key={i} style={{ height: `${p * 100}%` }} />
-                    ))}
-                  </span>
-                )}
-              </>
-            ) : (
-              <>
-                <b>{t('pages.upload.drop')}</b>
-                <span className="muted">{t('pages.upload.dropHint')}</span>
-              </>
-            )}
-          </label>
-          <label className="field">
-            {t('pages.upload.titleLabel')}
-            <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} placeholder={t('pages.upload.titlePlaceholder')} />
-          </label>
-          <label className="field">
-            {t('pages.upload.artistLabel')}
-            <input className="input" value={m.library.displayName} onChange={(e) => m.setDisplayName(e.target.value)} maxLength={40} placeholder={t('pages.upload.artistPlaceholder')} />
-          </label>
-          <label className="field">
-            {t('pages.upload.genreLabel')}
-            <select className="input" value={genre} onChange={(e) => setGenre(e.target.value as GenreId)}>
-              {GENRES.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="field">
-            {t('pages.upload.descriptionLabel')}
-            <textarea className="input" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={400} placeholder={t('pages.upload.descriptionPlaceholder')} />
-          </label>
-          <label className="field">
-            {t('pages.lyrics.title')} <span className="muted">{t('pages.upload.lyricsHint')}</span>
-            <textarea className="input" rows={4} value={lyrics} onChange={(e) => setLyrics(e.target.value)} maxLength={20_000} placeholder={t('pages.upload.lyricsPlaceholder')} />
-          </label>
-          <label className="check">
-            <input type="checkbox" checked={explicit} onChange={(e) => setExplicit(e.target.checked)} /> {t('pages.upload.explicit')}
-          </label>
-          {error && (
-            <div className="notice notice--error" role="alert">
-              {error}
-            </div>
-          )}
-          <button className="btn-accent btn-lg" disabled={busy || !info} onClick={() => void submit()}>
-            {busy ? t('pages.upload.uploading') : t('pages.upload.publish')}
-          </button>
-        </section>
-        <aside className="card-panel stack">
-          <h2 className="panel-title">{t('pages.upload.coverArt')}</h2>
-          <Cover spec={shownCover} className="upload__cover" />
-          <label className="btn-accent upload__art-btn">
-            <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={(e) => pickArt(e.target.files?.[0])} hidden />
-            {art ? t('pages.upload.replaceArt') : t('pages.upload.uploadArt')}
-          </label>
-          {art && (
-            <button className="btn-glass" onClick={() => setArt(null)}>
-              {t('pages.upload.useGenerated')}
-            </button>
-          )}
-          <p className="muted upload__hint">{t('pages.upload.artHint')}</p>
-          <div className="chips">
-            {TEMPLATES.map((tp) => (
-              <button key={tp} className={`chip2${template === tp ? ' is-active' : ''}`} onClick={() => setTemplate(tp)}>
-                {t(`pages.upload.template.${tp}`)}
-              </button>
-            ))}
-          </div>
-          <div className="swatches" role="radiogroup" aria-label={t('pages.upload.palette')}>
-            {PALETTES.map((p, i) => (
-              <button
-                key={i}
-                role="radio"
-                aria-checked={palette === i}
-                className={palette === i ? 'is-active' : ''}
-                style={{ background: `linear-gradient(135deg, ${p[0]}, ${p[1]} 55%, ${p[2]})` }}
-                onClick={() => setPalette(i)}
-                aria-label={t('pages.upload.paletteN', { n: i + 1 })}
-              />
-            ))}
-          </div>
-          <button className="btn-glass" onClick={() => setSeed(Math.floor(Math.random() * 1e6))}>
-            {t('pages.upload.shuffleDesign')}
-          </button>
-        </aside>
-      </div>
     </div>
   );
 }
