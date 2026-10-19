@@ -142,7 +142,7 @@ export const common: { [K in keyof typeof En]: string } = {
   'common.footer.socialOn': '{brand} sur {network}',
   'common.footer.legal': 'Informations juridiques',
   'common.footer.contact': 'Contact',
-  'common.footer.rights': '© {year} {short} — {name}. Tous droits réservés. Le catalogue musical présenté dans cette démo est fictif.',
+  'common.footer.rights': '© {year} {short} — {name}. Tous droits réservés.',
 
   // Language
   'common.lang.label': 'Langue',

@@ -1,27 +1,25 @@
 import { expect, test } from '@playwright/test';
-import { open, playAlbum, position, settle, trackErrors } from './helpers';
+import { ARTIST_A } from './data';
+import { open, playArtist, position, published, settle, trackErrors } from './helpers';
 
-test('play an album, skip ahead and see synced lyrics', async ({ page, isMobile }) => {
+test('play an artist\'s songs and skip ahead', async ({ page, isMobile }) => {
   const errors = trackErrors(page);
-  await playAlbum(page);
-  await expect(page.locator('.pbar__title')).toHaveText('Lanmou Pa Fasil');
+  const titles = await playArtist(page);
+  await expect(page.locator('.pbar__title')).toHaveText(titles[0]);
   if (isMobile) {
     // Phones skip from the full-screen player.
     await page.locator('.pbar__art').click();
     await page.locator('.np').getByRole('button', { name: 'Next', exact: true }).click();
     await page.getByRole('button', { name: 'Close now playing' }).click();
   } else await page.locator('.pbar').getByRole('button', { name: 'Next', exact: true }).click();
-  await expect(page.locator('.pbar__title')).toHaveText('Soley Leve');
-  await open(page, '#/song/tr-al-tiga-blaze-1-1');
-  await page.locator('.lyr--page .lyr__line.is-clickable').nth(5).click();
-  // Highlighting waits for audio to start, which can take a moment on a busy machine.
-  await expect(page.locator('.lyr--page .lyr__line.is-active')).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('.pbar__title')).toHaveText(titles[1]);
+  await expect(page.locator('.pbar').getByRole('button', { name: 'Pause' }).first()).toBeVisible();
   errors.expectNone();
 });
 
 test('queue can be reordered and Next follows the new order', async ({ page, isMobile }) => {
   test.skip(isMobile, 'queue popover is desktop-only');
-  await playAlbum(page);
+  await playArtist(page);
   await page.locator('.pbar').getByRole('button', { name: 'Queue' }).click();
   const rows = page.locator('.pbar__queue .qrow--drag b');
   await expect(rows.first()).toBeVisible(); // the queue loads on demand
@@ -34,21 +32,20 @@ test('queue can be reordered and Next follows the new order', async ({ page, isM
 
 test('the Up next panel lists the queue and jumps to a song', async ({ page, isMobile }) => {
   test.skip(isMobile, 'the side panel is for wide screens');
-  await playAlbum(page);
+  const titles = await playArtist(page);
   const panel = page.locator('.npp');
   if (!(await panel.isVisible())) await page.getByRole('button', { name: 'Up next panel' }).click();
   await expect(panel.getByRole('heading', { name: 'Up next' })).toBeVisible();
   // The current song is in the player bar, not repeated in the panel; neither are lyrics.
-  await expect(panel.locator('.qrow b').first()).toHaveText('Soley Leve');
+  await expect(panel.locator('.qrow b').first()).toHaveText(titles[1]);
   await expect(panel.locator('.lyr')).toHaveCount(0);
-  const third = (await panel.locator('.qrow b').nth(2).textContent())!;
-  await panel.locator('.qrow__main').nth(2).click();
-  await expect(page.locator('.pbar__title')).toHaveText(third);
+  await panel.locator('.qrow__main').nth(1).click();
+  await expect(page.locator('.pbar__title')).toHaveText(titles[2]);
 });
 
 test('autoplay continues with similar songs when the queue ends', async ({ page, isMobile }) => {
   test.skip(isMobile, 'uses the desktop seek bar');
-  await open(page, '#/album/al-lavi-soley-1');
+  await open(page, (await published(page)).artist(ARTIST_A));
   const rows = page.locator('.trow');
   await rows.last().locator('.trow__play').click({ force: true });
   const last = await page.locator('.pbar__title').textContent();
@@ -56,17 +53,19 @@ test('autoplay continues with similar songs when the queue ends', async ({ page,
   const bar = await page.locator('.pbar .seek__track').boundingBox();
   await page.mouse.click(bar!.x + bar!.width * 0.995, bar!.y + bar!.height / 2);
   await expect(page.locator('.pbar__title')).not.toHaveText(last!, { timeout: 8000 });
-  await page.locator('.pbar').getByRole('button', { name: 'Queue' }).click();
-  await expect(page.locator('.pbar__queue h4', { hasText: 'Autoplay' })).toBeVisible();
+  // The artist's other songs were just queued, so autoplay picks the other kompa song.
+  await expect(page.locator('.pbar__title')).toHaveText('Other Song');
 });
 
 test('"Sped up" plays faster than normal', async ({ page, isMobile }) => {
   test.skip(isMobile, 'uses the desktop seek bar');
-  await playAlbum(page);
+  test.slow();
+  await playArtist(page);
   await open(page, '#/settings');
+  // Positions are whole seconds, so measure long enough that 1.2× speed clearly shows.
   const measure = async () => {
     const a = await position(page);
-    await page.waitForTimeout(5000);
+    await page.waitForTimeout(10_000);
     return (await position(page)) - a;
   };
   const normal = await measure();
@@ -76,16 +75,17 @@ test('"Sped up" plays faster than normal', async ({ page, isMobile }) => {
 });
 
 test('share sheet renders a story card and a link', async ({ page }) => {
-  await open(page, '#/song/tr-al-tiga-blaze-1-1');
+  const song = (await published(page)).song();
+  await open(page, song);
   await page.getByRole('button', { name: 'Share', exact: true }).click();
   await expect(page.locator('.share__preview img')).toBeVisible();
-  await expect(page.getByRole('textbox', { name: 'Link' })).toHaveValue(/#\/song\/tr-al-tiga-blaze-1-1$/);
+  await expect(page.getByRole('textbox', { name: 'Link' })).toHaveValue(new RegExp(`${song}$`)); // #/song/srv-<uuid>: no regex specials
   await expect(page.getByRole('link', { name: 'WhatsApp' })).toHaveAttribute('href', /wa\.me/);
 });
 
 test('mobile: swipe down on the artwork closes Now Playing', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'touch gesture');
-  await playAlbum(page);
+  await playArtist(page);
   await page.locator('.pbar__art').click();
   const art = page.locator('.np__art');
   await expect(art).toBeVisible();

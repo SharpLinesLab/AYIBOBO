@@ -6,7 +6,7 @@ import { PageTint } from '../components/music/premium';
 import { compact, useMusic } from '../music';
 import { plural, t, type Key } from '../i18n';
 import { Cover, PlayAll, Shelf } from '../components/music/bits';
-import { AlbumCard, ArtistCard, PlaylistCard } from '../components/music/Cards';
+import { AlbumCard, ArtistCard } from '../components/music/Cards';
 import { TrackList, TrackListHeader, TrackRow } from '../components/music/TrackRow';
 
 function GenreChips({ base, active }: { base: string; active?: string }) {
@@ -21,6 +21,16 @@ function GenreChips({ base, active }: { base: string; active?: string }) {
         </a>
       ))}
     </nav>
+  );
+}
+
+/** Shown where a list of songs would be when there's nothing to list yet. */
+function NoSongs() {
+  return (
+    <div className="empty-state">
+      <h2>{t('browse.empty.title')}</h2>
+      <p>{t('browse.empty.body')}</p>
+    </div>
   );
 }
 
@@ -48,7 +58,7 @@ export function TrendingPage({ genre }: { genre?: string }) {
         </div>
       </PageHead>
       <GenreChips base="#/trending" active={g} />
-      <TrackList tracks={list} plays={undefined} showAlbum />
+      {list.length ? <TrackList tracks={list} plays={undefined} showAlbum /> : <NoSongs />}
     </div>
   );
 }
@@ -93,7 +103,11 @@ export function ChartsPage({ kind, window }: { kind: 'songs' | 'albums'; window:
           </a>
         ))}
       </nav>
-      {kind === 'songs' ? (
+      {(kind === 'songs' ? !rows.length : !albums.length) ? (
+        <div className="empty-state">
+          <h2>{t('browse.charts.empty')}</h2>
+        </div>
+      ) : kind === 'songs' ? (
         <div className="tlist" role="list">
           <TrackListHeader withChange />
           {rows.map((r) => (
@@ -162,7 +176,6 @@ export function GenrePage({ id }: { id: string }) {
   const tracks = trending(m.catalog.tracks.filter((t) => t.genre === id && !t.uploaded), m.now);
   const artists = m.catalog.artists.filter((a) => a.genres.includes(id)).sort((a, b) => b.followers - a.followers);
   const albums = m.catalog.albums.filter((a) => m.tracksOf(a.trackIds).some((t) => t.genre === id));
-  const playlists = m.catalog.playlists.filter((p) => p.editorial && m.tracksOf(p.trackIds).some((t) => t.genre === id));
   return (
     <div className="page-music">
       <PageTint color={g.colors[0]} />
@@ -178,17 +191,21 @@ export function GenrePage({ id }: { id: string }) {
           </span>
         </div>
       </header>
-      <section>
-        <header className="shelf__head">
-          <div>
-            <h2>{t('browse.genre.top', { genre: g.label })}</h2>
-          </div>
-          <a className="shelf__all" href={`#/trending/${id}`}>
-            {t('common.action.viewAll')}
-          </a>
-        </header>
-        <TrackList tracks={tracks.slice(0, 10)} showAlbum />
-      </section>
+      {tracks.length ? (
+        <section>
+          <header className="shelf__head">
+            <div>
+              <h2>{t('browse.genre.top', { genre: g.label })}</h2>
+            </div>
+            <a className="shelf__all" href={`#/trending/${id}`}>
+              {t('common.action.viewAll')}
+            </a>
+          </header>
+          <TrackList tracks={tracks.slice(0, 10)} showAlbum />
+        </section>
+      ) : (
+        <NoSongs />
+      )}
       {albums.length > 0 && (
         <Shelf title={t('browse.genre.albums')}>
           {albums.map((a) => (
@@ -196,15 +213,10 @@ export function GenrePage({ id }: { id: string }) {
           ))}
         </Shelf>
       )}
-      <Shelf title={t('browse.genre.artists')}>
-        {artists.map((a) => (
-          <ArtistCard key={a.id} artist={a} />
-        ))}
-      </Shelf>
-      {playlists.length > 0 && (
-        <Shelf title={t('common.nav.playlists')}>
-          {playlists.map((p) => (
-            <PlaylistCard key={p.id} playlist={p} />
+      {artists.length > 0 && (
+        <Shelf title={t('browse.genre.artists')}>
+          {artists.map((a) => (
+            <ArtistCard key={a.id} artist={a} />
           ))}
         </Shelf>
       )}

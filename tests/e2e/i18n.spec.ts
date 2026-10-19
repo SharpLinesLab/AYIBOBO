@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { open, trackErrors } from './helpers';
+import { open, resolve, trackErrors } from './helpers';
 
 test.describe('browser language is detected', () => {
   test.use({ locale: 'fr-FR' });
@@ -26,13 +26,12 @@ const ROUTES = [
   '#/trending',
   '#/charts',
   '#/genres/kompa',
-  '#/song/tr-al-tiga-blaze-1-1',
-  '#/album/al-lavi-soley-1',
-  '#/artist/ar-sisi-lune',
+  '#/song/{song}',
+  '#/artist/{artist}',
   '#/library/likes',
   '#/upload',
   '#/settings',
-  '#/studio/ar-tiga-blaze',
+  '#/studio',
   '#/account',
   '#/admin',
   '#/privacy',
@@ -45,7 +44,7 @@ for (const lang of ['fr', 'ht'] as const) {
     test(`${route} in ${lang}: accessible, no overflow, no errors`, async ({ page }) => {
       const errors = trackErrors(page);
       await page.addInitScript((l) => localStorage.setItem('asf:lang', l), lang);
-      await open(page, route);
+      await open(page, await resolve(page, route));
       await expect(page.locator('html')).toHaveAttribute('lang', lang);
       const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
       expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).slice(0, 3).join(' | ')}`)).toEqual([]);

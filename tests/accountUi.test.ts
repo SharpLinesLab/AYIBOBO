@@ -2,7 +2,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { lyricsFor } from '../src/catalog/lyrics';
-import { lifetimePlays, playsInWindow } from '../src/catalog/plays';
+import { playsInWindow } from '../src/catalog/plays';
 import { setLang } from '../src/i18n';
 import { dict as en } from '../src/i18n/locales/en';
 import { dict as fr } from '../src/i18n/locales/fr';
@@ -75,7 +75,6 @@ describe('published songs in the catalog', () => {
 
   it('get no invented plays or lyrics', () => {
     const [t] = toCatalog(list).tracks;
-    expect(lifetimePlays(t, 1_000_000_000)).toBe(0);
     expect(playsInWindow(t, 1_000_000_000, 7)).toBe(0);
     expect(lyricsFor(t)).toBeNull();
   });

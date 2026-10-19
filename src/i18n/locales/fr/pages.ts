@@ -115,7 +115,7 @@ export const pages: { [K in keyof typeof En]: string } = {
   'pages.library.newPlaylistName': 'Nom de la nouvelle playlist',
   'pages.library.createPlaylist': 'Créer une playlist',
   'pages.library.playlistsEmptyTitle': 'Aucune playlist pour l’instant',
-  'pages.library.playlistsEmptyBody': 'Créez-en une ci-dessus ou suivez une playlist de la rédaction.',
+  'pages.library.playlistsEmptyBody': 'Créez-en une ci-dessus.',
   'pages.library.discoverPlaylists': 'Découvrir des playlists',
   'pages.library.followingEmptyTitle': 'Suivez les artistes que vous aimez',
   'pages.library.followingEmptyBody': 'Vous retrouverez facilement leurs nouvelles sorties ici.',

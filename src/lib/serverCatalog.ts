@@ -36,14 +36,11 @@ export async function fetchPublished(): Promise<PublishedTrack[]> {
 
 const palette = (g: GenreId): [string, string, string] => ['#0b0c0f', genreById(g).colors[0], genreById(g).colors[1]];
 
-/** Artists behind published songs (real accounts, as opposed to the demo catalog). */
-export const isPublishedArtist = (id: string) => id.startsWith('ar-srv-');
-
 /** Catalog tracks and artists (one per artist account) for the published songs. */
 export function toCatalog(list: PublishedTrack[]): { tracks: Track[]; artists: Artist[] } {
   const artists = new Map<string, Artist>();
   const tracks = list.map((p): Track => {
-    const artistId = `ar-srv-${p.artistId}`; // see isPublishedArtist
+    const artistId = `ar-srv-${p.artistId}`;
     const seed = hashString(p.id);
     const artist = artists.get(artistId);
     if (!artist) {

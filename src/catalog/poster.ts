@@ -137,16 +137,3 @@ ${figure(p, hi, `filter="url(#${id}rim)" opacity="0.95" transform-origin="150 20
 ${figure(p, `url(#${id}fig)`)}
 <rect width="300" height="400" fill="url(#${id}floor)"/>${g.layer}</svg>`;
 }
-
-/** Cinematic duotone lighting palettes for artist imagery: [shadow, haze, key light]. */
-export const STAGE_PALETTES: [string, string, string][] = [
-  ['#04080a', '#0f3d29', '#2ed573'],
-  ['#08040f', '#4c1d95', '#e879f9'],
-  ['#100404', '#7f1d1d', '#fb923c'],
-  ['#020d16', '#0c4a6e', '#38bdf8'],
-  ['#120c02', '#78350f', '#fbbf24'],
-  ['#10030a', '#831843', '#f472b6'],
-  ['#050505', '#27272a', '#f4f4f5'],
-  ['#03100e', '#115e59', '#5eead4'],
-  ['#09071c', '#3730a3', '#a5b4fc'],
-];

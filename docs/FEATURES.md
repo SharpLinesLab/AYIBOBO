@@ -11,7 +11,6 @@
   - plain text, shown unsynced, or
   - an [LRC](https://en.wikipedia.org/wiki/LRC_(file_format)) file. Supported: `[mm:ss.xx]` stamps, several stamps on one line, `[offset:]`, and metadata tags.
 - **Tap-to-sync:** **Sync to song** plays the track. The artist presses Space (or **Next line**) as each line starts, and Backspace undoes. The result is saved as LRC.
-- **Demo catalog:** the sample songs have demo lyrics timed to each song's verses and hooks (`src/catalog/lyrics.ts`). Replace these with licensed lyrics before launch.
 
 ## Crossfade
 - **Setting:** Settings → Playback → Crossfade, from 0 to 12 s. The value is saved per device.
@@ -36,13 +35,11 @@
 
 ## Artist Studio (`#/studio`)
 - **What it shows:**
-  - streams, listeners, followers and saves, with the change against the previous period
+  - streams, songs, likes and comments, with the change in streams against the previous period
   - a streams-over-time chart; it has a crosshair tooltip, arrow-key reading and a table view
   - top songs with trend sparklines
-  - top cities and where streams come from
 - **Time range:** 7 days, 28 days or 12 months. Data runs through yesterday, so a half-counted today doesn't read as a drop.
 - **Your uploads ("me"):** plays counted on this device, per day.
-- **Demo artist profiles:** simulated numbers from the sample catalog, labelled as such on the page.
 - **Before launch:** real listener counts, cities and stream sources need accounts and server-side play logging. See the launch blockers in `UI-UX-AUDIT.md`.
 
 ## Sound: equalizer, speed and reverb

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { activeLine, lyricsFor, parseLyrics, toLrc } from '../src/catalog/lyrics';
-import { dailyPlays, playsInWindow } from '../src/catalog/plays';
-import { createCatalog } from '../src/catalog/seed';
+import { toCatalog } from '../src/lib/serverCatalog';
 import { parseRoute } from '../src/store';
 
-const NOW = Date.parse('2026-10-17T15:00:00Z');
-const cat = createCatalog(NOW);
+const [song] = toCatalog([
+  { id: 'l1', title: 'Lakay', genre: 'kompa', artistId: 'u1', artistName: 'Ròz Mapou', duration: 200, peaks: null, releasedAt: 1, audioUrl: '/a', coverUrl: '/c' },
+]).tracks;
 
 describe('lyrics', () => {
   it('parses LRC with fractions, repeated stamps, tags and offset', () => {
@@ -49,28 +49,16 @@ describe('lyrics', () => {
     expect(activeLine(lines, 100)).toBe(2);
   });
 
-  it('gives seed songs synced demo lyrics inside the song, with the title in the hook', () => {
-    const t = cat.tracks.find((x) => x.genre === 'kompa')!;
-    const l = lyricsFor(t)!;
-    expect(l.synced).toBe(true);
-    expect(l.lines.length).toBeGreaterThan(8);
-    expect(l.lines.every((x) => x.time! >= 0 && x.time! < t.duration)).toBe(true);
-    expect(l.lines.some((x) => x.text === t.title)).toBe(true);
-    const times = l.lines.map((x) => x.time!);
-    expect([...times].sort((a, b) => a - b)).toEqual(times);
-    expect(lyricsFor({ ...t, uploaded: true })).toBeNull();
+  it('shows only the lyrics an artist added, never made-up ones', () => {
+    expect(lyricsFor(song)).toBeNull();
+    expect(lyricsFor({ ...song, uploaded: true })).toBeNull();
+    const l = lyricsFor({ ...song, lyrics: '[00:01.00] Lakay se lakay\n[00:04.50] Nou la' })!;
+    expect(l.source).toBe('lrc');
+    expect(l.lines.map((x) => x.text)).toEqual(['Lakay se lakay', 'Nou la']);
   });
 });
 
-describe('studio data', () => {
-  it('daily plays add up to the window totals', () => {
-    const t = cat.tracks[0];
-    const days = dailyPlays(t, NOW, 28);
-    expect(days).toHaveLength(28);
-    const sum = days.reduce((a, b) => a + b, 0);
-    expect(Math.abs(sum - playsInWindow(t, NOW, 28))).toBeLessThanOrEqual(28);
-  });
-
+describe('studio', () => {
   it('routes settings and studio pages', () => {
     expect(parseRoute('#/settings')).toEqual({ page: 'settings' });
     expect(parseRoute('#/studio')).toEqual({ page: 'studio', artistId: undefined });

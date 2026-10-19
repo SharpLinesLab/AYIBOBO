@@ -1,7 +1,7 @@
 /**
  * Offline support: service worker registration (with a "new version" prompt), connection status
- * and downloads. Catalog songs are synthesized on the device and uploads live in IndexedDB, so
- * both play offline once the app shell is cached; streamed audio files are saved to Cache Storage.
+ * and downloads. Uploads live in IndexedDB, so they play offline once the app shell is cached;
+ * streamed audio files are saved to Cache Storage when downloaded.
  */
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { t } from './i18n';

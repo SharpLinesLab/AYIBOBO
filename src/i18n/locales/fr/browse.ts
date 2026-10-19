@@ -31,10 +31,10 @@ export const browse: { [K in keyof typeof En]: string } = {
   'browse.discover.mixesSub': 'Conçus pour vous — mis à jour selon vos J’aime',
   'browse.discover.community': 'Tout frais de la communauté',
   'browse.discover.communitySub': 'Les nouveautés des artistes d’ASF — touchez la forme d’onde pour écouter',
-  'browse.discover.featured': 'Playlists à la une',
-  'browse.discover.featuredSub': 'Sélection de la rédaction ASF',
   'browse.discover.toWatch': 'Artistes à suivre',
   'browse.discover.toWatchSub': 'Les voix montantes de la diaspora',
+  'browse.empty.title': 'Pas encore de musique',
+  'browse.empty.body': 'Les titres apparaissent ici dès leur publication sur ASF.',
 
   // Quick picks greeting
   'browse.greet.night': 'Bonne nuit',
@@ -74,6 +74,7 @@ export const browse: { [K in keyof typeof En]: string } = {
   'browse.charts.playAll': 'Écouter le classement',
   'browse.charts.songs': 'Titres',
   'browse.charts.albums': 'Albums',
+  'browse.charts.empty': 'Ce classement est encore vide',
 
   // Genres pages
   'browse.genres.title': 'Genres et ambiances',

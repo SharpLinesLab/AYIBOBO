@@ -1,7 +1,7 @@
 /* ASF service worker — generated at build time from src/sw.template.js (see vite.config.ts).
  *
  * - App shell (HTML, JS, CSS, icons) is precached, so the app opens and plays with no network.
- *   Catalog songs are synthesized on the device and uploads live in IndexedDB, so they play offline.
+ *   Your uploads live in IndexedDB and downloaded songs in the audio cache, so they play offline.
  * - Hashed /assets/* are cache-first; pages are network-first with the cached shell as fallback.
  * - Fonts are self-hosted and precached; images are cached as they're used. Downloaded audio lives in its own cache
  *   ("asf-audio-v1") that is never purged on update; the app reads it directly.

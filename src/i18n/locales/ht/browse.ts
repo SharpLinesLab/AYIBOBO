@@ -30,10 +30,10 @@ export const browse: { [K in keyof typeof En]: string } = {
   'browse.discover.mixesSub': 'Fèt pou ou — yo chanje chak fwa w renmen yon chante',
   'browse.discover.community': 'Tou cho nan kominote a',
   'browse.discover.communitySub': 'Nouvo mizik atis sou ASF — touche fòm son an pou w antre ladan l',
-  'browse.discover.featured': 'Playlist n ap mete devan',
-  'browse.discover.featuredSub': 'Chwazi pa ekip ASF la',
   'browse.discover.toWatch': 'Atis pou w veye',
   'browse.discover.toWatchSub': 'Vwa k ap leve nan dyaspora a',
+  'browse.empty.title': 'Poko gen mizik',
+  'browse.empty.body': 'Chante yo ap parèt isit la depi nou pibliye yo sou ASF.',
 
   // Quick picks greeting
   'browse.greet.night': 'Bòn nuit',
@@ -73,6 +73,7 @@ export const browse: { [K in keyof typeof En]: string } = {
   'browse.charts.playAll': 'Jwe klasman an',
   'browse.charts.songs': 'Chante',
   'browse.charts.albums': 'Albòm',
+  'browse.charts.empty': 'Poko gen anyen nan klasman sa a',
 
   // Genres pages
   'browse.genres.title': 'Estil mizik ak atmosfè',

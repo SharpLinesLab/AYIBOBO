@@ -81,7 +81,6 @@ export function QuickPicks({ onTint }: { onTint: (spec: CoverSpec | undefined) =
       if (out.length >= 4) break;
     }
     for (const p of m.catalog.playlists.filter((x) => x.id.startsWith('mix-')).slice(0, 2)) add(fromPlaylist(p, m.tracksOf(p.trackIds)));
-    for (const p of m.catalog.playlists.filter((x) => x.editorial)) add(fromPlaylist(p, m.tracksOf(p.trackIds)));
     return out.slice(0, 8);
   }, [m]);
 

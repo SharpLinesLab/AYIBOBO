@@ -1,12 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent as RPointerEvent } from 'react';
-import { genreById } from '../catalog/genres';
-import { dailyPlays } from '../catalog/plays';
-import type { Artist, Track } from '../catalog/types';
-import { mulberry32 } from '../lib/random';
-import { fmtDate, fmtNumber, t, type Key } from '../i18n';
+import type { Track } from '../catalog/types';
+import { fmtDate, fmtNumber, t } from '../i18n';
 import { compact, dayKey, useMusic } from '../music';
-import { useApp } from '../store';
-import { isPublishedArtist } from '../lib/serverCatalog';
 import { Cover } from '../components/music/bits';
 import { PageHead } from './Browse';
 
@@ -16,7 +11,7 @@ const rangeKey = (r: Range) => `player.studio.range.${r}` as const;
 const lastKey = (r: Range) => `player.studio.last.${r}` as const;
 const vsPrevKey = (r: Range) => `player.studio.vsPrev.${r}` as const;
 const DAY = 86_400_000;
-/** The synthetic history covers ~400 days, so period-over-period deltas exist up to 28 days. */
+/** Daily play history covers ~400 days, so period-over-period deltas exist up to 28 days. */
 const MAX_HISTORY = 400;
 
 const fmtInt = (n: number) => fmtNumber(Math.round(n));
@@ -42,11 +37,7 @@ function useStudioData(tracks: Track[], range: Range) {
       for (let d = days - 1; d >= 0; d--) out.push(m.library.daily[dayKey(end - d * DAY)]?.[t.id] ?? 0);
       return out;
     };
-    const perTrack = tracks.map((t) => {
-      const synth = dailyPlays(t, m.now, span + 1).slice(0, -1);
-      const mine = local(t, span);
-      return { t, days: synth.map((v, i) => v + mine[i]) };
-    });
+    const perTrack = tracks.map((t) => ({ t, days: local(t, span) }));
     const total = new Array(span).fill(0);
     perTrack.forEach(({ days }) => days.forEach((v, i) => (total[i] += v)));
     const cur = total.slice(-range);
@@ -78,47 +69,6 @@ function bucket(days: number[], range: Range): number[] {
   const out: number[] = [];
   for (let i = 0; i < days.length; i += size) out.push(days.slice(i, i + size).reduce((a, b) => a + b, 0));
   return out;
-}
-
-const CITIES: Record<string, [string, number][]> = {
-  base: [
-    ['Port-au-Prince, HT', 30],
-    ['Miami, US', 24],
-    ['New York, US', 22],
-    ['Montréal, CA', 14],
-    ['Boston, US', 10],
-    ['Paris, FR', 9],
-    ['Cap-Haïtien, HT', 8],
-    ['Orlando, US', 6],
-  ],
-  afrobeats: [['Lagos, NG', 26], ['London, UK', 18], ['Accra, GH', 12]],
-  amapiano: [['Johannesburg, ZA', 30], ['London, UK', 12], ['Lagos, NG', 10]],
-  dancehall: [['Kingston, JM', 28], ['Toronto, CA', 14], ['London, UK', 10]],
-  reggae: [['Kingston, JM', 24], ['London, UK', 12], ['Toronto, CA', 9]],
-  zouk: [['Fort-de-France, MQ', 22], ['Pointe-à-Pitre, GP', 18], ['Paris, FR', 16]],
-  drill: [['London, UK', 16], ['Brooklyn, US', 14]],
-};
-
-function audience(a: Artist) {
-  const r = mulberry32((a.avatar.seed ^ 0x2c1b3c6d) >>> 0);
-  const extra = CITIES[a.genres[0]] ?? [];
-  const weights = new Map<string, number>();
-  for (const [c, w] of [...CITIES.base, ...extra]) weights.set(c, (weights.get(c) ?? 0) + w * (0.6 + r() * 0.8));
-  const cities = [...weights].sort((x, y) => y[1] - x[1]).slice(0, 6);
-  // Called while rendering, so the source names are read in the current language.
-  const src: [Key, number][] = [
-    ['player.studio.src.playlists', 30 + r() * 14],
-    ['player.studio.src.profile', 18 + r() * 10],
-    ['player.studio.src.search', 10 + r() * 6],
-    ['player.studio.src.library', 12 + r() * 8],
-    ['player.studio.src.other', 4 + r() * 4],
-  ];
-  const sources = src.map(([k, v]): [string, number] => [t(k), v]);
-  const norm = (list: [string, number][]) => {
-    const total = list.reduce((s, [, v]) => s + v, 0);
-    return list.map(([k, v]) => ({ label: k, share: v / total }));
-  };
-  return { cities: norm(cities), sources: norm(sources).sort((x, y) => y.share - x.share) };
 }
 
 // --- charts ----------------------------------------------------------------------------------------
@@ -277,26 +227,6 @@ function Sparkline({ values }: { values: number[] }) {
   );
 }
 
-function BarList({ rows, title }: { rows: { label: string; share: number }[]; title: string }) {
-  const max = Math.max(...rows.map((r) => r.share));
-  return (
-    <section className="card-panel">
-      <h2 className="panel-title">{title}</h2>
-      <ul className="barlist">
-        {rows.map((r) => (
-          <li key={r.label}>
-            <span className="barlist__label">{r.label}</span>
-            <span className="barlist__track">
-              <i style={{ width: `${(r.share / max) * 100}%` }} />
-            </span>
-            <span className="barlist__value num">{t('player.pct', { n: Math.round(r.share * 100) })}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
 function Delta({ cur, prev, label }: { cur: number; prev: number | null; label: string }) {
   if (prev === null || prev <= 0) return null;
   const pct = ((cur - prev) / prev) * 100;
@@ -312,83 +242,46 @@ function Delta({ cur, prev, label }: { cur: number; prev: number | null; label: 
 
 export function StudioPage({ artistId }: { artistId?: string }) {
   const m = useMusic();
-  const { navigate } = useApp();
   const [range, setRange] = useState<Range>(28);
   const uploads = useMemo(() => m.catalog.tracks.filter((t) => t.uploaded), [m.catalog.tracks]);
-  // Studio's numbers are simulated, so it only offers the demo profiles, never real artist accounts.
-  const demoArtists = useMemo(() => m.catalog.artists.filter((a) => !isPublishedArtist(a.id)), [m.catalog.artists]);
-  const fallback = uploads.length ? 'me' : (m.library.follows.find((id) => !isPublishedArtist(id)) ?? [...demoArtists].sort((a, b) => b.followers - a.followers)[0]?.id);
-  const pid = artistId ?? fallback;
-  const isMe = pid === 'me';
-  const artist = isMe || isPublishedArtist(pid ?? '') ? undefined : m.artist(pid ?? '');
-  const tracks = useMemo(() => (isMe ? uploads : artist ? m.artistTracks(artist.id) : []), [isMe, uploads, artist, m]);
-  const data = useStudioData(tracks, range);
+  const data = useStudioData(uploads, range);
   const rangeLabel = t(lastKey(range));
   const periodWord = t(vsPrevKey(range));
 
-  const profiles = (
-    <label className="studio__pick">
-      <span className="muted">{t('player.studio.profile')}</span>
-      <select className="input" value={pid} onChange={(e) => navigate(`#/studio/${e.target.value}`)}>
-        <option value="me">{t('player.studio.meOption', { name: m.library.displayName || t('common.word.you') })}</option>
-        <optgroup label={t('player.studio.demoProfiles')}>
-          {[...demoArtists]
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-        </optgroup>
-      </select>
-    </label>
-  );
-
-  if (!isMe && !artist)
+  // Studio shows your own uploads; there are no other profiles.
+  if (artistId && artistId !== 'me')
     return (
       <div className="page-music">
-        <PageHead kicker={t('common.nav.studio')} title={t('player.studio.notFound')} />
-        {profiles}
+        <PageHead kicker={t('common.nav.studio')} title={t('player.studio.notFound')}>
+          <a href="#/studio">{t('player.studio.yourMusic')}</a>
+        </PageHead>
       </div>
     );
 
-  const name = isMe ? m.library.displayName || t('player.studio.yourMusic') : artist!.name;
-  const liked = tracks.filter((t) => m.isLiked(t.id)).length;
-  const comments = tracks.reduce((s, t) => s + (m.library.comments[t.id]?.length ?? 0), 0);
-  const listenRatio = range === 7 ? 0.42 : range === 28 ? 0.31 : 0.14;
-  const kpis = isMe
-    ? [
-        { label: t('player.studio.streams'), value: data.streams, delta: <Delta cur={data.streams} prev={data.prev} label={periodWord} /> },
-        { label: t('player.studio.songs'), value: uploads.length },
-        { label: t('player.studio.likes'), value: liked },
-        { label: t('player.studio.comments'), value: comments },
-      ]
-    : [
-        { label: t('player.studio.streams'), value: data.streams, delta: <Delta cur={data.streams} prev={data.prev} label={periodWord} /> },
-        { label: t('player.studio.listeners'), value: Math.round(data.streams * listenRatio) },
-        { label: t('player.studio.followers'), value: m.followerCount(artist!) },
-        { label: t('player.studio.saves'), value: Math.round(data.streams * 0.035) },
-      ];
-  const aud = artist ? audience(artist) : null;
+  const name = m.library.displayName || t('player.studio.yourMusic');
+  const liked = uploads.filter((t) => m.isLiked(t.id)).length;
+  const comments = uploads.reduce((s, t) => s + (m.library.comments[t.id]?.length ?? 0), 0);
+  const kpis = [
+    { label: t('player.studio.streams'), value: data.streams, delta: <Delta cur={data.streams} prev={data.prev} label={periodWord} /> },
+    { label: t('player.studio.songs'), value: uploads.length },
+    { label: t('player.studio.likes'), value: liked },
+    { label: t('player.studio.comments'), value: comments },
+  ];
   const shareMax = Math.max(1, ...data.songs.map((s) => s.streams));
 
   return (
     <div className="page-music studio">
       <div className="studio__head">
-        {artist ? <Cover spec={artist.avatar} size={72} round /> : <span className="studio__me" aria-hidden>{name.slice(0, 1).toUpperCase()}</span>}
+        <span className="studio__me" aria-hidden>
+          {name.slice(0, 1).toUpperCase()}
+        </span>
         <div className="studio__titles">
           <span className="phead__kicker">{t('common.nav.studio')}</span>
           <h1>{name}</h1>
           <span className="muted">
-            {isMe ? t('player.studio.yourUploads') : `${genreById(artist!.genres[0]).label} · ${artist!.handle}`} ·{' '}
-            {isMe ? (
-              <a href="#/library/uploads">{t('player.studio.manageUploads')}</a>
-            ) : (
-              <a href={`#/artist/${artist!.id}`}>{t('player.studio.viewProfile')}</a>
-            )}
+            {t('player.studio.yourUploads')} · <a href="#/library/uploads">{t('player.studio.manageUploads')}</a>
           </span>
         </div>
-        {profiles}
       </div>
 
       <div className="studio__filters" role="group" aria-label={t('player.studio.timeRange')}>
@@ -402,7 +295,7 @@ export function StudioPage({ artistId }: { artistId?: string }) {
         <span className="muted studio__asof">{t('player.studio.through', { date: fmtDay(m.now - DAY, true) })}</span>
       </div>
 
-      {isMe && !uploads.length ? (
+      {!uploads.length ? (
         <div className="empty-state card-panel">
           <h2>{t('player.studio.emptyTitle')}</h2>
           <p>{t('player.studio.emptyBody')}</p>
@@ -481,18 +374,7 @@ export function StudioPage({ artistId }: { artistId?: string }) {
             </div>
           </section>
 
-          {aud ? (
-            <div className="two-col studio__aud">
-              <BarList title={t('player.studio.topCities')} rows={aud.cities} />
-              <BarList title={t('player.studio.sourcesTitle')} rows={aud.sources} />
-            </div>
-          ) : null}
-
-          <p className="muted studio__note">
-            {isMe
-              ? t('player.studio.noteMe')
-              : t('player.studio.noteDemo')}
-          </p>
+          <p className="muted studio__note">{t('player.studio.noteMe')}</p>
         </>
       )}
     </div>

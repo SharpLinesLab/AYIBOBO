@@ -29,10 +29,10 @@ export const browse = {
   'browse.discover.mixesSub': 'Made for you — updated as you like songs',
   'browse.discover.community': 'Fresh from the community',
   'browse.discover.communitySub': 'New drops from artists on ASF — tap the waveform to jump in',
-  'browse.discover.featured': 'Featured playlists',
-  'browse.discover.featuredSub': 'Curated by ASF Editorial',
   'browse.discover.toWatch': 'Artists to watch',
   'browse.discover.toWatchSub': 'Rising voices across the diaspora',
+  'browse.empty.title': 'No music yet',
+  'browse.empty.body': 'Songs show up here as soon as they’re published on ASF.',
 
   // Quick picks greeting
   'browse.greet.night': 'Good night',
@@ -72,6 +72,7 @@ export const browse = {
   'browse.charts.playAll': 'Play the chart',
   'browse.charts.songs': 'Songs',
   'browse.charts.albums': 'Albums',
+  'browse.charts.empty': 'Nothing on this chart yet',
 
   // Genres pages
   'browse.genres.title': 'Genres & moods',

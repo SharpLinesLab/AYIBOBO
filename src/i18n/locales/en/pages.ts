@@ -113,7 +113,7 @@ export const pages = {
   'pages.library.newPlaylistName': 'New playlist name',
   'pages.library.createPlaylist': 'Create playlist',
   'pages.library.playlistsEmptyTitle': 'No playlists yet',
-  'pages.library.playlistsEmptyBody': 'Create one above, or follow an editorial playlist.',
+  'pages.library.playlistsEmptyBody': 'Create one above.',
   'pages.library.discoverPlaylists': 'Discover playlists',
   'pages.library.followingEmptyTitle': 'Follow artists you love',
   'pages.library.followingEmptyBody': 'Their new releases will be easy to find here.',

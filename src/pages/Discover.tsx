@@ -132,12 +132,28 @@ export function DiscoverPage() {
   }, [liked, catalog.tracks, library.likes]);
   const chartTracks = data.chart.map((r) => r.track);
 
+  // Nothing published yet (and no uploads of your own): say so instead of empty shelves.
+  if (!catalog.tracks.length)
+    return (
+      <div className="page-music">
+        <PageTint color="#1d6b45" />
+        <QuickPicks onTint={setTint} />
+        <div className="empty-state">
+          <h1>{t('browse.empty.title')}</h1>
+          <p>{t('browse.empty.body')}</p>
+          <a className="btn-accent" href="#/upload">
+            {t('common.nav.uploadMusic')}
+          </a>
+        </div>
+      </div>
+    );
+
   return (
     <div className="page-music">
       <PageTint spec={tint} color={tint ? undefined : '#1d6b45'} />
       <QuickPicks onTint={setTint} />
 
-      <HeroCarousel items={data.features} />
+      {data.features.length ? <HeroCarousel items={data.features} /> : <h1 className="sr-only">{t('common.nav.discover')}</h1>}
 
       <nav className="genre-strip" aria-label={t('common.nav.genres')}>
         {GENRES.map((g) => (
@@ -153,40 +169,48 @@ export function DiscoverPage() {
         </Shelf>
       )}
 
-      <Shelf title={t('browse.discover.trending')} subtitle={t('browse.discover.trendingSub')} href="#/trending">
-        {data.trend.map((t, i) => (
-          <TrackCard key={t.id} track={t} context={data.trend} rank={i + 1} />
-        ))}
-      </Shelf>
+      {data.trend.length > 0 && (
+        <Shelf title={t('browse.discover.trending')} subtitle={t('browse.discover.trendingSub')} href="#/trending">
+          {data.trend.map((t, i) => (
+            <TrackCard key={t.id} track={t} context={data.trend} rank={i + 1} />
+          ))}
+        </Shelf>
+      )}
 
-      <Shelf title={t('browse.discover.spotlight')} subtitle={t('browse.discover.spotlightSub')}>
-        {data.spotlight.map((a) => (
-          <PosterCard key={a.id} artist={a} />
-        ))}
-      </Shelf>
+      {data.spotlight.length > 0 && (
+        <Shelf title={t('browse.discover.spotlight')} subtitle={t('browse.discover.spotlightSub')}>
+          {data.spotlight.map((a) => (
+            <PosterCard key={a.id} artist={a} />
+          ))}
+        </Shelf>
+      )}
 
-      <section className="split">
-        <div className="split__main">
-          <header className="shelf__head">
-            <div>
-              <h2>{t('browse.discover.topSongs')}</h2>
-              <p>{t('browse.discover.topSongsSub')}</p>
+      {data.chart.length > 0 && (
+        <section className="split">
+          <div className="split__main">
+            <header className="shelf__head">
+              <div>
+                <h2>{t('browse.discover.topSongs')}</h2>
+                <p>{t('browse.discover.topSongsSub')}</p>
+              </div>
+              <a className="shelf__all" href="#/charts/songs/week">
+                {t('browse.discover.fullChart')}
+              </a>
+            </header>
+            <div className="tlist tlist--two" role="list">
+              {data.chart.map((r) => (
+                <TrackRow key={r.track.id} track={r.track} context={chartTracks} index={r.rank} plays={r.plays} change={r.change} />
+              ))}
             </div>
-            <a className="shelf__all" href="#/charts/songs/week">
-              {t('browse.discover.fullChart')}
-            </a>
-          </header>
-          <div className="tlist tlist--two" role="list">
-            {data.chart.map((r) => (
-              <TrackRow key={r.track.id} track={r.track} context={chartTracks} index={r.rank} plays={r.plays} change={r.change} />
-            ))}
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      <Shelf title={t('browse.discover.newReleases')} subtitle={t('browse.discover.newReleasesSub')}>
-        {data.releases.map((r) => (r.kind === 'album' ? <AlbumCard key={r.a.id} album={r.a} /> : <TrackCard key={r.t.id} track={r.t} />))}
-      </Shelf>
+      {data.releases.length > 0 && (
+        <Shelf title={t('browse.discover.newReleases')} subtitle={t('browse.discover.newReleasesSub')}>
+          {data.releases.map((r) => (r.kind === 'album' ? <AlbumCard key={r.a.id} album={r.a} /> : <TrackCard key={r.t.id} track={r.t} />))}
+        </Shelf>
+      )}
 
       {forYou.length > 0 && (
         <Shelf title={t('browse.discover.forYou')} subtitle={t('browse.discover.forYouSub')}>
@@ -196,39 +220,37 @@ export function DiscoverPage() {
         </Shelf>
       )}
 
-      <Shelf title={t('browse.discover.mixes')} subtitle={t('browse.discover.mixesSub')}>
-        {mixes.map((p) => (
-          <PlaylistCard key={p.id} playlist={p} />
-        ))}
-      </Shelf>
-
-      <section aria-labelledby="stream-title">
-        <header className="shelf__head">
-          <div>
-            <h2 id="stream-title">{t('browse.discover.community')}</h2>
-            <p>{t('browse.discover.communitySub')}</p>
-          </div>
-        </header>
-        <div className="stream-list">
-          {stream.map((t) => (
-            <StreamCard key={t.id} track={t} context={stream} />
-          ))}
-        </div>
-      </section>
-
-      <Shelf title={t('browse.discover.featured')} subtitle={t('browse.discover.featuredSub')}>
-        {catalog.playlists
-          .filter((p) => p.editorial)
-          .map((p) => (
+      {mixes.length > 0 && (
+        <Shelf title={t('browse.discover.mixes')} subtitle={t('browse.discover.mixesSub')}>
+          {mixes.map((p) => (
             <PlaylistCard key={p.id} playlist={p} />
           ))}
-      </Shelf>
+        </Shelf>
+      )}
 
-      <Shelf title={t('browse.discover.toWatch')} subtitle={t('browse.discover.toWatchSub')}>
-        {data.rising.map((a) => (
-          <ArtistCard key={a.id} artist={a} />
-        ))}
-      </Shelf>
+      {stream.length > 0 && (
+        <section aria-labelledby="stream-title">
+          <header className="shelf__head">
+            <div>
+              <h2 id="stream-title">{t('browse.discover.community')}</h2>
+              <p>{t('browse.discover.communitySub')}</p>
+            </div>
+          </header>
+          <div className="stream-list">
+            {stream.map((t) => (
+              <StreamCard key={t.id} track={t} context={stream} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {data.rising.length > 0 && (
+        <Shelf title={t('browse.discover.toWatch')} subtitle={t('browse.discover.toWatchSub')}>
+          {data.rising.map((a) => (
+            <ArtistCard key={a.id} artist={a} />
+          ))}
+        </Shelf>
+      )}
     </div>
   );
 }

@@ -1,17 +1,16 @@
 /**
- * Music app state: the catalog (seed + your uploads), your library (likes, follows, playlists,
- * reposts, recently played, comments) and helpers to turn tracks into playable queue items.
+ * Music app state: the catalog (songs artists published on ASF + your uploads), your library
+ * (likes, follows, playlists, reposts, recently played, comments) and helpers to turn tracks into
+ * playable queue items.
  * Library data is stored per browser in localStorage; uploaded audio in IndexedDB. While you're
  * signed in, likes, follows, playlists and play history also sync to your account (lib/librarySync).
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { coverUrl, makeCover } from './catalog/covers';
-import { lifetimePlays } from './catalog/plays';
 import { CATALOG_CHANGED, fetchPublished, toCatalog, type PublishedTrack } from './lib/serverCatalog';
 import { useAccount } from './lib/account';
 import { librarySync } from './lib/librarySync';
 import { createMixes } from './catalog/mixes';
-import { createCatalog } from './catalog/seed';
 import type { Album, Artist, Catalog, Playlist, Track } from './catalog/types';
 import { deleteAudio, loadAudio } from './catalog/uploads';
 import { getPosition, getState, onPlay, playQueue, setAutoplayProvider, subscribe, subscribePosition, toggleItem, type Playable, type PlayerState } from './player/engine';
@@ -120,7 +119,7 @@ export interface MusicContextValue {
   /** Lyrics (plain text or LRC) for one of your uploads. */
   setLyrics: (trackId: string, text: string) => void;
   isDownloaded: (id: string) => boolean;
-  /** Can this track play with no connection? (synthesized, uploaded or downloaded) */
+  /** Can this track play with no connection? (uploaded or downloaded) */
   availableOffline: (t: Track) => boolean;
   /** Save tracks for offline (fetches streamed audio + artwork). */
   download: (tracks: Track[], onProgress?: (done: number, total: number) => void) => Promise<void>;
@@ -136,8 +135,6 @@ export function useMusic(): MusicContextValue {
 }
 
 export function MusicProvider({ now, children }: { now: number; children: ReactNode }) {
-  // The seed is built once per session so ids/timestamps stay stable while the app is open.
-  const [seed] = useState(() => createCatalog(Date.now()));
   const [library, setLibrary] = useState<Library>(readLibrary);
   const [uploadUrls, setUploadUrls] = useState<Record<string, string>>({});
 
@@ -229,7 +226,7 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
 
   // Personal mixes follow your likes (not every play, so they don't reshuffle mid-listen).
   const likesKey = library.likes.join('|');
-  const mixes = useMemo(() => createMixes(seed.tracks, seed.artists, library.likes, []), [seed, likesKey]);
+  const mixes = useMemo(() => createMixes(server.tracks, server.artists, library.likes, []), [server, likesKey]);
 
   const catalog: Catalog = useMemo(() => {
     const uploads = library.uploads.map((t) => {
@@ -237,12 +234,12 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
       return { ...t, audioUrl: uploadUrls[t.id], cover: art ? { ...t.cover, imageUrl: art } : t.cover };
     });
     return {
-      artists: [...server.artists, ...seed.artists],
-      tracks: [...uploads, ...server.tracks, ...seed.tracks],
-      albums: seed.albums,
-      playlists: [...library.playlists, ...mixes, ...seed.playlists],
+      artists: server.artists,
+      tracks: [...uploads, ...server.tracks],
+      albums: [],
+      playlists: [...library.playlists, ...mixes],
     };
-  }, [seed, library.uploads, library.playlists, uploadUrls, mixes, server]);
+  }, [library.uploads, library.playlists, uploadUrls, mixes, server]);
 
   const maps = useMemo(
     () => ({
@@ -346,7 +343,7 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
         toggleItem(toPlayable(t), q);
       },
       peaks: (t) => t.peaks ?? synthPeaks(t.recipe, t.duration),
-      totalPlays: (t) => (library.plays[t.id] ?? 0) + (t.uploaded || t.published ? 0 : lifetimeCache(t, now)),
+      totalPlays: (t) => library.plays[t.id] ?? 0,
       followerCount: (a) => a.followers + (library.follows.includes(a.id) ? 1 : 0),
       isLiked: (id) => library.likes.includes(id),
       toggleLike: (id) => update((l) => ({ ...l, likes: toggleIn(l.likes, id) })),
@@ -414,18 +411,6 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
   }, [catalog, maps, now, library, artistNames, toPlayable, update]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
-}
-
-// Lifetime plays are a 400-day sum; cache per track per hour.
-const lifeMemo = new Map<string, number>();
-function lifetimeCache(t: Track, now: number): number {
-  const k = `${t.id}|${Math.floor(now / 3_600_000)}`;
-  let v = lifeMemo.get(k);
-  if (v === undefined) {
-    v = lifetimePlays(t, now);
-    lifeMemo.set(k, v);
-  }
-  return v;
 }
 
 // --- player hooks ---------------------------------------------------------------------------------

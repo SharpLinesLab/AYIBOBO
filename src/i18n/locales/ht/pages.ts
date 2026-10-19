@@ -114,7 +114,7 @@ export const pages: { [K in keyof typeof En]: string } = {
   'pages.library.newPlaylistName': 'Non nouvo playlist la',
   'pages.library.createPlaylist': 'Kreye playlist',
   'pages.library.playlistsEmptyTitle': 'Poko gen playlist',
-  'pages.library.playlistsEmptyBody': 'Kreye youn anlè a, oswa swiv yon playlist ekip ASF fè.',
+  'pages.library.playlistsEmptyBody': 'Kreye youn anlè a.',
   'pages.library.discoverPlaylists': 'Dekouvri playlist',
   'pages.library.followingEmptyTitle': 'Swiv atis ou renmen yo',
   'pages.library.followingEmptyBody': 'W ap jwenn nouvo sòti yo fasil la a.',
