@@ -55,7 +55,8 @@ describe('moderation', () => {
     const id = await send('Soley Leve');
     const list = (await (await admin.get('/api/admin/uploads')).json()).uploads as { id: string; title: string; artistName: string; audioUrl: string; coverUrl: string }[];
     const item = list.find((u) => u.id === id)!;
-    expect(item).toMatchObject({ title: 'Soley Leve', artistName: 'tiga', status: 'pending' });
+    // The artist named on the upload, not the account's display name ("tiga").
+    expect(item).toMatchObject({ title: 'Soley Leve', artistName: 'Tiga', status: 'pending' });
     const preview = await admin.get(item.audioUrl);
     expect(preview.status).toBe(200);
     expect(Buffer.from(await preview.arrayBuffer()).equals(FILES.mp3)).toBe(true);
@@ -65,7 +66,7 @@ describe('moderation', () => {
     expect((await admin.post(`/api/admin/uploads/${id}/approve`)).status).toBe(409);
     const tracks = await catalog();
     expect(tracks.map((t) => t.id)).toEqual([id]);
-    expect(tracks[0]).toMatchObject({ title: 'Soley Leve', artistName: 'tiga', audioUrl: `/api/audio/${id}`, coverUrl: `/api/covers/${id}` });
+    expect(tracks[0]).toMatchObject({ title: 'Soley Leve', artistName: 'Tiga', audioUrl: `/api/audio/${id}`, coverUrl: `/api/covers/${id}` });
     const mine = (await (await artist.get('/api/uploads/mine')).json()).uploads as { id: string; status: string }[];
     expect(mine.find((u) => u.id === id)!.status).toBe('approved');
   });

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { GENRES } from '../catalog/genres';
+import { ExplicitBadge } from '../components/music/bits';
 import { t } from '../i18n';
 import { useAccount } from '../lib/account';
 import { CATALOG_CHANGED } from '../lib/serverCatalog';
@@ -43,9 +44,13 @@ function Review() {
             <li key={u.id} className="card-panel admin__item">
               <img className="admin__cover" src={u.coverUrl} alt={t('admin.coverOf', { title: u.title })} width={112} height={112} loading="lazy" />
               <div className="admin__body">
-                <h2>{u.title}</h2>
+                <h2>
+                  {u.title}
+                  {u.explicit && <ExplicitBadge />}
+                </h2>
                 <p className="muted">
-                  {u.artistName} · {GENRES.find((g) => g.id === u.genre)?.label} · {fmtTime(u.duration)} · {mb(u.audioSize)}
+                  {u.artistName}
+                  {u.featuredArtists && ` ${t('browse.feat')} ${u.featuredArtists}`} · {GENRES.find((g) => g.id === u.genre)?.label} · {fmtTime(u.duration)} · {mb(u.audioSize)}
                 </p>
                 <audio controls preload="none" src={u.audioUrl} aria-label={t('admin.preview', { title: u.title })} />
                 <div className="admin__actions">

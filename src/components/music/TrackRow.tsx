@@ -24,9 +24,17 @@ export function ArtistLinks({ track }: { track: Track }) {
   const m = useMusic();
   const main = m.artist(track.artistId);
   const feats = (track.featuring ?? []).map((id) => m.artist(id)).filter((a) => !!a);
+  // Published songs carry their own credit, linked to the uploader's artist page.
+  const name = track.artistName ?? main?.name;
   return (
     <span className="artist-links">
-      {main ? <a href={`#/artist/${main.id}`}>{main.name}</a> : <span>{m.library.displayName || t('common.word.you')}</span>}
+      {main ? <a href={`#/artist/${main.id}`}>{name}</a> : <span>{name ?? (m.library.displayName || t('common.word.you'))}</span>}
+      {track.featuredArtists && (
+        <>
+          {' '}
+          {t('browse.feat')} {track.featuredArtists}
+        </>
+      )}
       {feats.length > 0 && (
         <>
           {' '}

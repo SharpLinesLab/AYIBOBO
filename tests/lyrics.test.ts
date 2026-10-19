@@ -4,7 +4,7 @@ import { toCatalog } from '../src/lib/serverCatalog';
 import { parseRoute } from '../src/store';
 
 const [song] = toCatalog([
-  { id: 'l1', title: 'Lakay', genre: 'kompa', artistId: 'u1', artistName: 'Ròz Mapou', duration: 200, peaks: null, releasedAt: 1, audioUrl: '/a', coverUrl: '/c' },
+  { id: 'l1', title: 'Lakay', genre: 'kompa', artistId: 'u1', artistName: 'Ròz Mapou', featuredArtists: null, explicit: false, artist: { name: 'Ròz Mapou', bio: null, avatarUrl: null }, duration: 200, peaks: null, releasedAt: 1, audioUrl: '/a', coverUrl: '/c' },
 ]).tracks;
 
 describe('lyrics', () => {

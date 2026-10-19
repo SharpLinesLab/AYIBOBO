@@ -6,6 +6,9 @@ export type SubmissionStatus = 'pending' | 'approved' | 'rejected';
 export interface Submission {
   id: string;
   title: string;
+  artistName: string;
+  featuredArtists: string | null;
+  explicit: boolean;
   genre: GenreId;
   status: SubmissionStatus;
   duration: number;
@@ -24,6 +27,9 @@ export type SubmissionError =
   | 'invalid_title'
   | 'invalid_genre'
   | 'invalid_duration'
+  | 'invalid_artist_name'
+  | 'invalid_featured'
+  | 'unauthenticated'
   | 'unreadable'
   | 'rate_limited'
   | 'unknown';
@@ -34,6 +40,9 @@ export const MAX_COVER_BYTES = 8 * 1024 * 1024;
 
 export async function submitSong(input: {
   title: string;
+  artistName: string;
+  featuredArtists: string;
+  explicit: boolean;
   genre: GenreId;
   audio: File;
   cover: File;
@@ -44,6 +53,9 @@ export async function submitSong(input: {
   if (input.cover.size > MAX_COVER_BYTES) return { ok: false, error: 'cover_too_large' };
   const form = new FormData();
   form.append('title', input.title);
+  form.append('artistName', input.artistName);
+  form.append('featuredArtists', input.featuredArtists);
+  if (input.explicit) form.append('explicit', '1');
   form.append('genre', input.genre);
   form.append('duration', String(input.duration));
   form.append('peaks', JSON.stringify(input.peaks));

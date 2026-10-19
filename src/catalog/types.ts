@@ -63,6 +63,10 @@ export interface Track {
   title: string;
   artistId: string;
   featuring?: string[];
+  /** The artist name this song is credited to, when it's set per song (published songs). */
+  artistName?: string;
+  /** Free-text featured artists, e.g. "Wendyyy, Joé Dwèt Filé" (published songs). */
+  featuredArtists?: string;
   albumId?: string;
   genre: GenreId;
   /** Seconds. */

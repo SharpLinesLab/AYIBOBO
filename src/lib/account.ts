@@ -14,6 +14,10 @@ export interface AccountUser {
   role: Role;
   displayName: string;
   createdAt: number;
+  /** Artist profile: the name songs are credited to by default (null = the display name). */
+  artistName: string | null;
+  bio: string | null;
+  avatarUrl: string | null;
 }
 
 export interface AccountState {
@@ -117,4 +121,35 @@ export async function resetPassword(token: string, password: string): Promise<{ 
   if (r?.status === 429) return { ok: false, error: 'rate_limited' };
   const code = r?.body.code;
   return { ok: false, error: code === 'invalid_token' || code === 'weak_password' || code === 'long_password' ? code : 'unknown' };
+}
+
+/** Artist profile errors from the server, plus `rate_limited` and `unknown`; shown via `account.profile.error.*`. */
+export type ProfileError = 'invalid_artist_name' | 'invalid_bio' | 'invalid_picture' | 'picture_too_large' | 'missing_picture' | 'rate_limited' | 'unknown';
+
+/** Same cap as the server (and as song covers). */
+export const MAX_PICTURE_BYTES = 8 * 1024 * 1024;
+
+type ProfileResult = { ok: true; user: AccountUser } | { ok: false; error: ProfileError };
+
+function profileResult(r: Awaited<ReturnType<typeof api>>): ProfileResult {
+  if (r && r.body.ok && r.body.user) {
+    const user = r.body.user as AccountUser;
+    set({ status: 'ready', user });
+    return { ok: true, user };
+  }
+  if (r?.status === 429) return { ok: false, error: 'rate_limited' };
+  return { ok: false, error: (r?.body.code as ProfileError | undefined) ?? 'unknown' };
+}
+
+/** Save the artist name and bio. Empty values clear them (the name falls back to the display name). */
+export async function saveArtistProfile(input: { artistName: string; bio: string }): Promise<ProfileResult> {
+  return profileResult(await api('/api/account/profile', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(input) }));
+}
+
+/** Upload a new profile picture (JPG, PNG, WebP or AVIF, up to 8 MB). */
+export async function uploadArtistPicture(file: File): Promise<ProfileResult> {
+  if (file.size > MAX_PICTURE_BYTES) return { ok: false, error: 'picture_too_large' };
+  const form = new FormData();
+  form.append('picture', file);
+  return profileResult(await api('/api/account/avatar', { method: 'POST', body: form }));
 }

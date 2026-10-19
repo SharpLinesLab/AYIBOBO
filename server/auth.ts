@@ -13,6 +13,11 @@ export interface User {
   role: Role;
   displayName: string;
   createdAt: number;
+  /** Artist profile: the name songs are credited to by default (null = the display name). */
+  artistName: string | null;
+  bio: string | null;
+  /** Profile picture, or null when none was uploaded. */
+  avatarUrl: string | null;
 }
 
 export interface AuthConfig {
@@ -42,9 +47,25 @@ interface UserRow {
   role: Role;
   display_name: string;
   created_at: number;
+  artist_name: string | null;
+  bio: string | null;
+  avatar_type: string | null;
+  avatar_at: number | null;
 }
 
-const toUser = (r: UserRow): User => ({ id: r.id, email: r.email, role: r.role, displayName: r.display_name, createdAt: r.created_at });
+/** Where an account's profile picture is served; the version changes with every new picture. */
+export const avatarUrl = (userId: string, at: number) => `/api/artists/${encodeURIComponent(userId)}/avatar?v=${at}`;
+
+const toUser = (r: UserRow): User => ({
+  id: r.id,
+  email: r.email,
+  role: r.role,
+  displayName: r.display_name,
+  createdAt: r.created_at,
+  artistName: r.artist_name,
+  bio: r.bio,
+  avatarUrl: r.avatar_type && r.avatar_at ? avatarUrl(r.id, r.avatar_at) : null,
+});
 
 /** Why a new password can't be used, or null if it's fine. */
 function passwordProblem(password: string): 'weak_password' | 'long_password' | null {
@@ -82,7 +103,7 @@ export function createAuth(db: Db, cfg: AuthConfig) {
     const name = typeof input.displayName === 'string' ? input.displayName.replace(/[\u0000-\u001f\u007f]/g, ' ').trim() : '';
     if (!name || name.length > 60) return 'invalid_name';
     if (byEmail(email)) return 'email_taken';
-    const user: User = { id: randomUUID(), email, role, displayName: name, createdAt: Date.now() };
+    const user: User = { id: randomUUID(), email, role, displayName: name, createdAt: Date.now(), artistName: null, bio: null, avatarUrl: null };
     const hash = await bcrypt.hash(password, rounds);
     try {
       db.sql

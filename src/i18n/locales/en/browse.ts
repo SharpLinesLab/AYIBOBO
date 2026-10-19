@@ -98,7 +98,7 @@ export const browse = {
   'browse.shelf.scrollLeft': 'Scroll {title} left',
   'browse.shelf.scrollRight': 'Scroll {title} right',
   'browse.unlike': 'Unlike',
-  'browse.feat': 'feat.',
+  'browse.feat': 'ft.',
   'browse.row.unavailable': 'Not downloaded — needs a connection',
   'browse.row.change': 'Change vs previous period',
   'browse.col.title': 'Title',

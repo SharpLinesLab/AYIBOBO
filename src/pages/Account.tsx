@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { t, type Key } from '../i18n';
 import { requestPasswordReset, signIn, signOut, signUp, useAccount, type AccountError } from '../lib/account';
 import { useApp } from '../store';
+import { ArtistProfile } from './ArtistProfile';
 import { ArtistUploads } from './ArtistUploads';
 import { PageHead } from './Browse';
 
@@ -203,7 +204,12 @@ export function AccountPage() {
             </button>
           </div>
         </section>
-        {(user.role === 'artist' || user.role === 'admin') && <ArtistUploads />}
+        {(user.role === 'artist' || user.role === 'admin') && (
+          <>
+            <ArtistProfile />
+            <ArtistUploads />
+          </>
+        )}
       </>
     );
   return (

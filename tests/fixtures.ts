@@ -19,7 +19,7 @@ export const FILES = {
 
 export function uploadForm(parts: { audio?: Buffer | null; cover?: Buffer | null; audioName?: string; fields?: Record<string, string> } = {}): FormData {
   const f = new FormData();
-  const fields = { title: 'Lanmou Lakay', genre: 'kompa', duration: '183.4', peaks: JSON.stringify([0.2, 0.9, 0.5]), ...parts.fields };
+  const fields = { title: 'Lanmou Lakay', artistName: 'Tiga', genre: 'kompa', duration: '183.4', peaks: JSON.stringify([0.2, 0.9, 0.5]), ...parts.fields };
   for (const [k, v] of Object.entries(fields)) f.append(k, v);
   const audio = parts.audio === undefined ? FILES.mp3 : parts.audio;
   const cover = parts.cover === undefined ? FILES.png : parts.cover;

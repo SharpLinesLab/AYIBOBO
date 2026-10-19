@@ -5,8 +5,8 @@ import { join } from 'node:path';
 import type { Readable } from 'node:stream';
 
 /**
- * Where uploaded files live. Keys look like `audio/<id>` or `covers/<id>`. Local disk today;
- * an S3-compatible bucket can implement the same interface later.
+ * Where uploaded files live. Keys look like `audio/<id>`, `covers/<id>` or `avatars/<user id>`.
+ * Local disk today; an S3-compatible bucket can implement the same interface later.
  */
 export interface Storage {
   /** A fresh path for an incoming upload to be written to before it is accepted. */
@@ -21,7 +21,7 @@ export interface Storage {
   delete(key: string): Promise<void>;
 }
 
-const KEY = /^(audio|covers)\/[A-Za-z0-9-]{1,64}$/;
+const KEY = /^(audio|covers|avatars)\/[A-Za-z0-9-]{1,64}$/;
 
 function check(key: string): string {
   if (!KEY.test(key)) throw new Error(`invalid storage key: ${key}`);
@@ -34,7 +34,7 @@ export class LocalDiskStorage implements Storage {
 
   /** Create the folders up front so a read-only or missing volume fails at boot, not mid-upload. */
   async init(): Promise<void> {
-    for (const dir of ['audio', 'covers', 'tmp']) await mkdir(join(this.root, dir), { recursive: true });
+    for (const dir of ['audio', 'covers', 'avatars', 'tmp']) await mkdir(join(this.root, dir), { recursive: true });
   }
 
   async tempPath(): Promise<string> {

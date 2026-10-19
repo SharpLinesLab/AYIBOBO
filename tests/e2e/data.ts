@@ -25,7 +25,7 @@ export const ARTIST_B = 'E2E Artist B';
 export const SONGS = [
   { title: 'First Song', artist: ARTIST_A },
   { title: 'Second Song', artist: ARTIST_A },
-  { title: 'Third Song', artist: ARTIST_A },
+  { title: 'Third Song', artist: ARTIST_A, featured: 'Guest Star', explicit: true },
   { title: 'Other Song', artist: ARTIST_B },
 ] as const;
 /** Every test song is this long (seconds) and in this genre. */

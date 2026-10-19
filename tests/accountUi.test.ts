@@ -59,14 +59,20 @@ describe('#/admin', () => {
 
 describe('published songs in the catalog', () => {
   const list: PublishedTrack[] = [
-    { id: 'a1', title: 'One', genre: 'kompa', artistId: 'u1', artistName: 'Tiga', duration: 200, peaks: [0.5, 1], releasedAt: 10, audioUrl: '/api/audio/a1', coverUrl: '/api/covers/a1' },
-    { id: 'a2', title: 'Two', genre: 'zouk', artistId: 'u1', artistName: 'Tiga', duration: 150, peaks: null, releasedAt: 20, audioUrl: '/api/audio/a2', coverUrl: '/api/covers/a2' },
+    { id: 'a1', title: 'One', genre: 'kompa', artistId: 'u1', artistName: 'Tiga', featuredArtists: 'Wendyyy, Joé Dwèt Filé', explicit: true, artist: { name: 'Tiga Blaze', bio: 'From Okap.', avatarUrl: '/api/artists/u1/avatar?v=5' }, duration: 200, peaks: [0.5, 1], releasedAt: 10, audioUrl: '/api/audio/a1', coverUrl: '/api/covers/a1' },
+    { id: 'a2', title: 'Two', genre: 'zouk', artistId: 'u1', artistName: 'Tiga Blaze', featuredArtists: null, explicit: false, artist: { name: 'Tiga Blaze', bio: 'From Okap.', avatarUrl: '/api/artists/u1/avatar?v=5' }, duration: 150, peaks: null, releasedAt: 20, audioUrl: '/api/audio/a2', coverUrl: '/api/covers/a2' },
   ];
 
   it('become playable tracks under one artist per account', () => {
     const { tracks, artists } = toCatalog(list);
     expect(artists).toHaveLength(1);
-    expect(artists[0]).toMatchObject({ id: 'ar-srv-u1', name: 'Tiga', genres: ['kompa', 'zouk'] });
+    // The artist page uses the profile; each song keeps its own credit.
+    expect(artists[0]).toMatchObject({ id: 'ar-srv-u1', name: 'Tiga Blaze', bio: 'From Okap.', genres: ['kompa', 'zouk'] });
+    expect(artists[0].avatar.imageUrl).toBe('/api/artists/u1/avatar?v=5');
+    expect(tracks.map((t) => [t.artistName, t.featuredArtists, t.explicit])).toEqual([
+      ['Tiga', 'Wendyyy, Joé Dwèt Filé', true],
+      ['Tiga Blaze', undefined, false],
+    ]);
     expect(tracks.map((t) => [t.id, t.artistId, t.audioUrl, t.cover.imageUrl, t.published])).toEqual([
       ['srv-a1', 'ar-srv-u1', '/api/audio/a1', '/api/covers/a1', true],
       ['srv-a2', 'ar-srv-u1', '/api/audio/a2', '/api/covers/a2', true],

@@ -100,7 +100,7 @@ export const browse: { [K in keyof typeof En]: string } = {
   'browse.shelf.scrollLeft': '{title} : défiler vers la gauche',
   'browse.shelf.scrollRight': '{title} : défiler vers la droite',
   'browse.unlike': 'Je n’aime plus',
-  'browse.feat': 'feat.',
+  'browse.feat': 'ft.',
   'browse.row.unavailable': 'Non téléchargé — connexion requise',
   'browse.row.change': 'Évolution par rapport à la période précédente',
   'browse.col.title': 'Titre',

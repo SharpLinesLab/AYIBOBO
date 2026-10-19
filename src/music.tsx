@@ -253,9 +253,10 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
 
   const artistNames = useCallback(
     (tr: Track) => {
-      const main = maps.artists.get(tr.artistId)?.name ?? library.displayName ?? t('common.word.you');
-      const feats = (tr.featuring ?? []).map((id) => maps.artists.get(id)?.name).filter(Boolean);
-      return feats.length ? `${main} feat. ${feats.join(', ')}` : main || t('common.word.you');
+      // Published songs carry their own credit; otherwise it's the artist (or you, for your uploads).
+      const main = tr.artistName ?? maps.artists.get(tr.artistId)?.name ?? library.displayName ?? t('common.word.you');
+      const feats = tr.featuredArtists ? [tr.featuredArtists] : (tr.featuring ?? []).map((id) => maps.artists.get(id)?.name).filter(Boolean);
+      return feats.length ? `${main} ${t('browse.feat')} ${feats.join(', ')}` : main || t('common.word.you');
     },
     [maps, library.displayName],
   );

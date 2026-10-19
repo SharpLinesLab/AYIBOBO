@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { t } from '../../i18n';
 import { useMusic, usePlayerState } from '../../music';
 import { CollapseIcon } from '../icons';
-import { LikeButton } from '../music/bits';
+import { ExplicitBadge, LikeButton } from '../music/bits';
 import { LyricsView } from '../music/Lyrics';
 import { SoundButton } from '../music/SoundPanel';
 import { Waveform } from '../music/Waveform';
@@ -93,7 +93,10 @@ export function NowPlaying({ onClose, initialTab = 'wave' }: { onClose: () => vo
               <>
                 <div className="np__titles">
                   <a href={cur.href} onClick={onClose}>
-                    <h2>{cur.title}</h2>
+                    <h2>
+                      {cur.title}
+                      {track?.explicit && <ExplicitBadge />}
+                    </h2>
                   </a>
                   <a href={cur.subtitleHref} onClick={onClose} className="np__artist">
                     {cur.subtitle}
@@ -114,7 +117,10 @@ export function NowPlaying({ onClose, initialTab = 'wave' }: { onClose: () => vo
             ) : tab === 'lyrics' ? (
               <>
                 <div className="np__titles np__titles--sm">
-                  <h2>{cur.title}</h2>
+                  <h2>
+                    {cur.title}
+                    {track?.explicit && <ExplicitBadge />}
+                  </h2>
                   <span className="np__artist">{cur.subtitle}</span>
                 </div>
                 {track ? <LyricsView track={track} variant="full" /> : <p className="muted">{t('player.np.noLyrics')}</p>}

@@ -16,7 +16,7 @@ export interface DbShape {
  * Schema migrations, applied in order; `PRAGMA user_version` records how many have run. Append
  * new steps, never edit old ones.
  */
-const MIGRATIONS: string[] = [
+export const MIGRATIONS: string[] = [
   // 1: newsletter subscribers + key/value metadata
   `CREATE TABLE subscribers (email TEXT PRIMARY KEY, at INTEGER NOT NULL);
    CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);`,
@@ -101,6 +101,17 @@ const MIGRATIONS: string[] = [
      expires_at INTEGER NOT NULL
    );
    CREATE INDEX password_resets_user ON password_resets(user_id);`,
+  // 6: artist identity. Each upload credits its own artist name (existing ones get the uploader's
+  // display name), optional featured artists and an explicit flag; accounts get an artist profile
+  // (name, bio, and a picture kept in storage under avatars/<user id>).
+  `ALTER TABLE uploads ADD COLUMN artist_name TEXT;
+   ALTER TABLE uploads ADD COLUMN featured_artists TEXT;
+   ALTER TABLE uploads ADD COLUMN explicit INTEGER NOT NULL DEFAULT 0 CHECK (explicit IN (0, 1));
+   UPDATE uploads SET artist_name = (SELECT display_name FROM users WHERE users.id = uploads.user_id);
+   ALTER TABLE users ADD COLUMN artist_name TEXT;
+   ALTER TABLE users ADD COLUMN bio TEXT;
+   ALTER TABLE users ADD COLUMN avatar_type TEXT;
+   ALTER TABLE users ADD COLUMN avatar_at INTEGER;`,
 ];
 
 export interface DbOptions {

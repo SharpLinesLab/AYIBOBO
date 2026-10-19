@@ -6,7 +6,8 @@ import type { Db } from './db';
 import { logResetLink, resetLink, type ResetLinkSender } from './mail';
 import type { Storage } from './storage';
 import { registerLibraryRoutes } from './library';
-import { registerUploadRoutes, type UploadLimits } from './uploads';
+import { registerProfileRoutes } from './profile';
+import { DEFAULT_LIMITS, registerUploadRoutes, type UploadLimits } from './uploads';
 
 export interface AppConfig {
   db: Db;
@@ -184,6 +185,10 @@ export function createApp(cfg: AppConfig) {
   // --- artist uploads ----------------------------------------------------------------------------
 
   registerUploadRoutes(app, { db, storage: cfg.storage, limits: cfg.uploadLimits, rateLimit });
+
+  // --- artist profiles ---------------------------------------------------------------------------
+
+  registerProfileRoutes(app, { db, storage: cfg.storage, maxPicture: cfg.uploadLimits?.cover ?? DEFAULT_LIMITS.cover, userById: auth.userById, rateLimit });
 
   // --- library sync ------------------------------------------------------------------------------
 

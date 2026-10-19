@@ -99,7 +99,7 @@ export const browse: { [K in keyof typeof En]: string } = {
   'browse.shelf.scrollLeft': 'Defile {title} agoch',
   'browse.shelf.scrollRight': 'Defile {title} adwat',
   'browse.unlike': 'Pa renmen ankò',
-  'browse.feat': 'feat.',
+  'browse.feat': 'ft.',
   'browse.row.unavailable': 'Pa telechaje — fò w gen entènèt',
   'browse.row.change': 'Chanjman konpare ak peryòd anvan an',
   'browse.col.title': 'Tit',

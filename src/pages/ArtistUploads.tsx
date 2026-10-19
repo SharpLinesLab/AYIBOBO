@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GENRES } from '../catalog/genres';
 import type { GenreId } from '../catalog/types';
 import { analyzeAudio } from '../catalog/uploads';
 import { t, type Key } from '../i18n';
+import { useAccount } from '../lib/account';
 import { mySubmissions, submitSong, type Submission, type SubmissionError } from '../lib/submissions';
 import { fmtTime } from '../music';
 import { useApp } from '../store';
@@ -10,8 +11,14 @@ import { useApp } from '../store';
 /** On #/account for artists: send a song for review, and see where each one is. */
 export function ArtistUploads() {
   const { toast } = useApp();
+  const { user } = useAccount();
+  const saved = user?.artistName ?? '';
   const [list, setList] = useState<Submission[] | null>(null);
   const [title, setTitle] = useState('');
+  // Pre-filled with the saved artist name; editable for each song.
+  const [artistName, setArtistName] = useState(saved);
+  const [featured, setFeatured] = useState('');
+  const [explicit, setExplicit] = useState(false);
   const [genre, setGenre] = useState<GenreId>('kompa');
   const [audio, setAudio] = useState<File | null>(null);
   const [cover, setCover] = useState<File | null>(null);
@@ -22,6 +29,13 @@ export function ArtistUploads() {
   useEffect(() => {
     void mySubmissions().then(setList);
   }, []);
+
+  // When the saved artist name changes, follow it unless this song already has another name.
+  const lastSaved = useRef(saved);
+  useEffect(() => {
+    setArtistName((v) => (v.trim() && v !== lastSaved.current ? v : saved));
+    lastSaved.current = saved;
+  }, [saved]);
 
   const submit = async () => {
     if (!audio) return setError('missing_audio');
@@ -35,12 +49,15 @@ export function ArtistUploads() {
       setBusy(false);
       return setError('unreadable');
     }
-    const r = await submitSong({ title: title.trim(), genre, audio, cover, ...analysis });
+    const r = await submitSong({ title: title.trim(), artistName: artistName.trim(), featuredArtists: featured.trim(), explicit, genre, audio, cover, ...analysis });
     setBusy(false);
     if (!r.ok) return setError(r.error);
     toast(t('account.upload.sent', { title: r.upload.title }));
     setList((l) => [r.upload, ...(l ?? [])]);
     setTitle('');
+    setArtistName(saved);
+    setFeatured('');
+    setExplicit(false);
     setAudio(null);
     setCover(null);
     setFormKey((k) => k + 1);
@@ -66,6 +83,14 @@ export function ArtistUploads() {
             <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={100} required />
           </label>
           <label className="field">
+            {t('account.upload.artistName')}
+            <input className="input" value={artistName} onChange={(e) => setArtistName(e.target.value)} maxLength={100} required />
+          </label>
+          <label className="field">
+            {t('account.upload.featured')}
+            <input className="input" value={featured} onChange={(e) => setFeatured(e.target.value)} maxLength={200} placeholder={t('account.upload.featuredHint')} />
+          </label>
+          <label className="field">
             {t('account.upload.genre')}
             <select className="input" value={genre} onChange={(e) => setGenre(e.target.value as GenreId)}>
               {GENRES.map((g) => (
@@ -74,6 +99,9 @@ export function ArtistUploads() {
                 </option>
               ))}
             </select>
+          </label>
+          <label className="check">
+            <input type="checkbox" checked={explicit} onChange={(e) => setExplicit(e.target.checked)} /> {t('account.upload.explicit')}
           </label>
           <label className="field">
             {t('account.upload.audio')}

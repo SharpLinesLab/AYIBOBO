@@ -11,7 +11,12 @@ export interface PublishedTrack {
   title: string;
   genre: GenreId;
   artistId: string;
+  /** The artist this song is credited to (set per song by the uploader). */
   artistName: string;
+  featuredArtists: string | null;
+  explicit: boolean;
+  /** The uploader's artist profile. */
+  artist: { name: string; bio: string | null; avatarUrl: string | null };
   duration: number;
   peaks: number[] | null;
   releasedAt: number;
@@ -46,16 +51,17 @@ export function toCatalog(list: PublishedTrack[]): { tracks: Track[]; artists: A
     if (!artist) {
       const s = hashString(artistId);
       const spec = (template: CoverSpec['template']): CoverSpec => ({ template, palette: palette(p.genre), seed: s });
+      const avatar = spec('portrait');
       artists.set(artistId, {
         id: artistId,
-        name: p.artistName,
-        handle: `@${p.artistName.toLowerCase().replace(/[^a-z0-9]+/g, '')}`,
-        bio: '',
+        name: p.artist.name,
+        handle: `@${p.artist.name.toLowerCase().replace(/[^a-z0-9]+/g, '')}`,
+        bio: p.artist.bio ?? '',
         location: '',
         genres: [p.genre],
         verified: false,
         followers: 0,
-        avatar: spec('portrait'),
+        avatar: p.artist.avatarUrl ? { ...avatar, imageUrl: p.artist.avatarUrl } : avatar,
         banner: spec('stage'),
         poster: spec('poster'),
       });
@@ -64,6 +70,8 @@ export function toCatalog(list: PublishedTrack[]): { tracks: Track[]; artists: A
       id: `srv-${p.id}`,
       title: p.title,
       artistId,
+      artistName: p.artistName,
+      featuredArtists: p.featuredArtists ?? undefined,
       genre: p.genre,
       duration: p.duration,
       // Unused for playback (the file plays), but every track carries a recipe.
@@ -71,7 +79,7 @@ export function toCatalog(list: PublishedTrack[]): { tracks: Track[]; artists: A
       popularity: 0.3,
       releasedAt: p.releasedAt,
       cover: { template: 'orb', palette: palette(p.genre), seed, imageUrl: p.coverUrl },
-      explicit: false,
+      explicit: p.explicit,
       description: '',
       audioUrl: p.audioUrl,
       peaks: p.peaks ?? undefined,

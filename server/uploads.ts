@@ -4,7 +4,7 @@ import { createWriteStream } from 'node:fs';
 import { rm } from 'node:fs/promises';
 import type { Express, Request, RequestHandler, Response } from 'express';
 import type { GenreId } from '../src/catalog/types';
-import { currentUser, requireRole, sameOrigin } from './auth';
+import { avatarUrl, currentUser, requireRole, sameOrigin } from './auth';
 import type { Db } from './db';
 import type { Storage } from './storage';
 
@@ -35,7 +35,9 @@ export type UploadErrorCode =
   | 'unexpected_file'
   | 'invalid_title'
   | 'invalid_genre'
-  | 'invalid_duration';
+  | 'invalid_duration'
+  | 'invalid_artist_name'
+  | 'invalid_featured';
 
 export class UploadError extends Error {
   constructor(
@@ -90,7 +92,7 @@ export function readUpload(req: Request, storage: Storage, limits: UploadLimits)
   return new Promise((resolve, reject) => {
     let bb: busboy.Busboy;
     try {
-      bb = busboy({ headers: req.headers, limits: { files: 2, fields: 8, parts: 10, fieldSize: 16 * 1024, fileSize: Math.max(limits.audio, limits.cover) + 1 } });
+      bb = busboy({ headers: req.headers, limits: { files: 2, fields: 12, parts: 14, fieldSize: 16 * 1024, fileSize: Math.max(limits.audio, limits.cover) + 1 } });
     } catch {
       reject(new UploadError('not_multipart', 415));
       return;
@@ -212,7 +214,13 @@ export function readUpload(req: Request, storage: Storage, limits: UploadLimits)
 export interface UploadRecord {
   id: string;
   userId: string;
+  /** The artist this song is credited to (set per upload). */
   artistName: string;
+  /** Free text, e.g. "Wendyyy, Joé Dwèt Filé"; null when nobody is featured. */
+  featuredArtists: string | null;
+  explicit: boolean;
+  /** The uploader's artist profile, shown on their artist page. */
+  profile: { name: string; bio: string | null; avatarUrl: string | null };
   title: string;
   genre: GenreId;
   status: UploadStatus;
@@ -228,7 +236,14 @@ export interface UploadRecord {
 interface Row {
   id: string;
   user_id: string;
+  artist_name: string | null;
+  featured_artists: string | null;
+  explicit: number;
   display_name: string;
+  profile_name: string | null;
+  profile_bio: string | null;
+  avatar_type: string | null;
+  avatar_at: number | null;
   title: string;
   genre: GenreId;
   status: UploadStatus;
@@ -244,7 +259,10 @@ interface Row {
 const toRecord = (r: Row): UploadRecord => ({
   id: r.id,
   userId: r.user_id,
-  artistName: r.display_name,
+  artistName: r.artist_name ?? r.display_name,
+  featuredArtists: r.featured_artists,
+  explicit: r.explicit === 1,
+  profile: { name: r.profile_name ?? r.display_name, bio: r.profile_bio, avatarUrl: r.avatar_type && r.avatar_at ? avatarUrl(r.user_id, r.avatar_at) : null },
   title: r.title,
   genre: r.genre,
   status: r.status,
@@ -257,7 +275,7 @@ const toRecord = (r: Row): UploadRecord => ({
   reviewedAt: r.reviewed_at,
 });
 
-const SELECT = 'SELECT u.*, us.display_name FROM uploads u JOIN users us ON us.id = u.user_id';
+const SELECT = 'SELECT u.*, us.display_name, us.artist_name AS profile_name, us.bio AS profile_bio, us.avatar_type, us.avatar_at FROM uploads u JOIN users us ON us.id = u.user_id';
 
 export function uploadRepo(db: Db) {
   return {
@@ -271,13 +289,28 @@ export function uploadRepo(db: Db) {
     byStatus(status: UploadStatus): UploadRecord[] {
       return (db.sql.prepare(`${SELECT} WHERE u.status = ? ORDER BY u.created_at ${status === 'pending' ? 'ASC' : 'DESC'}`).all(status) as unknown as Row[]).map(toRecord);
     },
-    insert(u: Omit<UploadRecord, 'artistName' | 'reviewedAt' | 'status'> & { coverSize: number }): void {
+    insert(u: Omit<UploadRecord, 'profile' | 'reviewedAt' | 'status'> & { coverSize: number }): void {
       db.sql
         .prepare(
-          `INSERT INTO uploads (id, user_id, title, genre, status, audio_type, audio_size, cover_type, cover_size, duration, peaks, created_at)
-           VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO uploads (id, user_id, artist_name, featured_artists, explicit, title, genre, status, audio_type, audio_size, cover_type, cover_size, duration, peaks, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?)`,
         )
-        .run(u.id, u.userId, u.title, u.genre, u.audioType, u.audioSize, u.coverType, u.coverSize, u.duration, u.peaks ? JSON.stringify(u.peaks) : null, u.createdAt);
+        .run(
+          u.id,
+          u.userId,
+          u.artistName,
+          u.featuredArtists,
+          u.explicit ? 1 : 0,
+          u.title,
+          u.genre,
+          u.audioType,
+          u.audioSize,
+          u.coverType,
+          u.coverSize,
+          u.duration,
+          u.peaks ? JSON.stringify(u.peaks) : null,
+          u.createdAt,
+        );
     },
     setStatus(id: string, status: UploadStatus, reviewerId: string): void {
       db.sql.prepare('UPDATE uploads SET status = ?, reviewed_at = ?, reviewed_by = ? WHERE id = ?').run(status, Date.now(), reviewerId, id);
@@ -286,13 +319,43 @@ export function uploadRepo(db: Db) {
 }
 
 /** What artists see about their own uploads. */
-const mine = (u: UploadRecord) => ({ id: u.id, title: u.title, genre: u.genre, status: u.status, duration: u.duration, createdAt: u.createdAt });
+const mine = (u: UploadRecord) => ({
+  id: u.id,
+  title: u.title,
+  artistName: u.artistName,
+  featuredArtists: u.featuredArtists,
+  explicit: u.explicit,
+  genre: u.genre,
+  status: u.status,
+  duration: u.duration,
+  createdAt: u.createdAt,
+});
 
 // --- fields -----------------------------------------------------------------------------------
 
-function cleanFields(f: Record<string, string>): { title: string; genre: GenreId; duration: number; peaks: number[] | null } {
-  const title = (f.title ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
+/** One line of text: control characters become spaces, ends are trimmed. */
+const oneLine = (v: string | undefined) => (v ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
+
+/** Longest artist name and featured-artists credit, in characters. */
+export const MAX_ARTIST_NAME = 100;
+export const MAX_FEATURED = 200;
+
+function cleanFields(f: Record<string, string>): {
+  title: string;
+  artistName: string;
+  featuredArtists: string | null;
+  explicit: boolean;
+  genre: GenreId;
+  duration: number;
+  peaks: number[] | null;
+} {
+  const title = oneLine(f.title);
   if (!title || title.length > 100) throw new UploadError('invalid_title');
+  const artistName = oneLine(f.artistName);
+  if (!artistName || artistName.length > MAX_ARTIST_NAME) throw new UploadError('invalid_artist_name');
+  const featuredArtists = oneLine(f.featuredArtists);
+  if (featuredArtists.length > MAX_FEATURED) throw new UploadError('invalid_featured');
+  const explicit = ['1', 'true', 'on'].includes((f.explicit ?? '').toLowerCase());
   const genre = f.genre as GenreId;
   if (!(GENRE_IDS as readonly string[]).includes(genre)) throw new UploadError('invalid_genre');
   const duration = Number(f.duration);
@@ -304,7 +367,7 @@ function cleanFields(f: Record<string, string>): { title: string; genre: GenreId
   } catch {
     /* optional; the waveform falls back to a generated one */
   }
-  return { title, genre, duration: Math.round(duration * 100) / 100, peaks };
+  return { title, artistName, featuredArtists: featuredArtists || null, explicit, genre, duration: Math.round(duration * 100) / 100, peaks };
 }
 
 // --- routes -----------------------------------------------------------------------------------
@@ -326,7 +389,8 @@ export function registerUploadRoutes(app: Express, cfg: UploadRoutesConfig) {
   };
 
   // Artists (and admins) send a song for review: multipart with `audio`, `cover`, `title`,
-  // `genre`, `duration` and optional `peaks`. Every upload starts as "pending".
+  // `artistName`, `genre`, `duration` and optional `featuredArtists`, `explicit` and `peaks`.
+  // Every upload starts as "pending".
   app.post('/api/uploads', cfg.rateLimit('uploads', 20, 60 * 60_000), sameOrigin, requireRole('artist', 'admin'), async (req, res) => {
     const declared = Number(req.headers['content-length']);
     if (declared > limits.audio + limits.cover + 1024 * 1024) {
@@ -375,7 +439,6 @@ export function registerUploadRoutes(app: Express, cfg: UploadRoutesConfig) {
   };
   const forAdmin = (u: UploadRecord) => ({
     ...mine(u),
-    artistName: u.artistName,
     audioType: u.audioType,
     audioSize: u.audioSize,
     audioUrl: `/api/admin/uploads/${u.id}/audio`,
@@ -432,6 +495,9 @@ export function registerUploadRoutes(app: Express, cfg: UploadRoutesConfig) {
         genre: u.genre,
         artistId: u.userId,
         artistName: u.artistName,
+        featuredArtists: u.featuredArtists,
+        explicit: u.explicit,
+        artist: u.profile,
         duration: u.duration,
         peaks: u.peaks,
         releasedAt: u.reviewedAt ?? u.createdAt,
@@ -484,7 +550,7 @@ export function parseRange(header: string | undefined, size: number): { start: n
 }
 
 /** Stream a stored file with HTTP Range support, so the player can seek without downloading it all. */
-async function sendStored(req: Request, res: Response, storage: Storage, key: string, type: string, cacheControl: string) {
+export async function sendStored(req: Request, res: Response, storage: Storage, key: string, type: string, cacheControl: string) {
   const size = await storage.size(key);
   if (size === null) return void notFound(res);
   res.setHeader('Content-Type', type);

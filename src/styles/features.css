@@ -1689,6 +1689,26 @@
   margin: 0;
 }
 
+.account__picture {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 12px 0 16px;
+}
+
+.account__picture .field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.account__avatar {
+  flex: none;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .account__songs {
   list-style: none;
   margin: 0;
