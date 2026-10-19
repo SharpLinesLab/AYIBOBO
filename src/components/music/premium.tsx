@@ -116,7 +116,7 @@ export function StreamCard({ track, context }: { track: Track; context: Track[] 
   const artist = m.artist(track.artistId);
   const plays = m.totalPlays(track);
   const reposted = m.library.reposts.includes(track.id);
-  const comments = (m.library.comments[track.id] ?? []).length + 2 + (track.recipe.seed % 5);
+  const comments = (m.library.comments[track.id] ?? []).length;
   return (
     <article className="stream">
       <a href={`#/song/${track.id}`} className="stream__art" aria-label={track.title}>
