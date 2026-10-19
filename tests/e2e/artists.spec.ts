@@ -43,4 +43,8 @@ test('artists set their profile, and the upload form starts from it', async ({ p
 
   await profile.getByLabel(/profile picture/i).setInputFiles({ name: 'me.png', mimeType: 'image/png', buffer: png([200, 80, 40]) });
   await expect(profile.getByRole('img', { name: 'Profile picture of E2E Stage Name' })).toBeVisible();
+  await profile.getByRole('button', { name: 'Remove picture' }).click();
+  await expect(page.getByText('Profile picture removed')).toBeVisible();
+  await expect(profile.getByRole('img')).toHaveCount(0);
+  await expect(profile.getByRole('button', { name: 'Remove picture' })).toHaveCount(0);
 });

@@ -206,7 +206,7 @@ export function AccountPage() {
         </section>
         {(user.role === 'artist' || user.role === 'admin') && (
           <>
-            <ArtistProfile />
+            <ArtistProfile key={user.id} />
             <ArtistUploads />
           </>
         )}

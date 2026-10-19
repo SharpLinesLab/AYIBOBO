@@ -146,6 +146,11 @@ export async function saveArtistProfile(input: { artistName: string; bio: string
   return profileResult(await api('/api/account/profile', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(input) }));
 }
 
+/** Remove the profile picture (the generated portrait is shown again). */
+export async function removeArtistPicture(): Promise<ProfileResult> {
+  return profileResult(await api('/api/account/avatar', { method: 'DELETE' }));
+}
+
 /** Upload a new profile picture (JPG, PNG, WebP or AVIF, up to 8 MB). */
 export async function uploadArtistPicture(file: File): Promise<ProfileResult> {
   if (file.size > MAX_PICTURE_BYTES) return { ok: false, error: 'picture_too_large' };

@@ -1,6 +1,7 @@
 /**
- * Newsletter sign-up. Posts to the server; when the site runs without the API (static hosting or
- * `npm run dev` on its own) the address is kept in this browser so the form still works in demos.
+ * Newsletter sign-up. Posts to the server. If the server can't be reached (offline, or a page
+ * served without the API), the sign-up fails with an error: the address is never kept anywhere
+ * else, so it can't vanish quietly.
  */
 export async function subscribeEmail(email: string): Promise<{ ok: boolean; error?: string }> {
   try {
@@ -10,13 +11,7 @@ export async function subscribeEmail(email: string): Promise<{ ok: boolean; erro
       return res.ok ? { ok: true } : { ok: false, error: body.error };
     }
   } catch {
-    /* no API reachable — fall through to the local demo store */
+    /* no API reachable */
   }
-  try {
-    const list = JSON.parse(localStorage.getItem('asf:subscribers') ?? '[]') as string[];
-    if (!list.includes(email)) localStorage.setItem('asf:subscribers', JSON.stringify([...list, email]));
-  } catch {
-    /* storage blocked — still acknowledge */
-  }
-  return { ok: true };
+  return { ok: false };
 }

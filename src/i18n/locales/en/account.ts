@@ -86,6 +86,8 @@ export const account = {
   'account.profile.save': 'Save profile',
   'account.profile.saved': 'Profile saved',
   'account.profile.pictureSaved': 'Profile picture updated',
+  'account.profile.removePicture': 'Remove picture',
+  'account.profile.pictureRemoved': 'Profile picture removed',
   'account.profile.error.invalid_artist_name': 'Your artist name can be up to 100 characters.',
   'account.profile.error.invalid_bio': 'Your bio can be up to 500 characters.',
   'account.profile.error.invalid_picture': 'That doesn’t look like a JPG, PNG, WebP or AVIF image.',

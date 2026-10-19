@@ -50,7 +50,7 @@ export const legal = {
   'legal.privacy.uploads.p3': 'If a song isn’t approved, we delete its audio and cover files and keep only a short record of the decision: the title, the dates and the outcome.',
   'legal.privacy.newsletter.h': 'Newsletter',
   'legal.privacy.newsletter.p': 'If you subscribe, we store your email address and the date you signed up on our server. We use it only to send ASF news and new releases.',
-  'legal.privacy.newsletter.p2': 'You can unsubscribe at any time with the link in our emails or by writing to Contact@ayitisakapfet.com. We then delete your address. If our server can’t be reached when you sign up, your address is saved only in your browser.',
+  'legal.privacy.newsletter.p2': 'You can unsubscribe at any time with the link in our emails or by writing to Contact@ayitisakapfet.com. We then delete your address.',
   'legal.privacy.logs.h': 'Server logs',
   'legal.privacy.logs.p': 'Like any website, the servers that deliver ASF (DigitalOcean) may automatically record basic technical details of each request: IP address, date and time, the page or file requested, and browser type. We use these only to keep ASF running and secure, for example to stop abuse, and keep them for no longer than 90 days.',
   'legal.privacy.logs.p2': 'Our own server keeps IP addresses in memory only briefly, to limit how many requests one visitor can make. It doesn’t write them to disk.',

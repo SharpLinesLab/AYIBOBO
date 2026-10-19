@@ -48,7 +48,7 @@ export const legal: { [K in keyof typeof En]: string } = {
   'legal.privacy.uploads.p3': 'Si yo pa apwouve yon chante, nou efase fichye odyo ak pochèt li, epi nou kenbe sèlman yon ti dosye sou desizyon an: tit la, dat yo ak rezilta a.',
   'legal.privacy.newsletter.h': 'Bilten',
   'legal.privacy.newsletter.p': 'Si w abòne, nou kenbe adrès imèl ou ak dat ou te enskri a sou sèvè nou. Nou sèvi avè l sèlman pou voye nouvèl ASF ak nouvo sòti ba ou.',
-  'legal.privacy.newsletter.p2': 'Ou ka dezabòne nenpòt lè ak lyen ki nan imèl nou yo, oswa si w ekri nou nan Contact@ayitisakapfet.com. Lè sa a, nou efase adrès ou. Si sèvè nou pa disponib lè w enskri, adrès ou rete anrejistre sèlman nan navigatè w la.',
+  'legal.privacy.newsletter.p2': 'Ou ka dezabòne nenpòt lè ak lyen ki nan imèl nou yo, oswa si w ekri nou nan Contact@ayitisakapfet.com. Lè sa a, nou efase adrès ou.',
   'legal.privacy.logs.h': 'Jounal sèvè a',
   'legal.privacy.logs.p': 'Tankou nenpòt sit entènèt, sèvè ki bay ASF (DigitalOcean) ka anrejistre otomatikman kèk detay teknik pou chak demann: adrès IP, dat ak lè, paj oswa fichye yo mande a, ak ki kalite navigatè. Nou sèvi ak yo sèlman pou ASF kontinye mache an sekirite, pa egzanp pou bloke abi, epi nou pa kenbe yo pi lontan pase 90 jou.',
   'legal.privacy.logs.p2': 'Pwòp sèvè nou kenbe adrès IP nan memwa l pou yon ti tan sèlman, pou limite konbyen demann yon moun ka fè. Li pa anrejistre yo sou disk.',

@@ -111,6 +111,14 @@ export function registerProfileRoutes(app: Express, cfg: ProfileRoutesConfig) {
     }
   });
 
+  // Remove the picture: the file is deleted and the profile goes back to the generated portrait.
+  app.delete('/api/account/avatar', cfg.rateLimit('avatar', 20, 60 * 60_000), sameOrigin, requireRole('artist', 'admin'), async (_req, res) => {
+    const id = currentUser(res)!.id;
+    await storage.delete(`avatars/${id}`);
+    db.sql.prepare('UPDATE users SET avatar_type = NULL, avatar_at = NULL WHERE id = ?').run(id);
+    res.json({ ok: true, user: cfg.userById(id) });
+  });
+
   // Public. The URL carries a version (see avatarUrl), so a new picture gets a new address.
   app.get('/api/artists/:id/avatar', (req, res) => {
     const row = db.sql.prepare('SELECT avatar_type FROM users WHERE id = ?').get(String(req.params.id)) as { avatar_type: string | null } | undefined;

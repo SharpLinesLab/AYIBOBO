@@ -176,7 +176,7 @@ export function Visualizer() {
   return <canvas className="viz" ref={canvas} aria-hidden />;
 }
 
-/** Apple Music-style living backdrop: slow-drifting blobs in the artwork's colours. */
+/** Living backdrop: slow-drifting blobs in the artwork's colours. */
 export function MeshBackdrop({ spec }: { spec?: CoverSpec }) {
   const [a, b, c] = useArtPalette(spec);
   return (

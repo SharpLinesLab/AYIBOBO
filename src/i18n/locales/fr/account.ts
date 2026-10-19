@@ -88,6 +88,8 @@ export const account: { [K in keyof typeof En]: string } = {
   'account.profile.save': 'Enregistrer le profil',
   'account.profile.saved': 'Profil enregistré',
   'account.profile.pictureSaved': 'Photo de profil mise à jour',
+  'account.profile.removePicture': 'Supprimer la photo',
+  'account.profile.pictureRemoved': 'Photo de profil supprimée',
   'account.profile.error.invalid_artist_name': 'Votre nom d’artiste ne peut pas dépasser 100 caractères.',
   'account.profile.error.invalid_bio': 'Votre biographie ne peut pas dépasser 500 caractères.',
   'account.profile.error.invalid_picture': 'Ce fichier ne ressemble pas à une image JPG, PNG, WebP ou AVIF.',

@@ -110,7 +110,7 @@ function fromPlaylist(p: Playlist, tracks: Track[]): Pick {
   return { key: p.id, title: p.title, href: `#/playlist/${p.id}`, spec: p.cover, tracks };
 }
 
-/** SoundCloud-style stream post: who posted, artwork, waveform you can scrub, social counts. */
+/** Stream post: who posted, artwork, waveform you can scrub, social counts. */
 export function StreamCard({ track, context }: { track: Track; context: Track[] }) {
   const m = useMusic();
   const artist = m.artist(track.artistId);

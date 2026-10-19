@@ -87,6 +87,8 @@ export const account: { [K in keyof typeof En]: string } = {
   'account.profile.save': 'Sove pwofil la',
   'account.profile.saved': 'Pwofil la sove',
   'account.profile.pictureSaved': 'Foto pwofil la chanje',
+  'account.profile.removePicture': 'Retire foto a',
+  'account.profile.pictureRemoved': 'Foto pwofil la retire',
   'account.profile.error.invalid_artist_name': 'Non atis ou pa ka depase 100 karaktè.',
   'account.profile.error.invalid_bio': 'Biyografi ou pa ka depase 500 karaktè.',
   'account.profile.error.invalid_picture': 'Imaj sa a pa sanble yon JPG, PNG, WebP oswa AVIF.',

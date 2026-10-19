@@ -1,4 +1,4 @@
-import { mkdtempSync } from 'node:fs';
+import { existsSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -108,6 +108,19 @@ describe('artist profile', () => {
     expect(served.headers.get('content-type')).toBe('image/png');
     expect(Buffer.from(await served.arrayBuffer()).equals(FILES.png)).toBe(true);
     expect((await fetch(`${srv.base}/api/artists/nobody/avatar`)).status).toBe(404);
+  });
+
+  it('removes the picture, file and all', async () => {
+    const before = (await me(artist)).avatarUrl;
+    expect(before).toBeTruthy();
+    expect((await listener.send('/api/account/avatar', { method: 'DELETE' })).status).toBe(403);
+    const r = await artist.send('/api/account/avatar', { method: 'DELETE' });
+    expect(r.status).toBe(200);
+    expect((await r.json()).user.avatarUrl).toBeNull();
+    expect((await fetch(srv.base + before)).status).toBe(404);
+    expect(existsSync(join(srv.uploadsDir, 'avatars', (await me(artist)).id))).toBe(false);
+    // A new picture can be added again afterwards.
+    expect((await artist.send('/api/account/avatar', { method: 'POST', body: picture(FILES.png) })).status).toBe(200);
   });
 
   it('names, describes and pictures the artist in the catalog, while each song keeps its own credit', async () => {

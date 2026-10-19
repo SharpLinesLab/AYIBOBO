@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { t, type Key } from '../i18n';
-import { saveArtistProfile, uploadArtistPicture, useAccount, type ProfileError } from '../lib/account';
+import { removeArtistPicture, saveArtistProfile, uploadArtistPicture, useAccount, type ProfileError } from '../lib/account';
 import { CATALOG_CHANGED } from '../lib/serverCatalog';
 import { useApp } from '../store';
 
-/** On #/account for artists: the name songs are credited to by default, a picture and a bio. */
+/**
+ * On #/account for artists: the name songs are credited to by default, a picture and a bio.
+ * Keyed on the account (see AccountPage), so the form starts over for a different account.
+ */
 export function ArtistProfile() {
   const { toast } = useApp();
   const { user } = useAccount();
@@ -39,6 +42,14 @@ export function ArtistProfile() {
     if (!r.ok) return setError(r.error);
     done('account.profile.pictureSaved');
   };
+  const removePicture = async () => {
+    setPictureBusy(true);
+    setError(null);
+    const r = await removeArtistPicture();
+    setPictureBusy(false);
+    if (!r.ok) return setError(r.error);
+    done('account.profile.pictureRemoved');
+  };
 
   return (
     <section className="card-panel account__panel" aria-labelledby="artist-profile-title">
@@ -58,6 +69,11 @@ export function ArtistProfile() {
           {t(user.avatarUrl ? 'account.profile.changePicture' : 'account.profile.picture')}
           <input className="input" type="file" accept="image/jpeg,image/png,image/webp,image/avif" disabled={pictureBusy} onChange={(e) => void pick(e.target.files?.[0])} />
         </label>
+        {user.avatarUrl && (
+          <button type="button" className="link-btn" disabled={pictureBusy} onClick={() => void removePicture()}>
+            {t('account.profile.removePicture')}
+          </button>
+        )}
       </div>
       <form
         className="stack"

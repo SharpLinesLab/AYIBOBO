@@ -49,7 +49,7 @@ export const legal: { [K in keyof typeof En]: string } = {
   'legal.privacy.uploads.p3': 'Si un titre n’est pas approuvé, nous supprimons ses fichiers audio et sa pochette et ne gardons qu’une courte trace de la décision : le titre, les dates et le résultat.',
   'legal.privacy.newsletter.h': 'Newsletter',
   'legal.privacy.newsletter.p': 'Si vous vous abonnez, nous conservons sur notre serveur votre adresse e-mail et la date de votre inscription. Nous l’utilisons uniquement pour vous envoyer les actualités et les nouvelles sorties d’ASF.',
-  'legal.privacy.newsletter.p2': 'Vous pouvez vous désabonner à tout moment grâce au lien présent dans nos e-mails ou en écrivant à Contact@ayitisakapfet.com. Nous supprimons alors votre adresse. Si notre serveur est injoignable au moment de votre inscription, votre adresse est enregistrée uniquement dans votre navigateur.',
+  'legal.privacy.newsletter.p2': 'Vous pouvez vous désabonner à tout moment grâce au lien présent dans nos e-mails ou en écrivant à Contact@ayitisakapfet.com. Nous supprimons alors votre adresse.',
   'legal.privacy.logs.h': 'Journaux du serveur',
   'legal.privacy.logs.p': 'Comme tout site web, les serveurs qui diffusent ASF (DigitalOcean) peuvent enregistrer automatiquement quelques informations techniques sur chaque requête : adresse IP, date et heure, page ou fichier demandé, et type de navigateur. Nous les utilisons uniquement pour faire fonctionner ASF et le protéger, par exemple contre les abus, et ne les gardons pas plus de 90 jours.',
   'legal.privacy.logs.p2': 'Notre propre serveur ne garde les adresses IP en mémoire que brièvement, pour limiter le nombre de requêtes d’un même visiteur. Il ne les enregistre pas sur disque.',
