@@ -2,7 +2,7 @@
   "name": "asf-charts",
   "private": true,
   "version": "1.0.0",
-  "description": "ASF Charts (Ayiti Sakap Fet) — the public pay-to-rank leaderboard for music websites, tools, artists and labels.",
+  "description": "ASF (Ayiti Sakap Fet) Music — the Haitian music streaming and discovery platform.",
   "type": "module",
   "engines": {
     "node": ">=20"
