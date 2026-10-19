@@ -129,7 +129,7 @@ export const legal = {
   'legal.copyright.intro': 'ASF respects the rights of artists, songwriters and rights holders, and expects everyone who uses ASF to do the same. If you believe something on ASF infringes your copyright, tell us and we will act quickly. We follow the notice-and-takedown process of the U.S. Digital Millennium Copyright Act (DMCA).',
   'legal.copyright.report.h': 'How to report infringement',
   'legal.copyright.report.p': 'Send a written notice to our designated copyright agent:',
-  'legal.copyright.report.li1': 'Agent: Ayitisakapfet LLC, Ayitisakapfet LLC',
+  'legal.copyright.report.li1': 'Agent: Ayitisakapfet LLC',
   'legal.copyright.report.li2': 'Email: Contact@ayitisakapfet.com',
   'legal.copyright.report.li3': 'Mail: Brooklyn, NY, USA',
   'legal.copyright.notice.h': 'What your notice must include',
