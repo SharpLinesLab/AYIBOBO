@@ -126,6 +126,32 @@ export const MIGRATIONS: string[] = [
    );
    CREATE UNIQUE INDEX verification_one_pending ON verification_requests(user_id) WHERE status = 'pending';
    CREATE INDEX verification_status ON verification_requests(status, requested_at);`,
+  // 8: audio ads for the free tier. Ad audio lives in storage under ads/<id>. Each ad play is
+  // logged for frequency capping and reporting: `listener` is the account (u:<id>) or, signed
+  // out, the browser's random listener id (a:<id>) or a hash of the IP address (ip:<hash>).
+  `ALTER TABLE users ADD COLUMN tier TEXT NOT NULL DEFAULT 'free' CHECK (tier IN ('free', 'premium'));
+   CREATE TABLE ads (
+     id TEXT PRIMARY KEY,
+     title TEXT NOT NULL,
+     advertiser_name TEXT NOT NULL,
+     audio_type TEXT NOT NULL,
+     audio_size INTEGER NOT NULL,
+     duration REAL NOT NULL,
+     weight INTEGER NOT NULL DEFAULT 1 CHECK (weight >= 1),
+     active INTEGER NOT NULL DEFAULT 0 CHECK (active IN (0, 1)),
+     starts_at INTEGER,
+     ends_at INTEGER,
+     created_at INTEGER NOT NULL
+   );
+   CREATE TABLE ad_plays (
+     id INTEGER PRIMARY KEY AUTOINCREMENT,
+     ad_id TEXT NOT NULL REFERENCES ads(id) ON DELETE CASCADE,
+     user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+     listener TEXT NOT NULL,
+     played_at INTEGER NOT NULL
+   );
+   CREATE INDEX ad_plays_cap ON ad_plays(listener, ad_id, played_at);
+   CREATE INDEX ad_plays_ad ON ad_plays(ad_id, played_at);`,
 ];
 
 export interface DbOptions {

@@ -4,6 +4,8 @@ export const player: { [K in keyof typeof En]: string } = {
   // Player bar & transport
   'player.region': 'Lektè',
   'player.seek': 'Ba pwogresyon',
+  'player.ad.label': 'Pib',
+  'player.ad.noSkip': 'Ou pa ka sote piblisite yo',
   'player.repeat.off': 'Repete: fèmen',
   'player.repeat.all': 'Repete: tout',
   'player.repeat.one': 'Repete: chante sa a',

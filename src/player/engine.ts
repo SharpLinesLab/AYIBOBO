@@ -48,6 +48,8 @@ export interface PlayerState {
   sound: SoundSettings;
   /** Keep playing similar songs when the queue ends. */
   autoplay: boolean;
+  /** While an ad plays (`current` is the ad), who it's from; null otherwise. */
+  ad: { advertiser: string } | null;
 }
 
 /** EQ, speed and space. Gains are dB for the 5 bands in `EQ_BANDS`. */
@@ -113,7 +115,7 @@ function loadPrefs(): Prefs {
   }
 }
 
-let state: PlayerState = { queue: [], index: -1, current: null, playing: false, loading: false, sleepAt: null, ...loadPrefs() };
+let state: PlayerState = { queue: [], index: -1, current: null, playing: false, loading: false, sleepAt: null, ad: null, ...loadPrefs() };
 const listeners = new Set<Listener>();
 const posListeners = new Set<PosListener>();
 const playListeners = new Set<(p: Playable) => void>();
@@ -257,6 +259,7 @@ export function setSound(patch: Partial<SoundSettings>) {
   applySound(sound);
   const cur = state.current;
   if (!cur || (sound.speed === before.speed && sound.keepPitch === before.keepPitch)) return;
+  if (state.ad) return; // ads always play as recorded
   if (voice?.slot) {
     voice.slot.el.playbackRate = sound.speed;
     voice.slot.el.preservesPitch = sound.keepPitch;
@@ -324,7 +327,8 @@ function watchEnd() {
     if (my !== token || !cur || !state.playing) return;
     const pos = getPosition();
     const xf = state.crossfade;
-    if (xf > 0 && cur.duration > xf * 2 + 2 && hasAutoNext() && pos >= cur.duration - xf) handleEnded(xf);
+    // No crossfade into or out of an ad break: the song (and the ad) play to the end.
+    if (xf > 0 && !state.ad && !adBreaks?.due() && cur.duration > xf * 2 + 2 && hasAutoNext() && pos >= cur.duration - xf) handleEnded(xf);
     else if (!voice?.slot && pos >= cur.duration - 0.02) handleEnded(0);
   }, 200);
 }
@@ -427,12 +431,15 @@ async function startFile(url: string, from: number, my: number, fade: number) {
     if (my !== token) return;
     if (slot.el.src !== src) slot.el.src = src;
     slot.el.currentTime = from;
-    slot.el.playbackRate = state.sound.speed;
-    slot.el.preservesPitch = state.sound.keepPitch;
-    curRate = state.sound.speed;
+    // Ads play as recorded, whatever the speed setting.
+    curRate = state.ad ? 1 : state.sound.speed;
+    slot.el.playbackRate = curRate;
+    slot.el.preservesPitch = state.ad ? true : state.sound.keepPitch;
     await slot.el.play();
   } catch {
-    if (my === token) emit({ playing: false });
+    // An ad that can't play is skipped, so the music carries on.
+    if (my === token && state.ad) finishAd();
+    else if (my === token) emit({ playing: false });
   } finally {
     if (my === token) emit({ loading: false });
   }
@@ -478,8 +485,13 @@ export function playQueue(items: Playable[], start = 0, from = 0) {
   if (!items.length) return;
   emit({ queue: items });
   buildOrder(start);
-  setCurrent(start);
-  void startCurrent(Math.max(0, Math.min(from, items[start].duration - 0.5)));
+  // During an ad, the chosen song plays once the ad ends.
+  if (state.ad) {
+    emit({ index: start });
+    afterAd = items[start].id;
+    return;
+  }
+  begin(start, 0, Math.max(0, Math.min(from, items[start].duration - 0.5)));
 }
 
 /** Play/pause toggle for a single item; plays it (as a one-item queue) if it isn't current. */
@@ -517,7 +529,7 @@ export function resume() {
 
 export function seek(seconds: number) {
   const cur = state.current;
-  if (!cur) return;
+  if (!cur || state.ad) return; // ads can't be skipped through
   const to = Math.max(0, Math.min(cur.duration - 0.25, seconds));
   if (state.playing && voice?.slot) {
     voice.slot.el.currentTime = to;
@@ -534,22 +546,20 @@ function orderPos(): number {
 }
 
 export function next(auto = false, fade = 0) {
-  if (!state.queue.length) return;
+  if (!state.queue.length || state.ad) return; // ads can't be skipped
+  if (!auto) adBreaks?.skipped();
   const p = orderPos();
   if (p < order.length - 1) {
-    setCurrent(order[p + 1]);
-    void startCurrent(0, fade);
+    begin(order[p + 1], fade);
     return;
   }
   // End of the queue: repeat, keep going with similar songs, or stop.
   if (state.repeat === 'off' && extendWithAutoplay()) {
-    setCurrent(order[p + 1]);
-    void startCurrent(0, fade);
+    begin(order[p + 1], fade);
     return;
   }
   if (state.repeat === 'all' || (!auto && order.length > 1)) {
-    setCurrent(order[0]);
-    void startCurrent(0, fade);
+    begin(order[0], fade);
   } else if (!auto) {
     seek(0);
   } else {
@@ -560,22 +570,24 @@ export function next(auto = false, fade = 0) {
 }
 
 export function prev() {
-  if (!state.current) return;
+  if (!state.current || state.ad) return;
   if (getPosition() > 3) {
     seek(0);
     if (!state.playing) resume();
     return;
   }
   const p = orderPos();
-  if (p > 0) {
-    setCurrent(order[p - 1]);
-    void startCurrent(0);
-  } else seek(0);
+  if (p > 0) begin(order[p - 1]);
+  else seek(0);
 }
 
 function handleEnded(fade: number) {
   if (advancedFor === token) return;
   advancedFor = token;
+  if (state.ad) {
+    finishAd();
+    return;
+  }
   if (state.repeat === 'one') {
     void startCurrent(0);
     return;
@@ -610,14 +622,15 @@ export function cycleRepeat() {
 
 /** Insert right after the current item. */
 export function playNext(item: Playable) {
-  if (!state.current) {
+  const cur = song();
+  if (!cur) {
     playQueue([item]);
     return;
   }
   const q = state.queue.filter((x) => x.id !== item.id);
-  const at = q.findIndex((x) => x.id === state.current!.id) + 1;
+  const at = q.findIndex((x) => x.id === cur.id) + 1;
   q.splice(at, 0, item);
-  emit({ queue: q, index: q.findIndex((x) => x.id === state.current!.id) });
+  emit({ queue: q, index: q.findIndex((x) => x.id === cur.id) });
   rebuildOrderKeepingCurrent();
 }
 
@@ -632,14 +645,22 @@ export function addToQueue(item: Playable) {
 }
 
 export function removeFromQueue(id: string) {
-  if (state.current?.id === id) return;
+  const cur = song();
+  if (cur?.id === id) return;
   const q = state.queue.filter((x) => x.id !== id);
-  emit({ queue: q, index: q.findIndex((x) => x.id === state.current?.id) });
+  emit({ queue: q, index: q.findIndex((x) => x.id === cur?.id) });
   rebuildOrderKeepingCurrent();
 }
 
 /** Songs that will play after the current one, in play order (respects shuffle). */
 export function getUpNext(): Playable[] {
+  // During an ad, the song waiting for it comes first.
+  const waiting = state.ad ? song() : null;
+  return waiting ? [waiting, ...upNext()] : upNext();
+}
+
+/** The songs after the current one (during an ad, after the song waiting for it). */
+function upNext(): Playable[] {
   const p = orderPos();
   return p < 0 ? state.queue.slice(state.index + 1) : order.slice(p + 1).map((i) => state.queue[i]).filter(Boolean);
 }
@@ -649,9 +670,9 @@ export function getUpNext(): Playable[] {
  * order — played songs stay before the current one.
  */
 export function reorderUpNext(ids: string[]) {
-  const cur = state.current;
+  const cur = song();
   if (!cur) return;
-  const upcoming = getUpNext();
+  const upcoming = upNext();
   const byId = new Map(upcoming.map((p) => [p.id, p]));
   const next = ids.map((id) => byId.get(id)).filter((p): p is Playable => !!p);
   const rest = upcoming.filter((p) => !ids.includes(p.id));
@@ -665,8 +686,87 @@ export function jumpTo(id: string) {
   const i = state.queue.findIndex((x) => x.id === id);
   if (i < 0) return;
   if (state.shuffle) buildOrder(i);
-  setCurrent(i);
+  // During an ad, the chosen song plays once the ad ends.
+  if (state.ad) {
+    emit({ index: i });
+    afterAd = id;
+    return;
+  }
+  begin(i);
+}
+
+// --- ad breaks (free tier) --------------------------------------------------------------------
+
+/** Decides when ads play and fetches them (set by the music layer; null = no ads, e.g. premium). */
+export interface AdBreaks {
+  /** Should an ad play before the next song? */
+  due(): boolean;
+  /** The ad to play now, or null to go straight on (no ad available). */
+  fetch(): Promise<Playable | null>;
+  /** The listener skipped a song with Next. */
+  skipped(): void;
+}
+
+let adBreaks: AdBreaks | null = null;
+/** The song that plays when the ad ends (by id, since the queue can change during the ad). */
+let afterAd: string | null = null;
+let afterAdFrom = 0;
+
+export function setAdBreaks(a: AdBreaks | null) {
+  adBreaks = a;
+}
+
+/** The current song; during an ad, the song that plays after it. */
+function song(): Playable | null {
+  return state.ad ? (state.queue.find((p) => p.id === afterAd) ?? null) : state.current;
+}
+
+/**
+ * Start `queue[index]` (from the top, unless `from`). Every change to a new song comes through
+ * here, so a due ad break plays first: between songs, never in the middle of one.
+ */
+function begin(index: number, fade = 0, from = 0) {
+  if (adBreaks?.due() && !state.queue[index]?.preview) {
+    void playAdBefore(index, from);
+    return;
+  }
+  setCurrent(index);
+  void startCurrent(from, fade);
+}
+
+async function playAdBefore(index: number, from: number) {
+  const my = ++token;
+  stopOutput();
+  afterAd = state.queue[index].id;
+  afterAdFrom = from;
+  emit({ index, loading: true });
+  const ad = await adBreaks!.fetch().catch(() => null);
+  if (my !== token) return; // something else started meanwhile
+  if (!ad) {
+    emit({ loading: false });
+    finishAd();
+    return;
+  }
+  emit({ current: ad, ad: { advertiser: ad.subtitle } });
   void startCurrent(0);
+}
+
+/** The ad ended (or couldn't play): on to the song it was in front of. */
+function finishAd() {
+  const i = state.queue.findIndex((p) => p.id === afterAd);
+  const from = afterAdFrom;
+  afterAd = null;
+  afterAdFrom = 0;
+  emit({ ad: null });
+  if (i < 0) {
+    // The queue was cleared during the ad: nothing left to play.
+    token++;
+    stopOutput();
+    emit({ current: null, index: -1, playing: false });
+    return;
+  }
+  setCurrent(i);
+  void startCurrent(from);
 }
 
 function rebuildOrderKeepingCurrent() {

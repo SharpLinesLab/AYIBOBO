@@ -28,6 +28,7 @@ export type NpTab = 'wave' | 'lyrics' | 'queue';
 /** Thin seek bar used in the player bar. */
 export function SeekBar() {
   const { position, duration } = usePosition();
+  const ad = !!usePlayerState().ad; // ads can't be skipped through
   const ref = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<number | null>(null);
   const f = drag ?? (duration ? position / duration : 0);
@@ -36,28 +37,32 @@ export function SeekBar() {
     return Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
   };
   return (
-    <div className="seek">
+    <div className={`seek${ad ? ' is-locked' : ''}`}>
       <span className="num seek__t">{fmtTime(f * duration)}</span>
       <div
         className="seek__track"
         ref={ref}
         role="slider"
-        tabIndex={0}
+        tabIndex={ad ? -1 : 0}
+        aria-disabled={ad || undefined}
         aria-label={t('player.seek')}
         aria-valuemin={0}
         aria-valuemax={Math.round(duration)}
         aria-valuenow={Math.round(f * duration)}
         aria-valuetext={fmtTime(f * duration)}
         onKeyDown={(e) => {
+          if (ad) return;
           if (e.key === 'ArrowRight') seek(position + 5);
           if (e.key === 'ArrowLeft') seek(position - 5);
         }}
         onPointerDown={(e) => {
+          if (ad) return;
           (e.currentTarget as Element).setPointerCapture(e.pointerId);
           setDrag(at(e));
         }}
         onPointerMove={(e) => drag !== null && setDrag(at(e))}
         onPointerUp={(e) => {
+          if (drag === null) return;
           seek(at(e) * duration);
           setDrag(null);
         }}
@@ -77,13 +82,13 @@ export function Transport({ big }: { big?: boolean }) {
       <button className={`tbtn${s.shuffle ? ' is-on' : ''}`} onClick={toggleShuffle} aria-label={t('common.action.shuffle')} aria-pressed={s.shuffle}>
         <ShuffleIcon />
       </button>
-      <button className="tbtn" onClick={prev} aria-label={t('common.action.previous')}>
+      <button className="tbtn" onClick={prev} aria-label={t('common.action.previous')} disabled={!!s.ad} title={s.ad ? t('player.ad.noSkip') : undefined}>
         <PrevIcon />
       </button>
       <button className="tbtn tbtn--main" onClick={toggle} aria-label={t(s.playing ? 'common.action.pause' : 'common.action.play')} disabled={!s.current}>
         {s.loading ? <span className="spinner" /> : s.playing ? <PauseIcon /> : <PlayIcon />}
       </button>
-      <button className="tbtn" onClick={() => next()} aria-label={t('common.action.next')}>
+      <button className="tbtn" onClick={() => next()} aria-label={t('common.action.next')} disabled={!!s.ad} title={s.ad ? t('player.ad.noSkip') : undefined}>
         <NextIcon />
       </button>
       <button className={`tbtn${s.repeat !== 'off' ? ' is-on' : ''}`} onClick={cycleRepeat} aria-label={t(`player.repeat.${s.repeat}`)}>
@@ -266,16 +271,26 @@ export function PlayerBar({
             <ExpandIcon />
           </span>
         </button>
-        <div className="pbar__titles">
-          <a href={cur.href} className="pbar__title">
-            {cur.title}
-            {track?.explicit && <ExplicitBadge />}
-          </a>
-          <a href={cur.subtitleHref} className="pbar__sub">
-            {cur.subtitle}
-            {track && m.artist(track.artistId)?.verified && <Verified />}
-          </a>
-        </div>
+        {s.ad ? (
+          <div className="pbar__titles">
+            <span className="pbar__title">
+              <AdLabel />
+              {cur.title}
+            </span>
+            <span className="pbar__sub">{s.ad.advertiser}</span>
+          </div>
+        ) : (
+          <div className="pbar__titles">
+            <a href={cur.href} className="pbar__title">
+              {cur.title}
+              {track?.explicit && <ExplicitBadge />}
+            </a>
+            <a href={cur.subtitleHref} className="pbar__sub">
+              {cur.subtitle}
+              {track && m.artist(track.artistId)?.verified && <Verified />}
+            </a>
+          </div>
+        )}
         {track && <LikeButton id={track.id} />}
       </div>
       <div className="pbar__center">
@@ -311,6 +326,11 @@ export function PlayerBar({
       )}
     </div>
   );
+}
+
+/** "Ad" tag shown in front of an ad's title while it plays. */
+export function AdLabel() {
+  return <span className="ad-label">{t('player.ad.label')}</span>;
 }
 
 function MobileProgress() {

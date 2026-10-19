@@ -20,6 +20,8 @@ export interface AccountUser {
   avatarUrl: string | null;
   /** Verified artist (an admin approved their verification request). */
   verified: boolean;
+  /** Free accounts hear ads between songs; premium ones never do. */
+  tier: 'free' | 'premium';
 }
 
 export interface AccountState {

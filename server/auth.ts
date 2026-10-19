@@ -20,7 +20,11 @@ export interface User {
   avatarUrl: string | null;
   /** Verified artist (an admin approved their verification request). */
   verified: boolean;
+  /** Listening tier: free accounts hear ads between songs, premium ones never do. */
+  tier: Tier;
 }
+
+export type Tier = 'free' | 'premium';
 
 export interface AuthConfig {
   /** Signs session ids before they are stored. At least 32 characters in production. */
@@ -54,6 +58,7 @@ interface UserRow {
   avatar_type: string | null;
   avatar_at: number | null;
   verified: number;
+  tier: Tier;
 }
 
 /** Where an account's profile picture is served; the version changes with every new picture. */
@@ -69,6 +74,7 @@ const toUser = (r: UserRow): User => ({
   bio: r.bio,
   avatarUrl: r.avatar_type && r.avatar_at ? avatarUrl(r.id, r.avatar_at) : null,
   verified: r.verified === 1,
+  tier: r.tier,
 });
 
 /** Why a new password can't be used, or null if it's fine. */
@@ -107,7 +113,7 @@ export function createAuth(db: Db, cfg: AuthConfig) {
     const name = typeof input.displayName === 'string' ? input.displayName.replace(/[\u0000-\u001f\u007f]/g, ' ').trim() : '';
     if (!name || name.length > 60) return 'invalid_name';
     if (byEmail(email)) return 'email_taken';
-    const user: User = { id: randomUUID(), email, role, displayName: name, createdAt: Date.now(), artistName: null, bio: null, avatarUrl: null, verified: false };
+    const user: User = { id: randomUUID(), email, role, displayName: name, createdAt: Date.now(), artistName: null, bio: null, avatarUrl: null, verified: false, tier: 'free' };
     const hash = await bcrypt.hash(password, rounds);
     try {
       db.sql

@@ -86,9 +86,12 @@ const HEAD = 16;
 /**
  * Stream a multipart upload (fields + `audio` + `cover` files) to temp files, checking each
  * file's type from its content and stopping as soon as a file goes over its cap. On any error,
- * nothing is left behind on disk.
+ * nothing is left behind on disk. With `cover: false` (ads) only the audio file is accepted.
  */
-export function readUpload(req: Request, storage: Storage, limits: UploadLimits): Promise<{ fields: Record<string, string>; audio: Incoming; cover: Incoming }> {
+export function readUpload(req: Request, storage: Storage, limits: UploadLimits, opts: { cover: false }): Promise<{ fields: Record<string, string>; audio: Incoming }>;
+export function readUpload(req: Request, storage: Storage, limits: UploadLimits, opts?: { cover: true }): Promise<{ fields: Record<string, string>; audio: Incoming; cover: Incoming }>;
+export function readUpload(req: Request, storage: Storage, limits: UploadLimits, opts: { cover: boolean } = { cover: true }): Promise<{ fields: Record<string, string>; audio: Incoming; cover?: Incoming }> {
+  const allowed = (name: string): name is 'audio' | 'cover' => name === 'audio' || (opts.cover && name === 'cover');
   return new Promise((resolve, reject) => {
     let bb: busboy.Busboy;
     try {
@@ -113,8 +116,8 @@ export function readUpload(req: Request, storage: Storage, limits: UploadLimits)
     });
 
     bb.on('file', (name, stream) => {
-      if ((name !== 'audio' && name !== 'cover') || files[name] || failure) {
-        if (name !== 'audio' && name !== 'cover') fail(new UploadError('unexpected_file'));
+      if (!allowed(name) || files[name] || failure) {
+        if (!allowed(name)) fail(new UploadError('unexpected_file'));
         stream.resume();
         return;
       }
@@ -185,8 +188,8 @@ export function readUpload(req: Request, storage: Storage, limits: UploadLimits)
       settled = true;
       await Promise.all(writes);
       const { audio, cover } = files;
-      const err = failure ?? (!audio ? new UploadError('missing_audio') : !cover ? new UploadError('missing_cover') : null);
-      if (err || !audio || !cover) {
+      const err = failure ?? (!audio ? new UploadError('missing_audio') : opts.cover && !cover ? new UploadError('missing_cover') : null);
+      if (err || !audio) {
         await cleanup();
         reject(err);
         return;

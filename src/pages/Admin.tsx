@@ -8,6 +8,7 @@ import { moderate, pendingReviews, type ReviewItem } from '../lib/submissions';
 import { pendingVerifications, reviewVerification, type VerificationReview } from '../lib/verification';
 import { fmtTime, useMusic } from '../music';
 import { useApp } from '../store';
+import { AdsAdmin } from './AdminAds';
 import { NotFound, PageHead } from './Browse';
 
 const mb = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
@@ -144,6 +145,7 @@ function Review() {
         </ul>
       )}
       <VerificationQueue />
+      <AdsAdmin />
     </div>
   );
 }

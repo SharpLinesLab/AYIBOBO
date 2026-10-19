@@ -4,8 +4,8 @@ import { SONG_SECONDS } from './data';
 const RATE = 22_050;
 
 /** A quiet two-note tone, as 16-bit mono WAV, so the browser has real audio to decode and play. */
-export function wav(seed: number): { file: Buffer; peaks: number[] } {
-  const n = RATE * SONG_SECONDS;
+export function wav(seed: number, seconds = SONG_SECONDS): { file: Buffer; peaks: number[] } {
+  const n = Math.round(RATE * seconds);
   const file = Buffer.alloc(44 + n * 2);
   file.write('RIFF', 0, 'latin1');
   file.writeUInt32LE(36 + n * 2, 4);

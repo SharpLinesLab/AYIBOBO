@@ -4,6 +4,8 @@ export const player: { [K in keyof typeof En]: string } = {
   // Player bar & transport
   'player.region': 'Lecteur',
   'player.seek': 'Barre de progression',
+  'player.ad.label': 'Pub',
+  'player.ad.noSkip': 'Les publicités ne peuvent pas être passées',
   'player.repeat.off': 'Répéter : désactivé',
   'player.repeat.all': 'Répéter : tout',
   'player.repeat.one': 'Répéter : le titre',

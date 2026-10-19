@@ -6,6 +6,7 @@ import type { Db } from './db';
 import { logResetLink, resetLink, type ResetLinkSender } from './mail';
 import type { Storage } from './storage';
 import { registerLibraryRoutes } from './library';
+import { registerAdRoutes } from './ads';
 import { registerProfileRoutes } from './profile';
 import { registerVerificationRoutes } from './verification';
 import { DEFAULT_LIMITS, registerUploadRoutes, type UploadLimits } from './uploads';
@@ -185,12 +186,16 @@ export function createApp(cfg: AppConfig) {
 
   // --- artist uploads ----------------------------------------------------------------------------
 
-  registerUploadRoutes(app, { db, storage: cfg.storage, limits: cfg.uploadLimits, rateLimit });
+  const uploads = registerUploadRoutes(app, { db, storage: cfg.storage, limits: cfg.uploadLimits, rateLimit });
 
   // --- artist profiles ---------------------------------------------------------------------------
 
   registerProfileRoutes(app, { db, storage: cfg.storage, maxPicture: cfg.uploadLimits?.cover ?? DEFAULT_LIMITS.cover, userById: auth.userById, rateLimit });
   registerVerificationRoutes(app, { db, rateLimit });
+
+  // --- audio ads (free tier) ---------------------------------------------------------------------
+
+  registerAdRoutes(app, { db, storage: cfg.storage, limits: uploads.limits, rateLimit });
 
   // --- library sync ------------------------------------------------------------------------------
 

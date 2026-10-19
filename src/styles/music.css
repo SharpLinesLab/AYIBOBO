@@ -670,6 +670,30 @@ body {
   vertical-align: 2px;
 }
 
+/* "Ad" tag in front of an ad's title while it plays (free tier). */
+.ad-label {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--accent-ink, #04130a);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: 2px;
+}
+
+/* No seeking during an ad. */
+.seek.is-locked .seek__track {
+  cursor: default;
+}
+
+.seek.is-locked .seek__knob {
+  display: none;
+}
+
 .verified {
   margin-left: 5px;
   color: var(--accent);

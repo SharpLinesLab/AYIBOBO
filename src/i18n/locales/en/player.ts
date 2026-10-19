@@ -3,6 +3,8 @@ export const player = {
   // Player bar & transport
   'player.region': 'Player',
   'player.seek': 'Seek',
+  'player.ad.label': 'Ad',
+  'player.ad.noSkip': 'Ads can’t be skipped',
   'player.repeat.off': 'Repeat: off',
   'player.repeat.all': 'Repeat: all',
   'player.repeat.one': 'Repeat: one song',

@@ -13,7 +13,9 @@ import { librarySync } from './lib/librarySync';
 import { createMixes } from './catalog/mixes';
 import type { Album, Artist, Catalog, Playlist, Track } from './catalog/types';
 import { deleteAudio, loadAudio } from './catalog/uploads';
-import { getPosition, getState, onPlay, playQueue, setAutoplayProvider, subscribe, subscribePosition, toggleItem, type Playable, type PlayerState } from './player/engine';
+import { getPosition, getState, onPlay, playQueue, setAdBreaks, setAutoplayProvider, subscribe, subscribePosition, toggleItem, type Playable, type PlayerState } from './player/engine';
+import { AdSchedule } from './player/adBreaks';
+import { fetchNextAd } from './lib/ads';
 import { synthPeaks } from './player/synth';
 import { isStreamed, removeFromOffline, saveForOffline } from './offline';
 import { fmtCompact, t } from './i18n';
@@ -181,6 +183,38 @@ export function MusicProvider({ now, children }: { now: number; children: ReactN
       window.removeEventListener('online', resume);
     };
   }, []);
+
+  // Free tier (signed out too): ad breaks between songs, see player/adBreaks. Premium: no ads at all.
+  const premium = account.user?.tier === 'premium';
+  useEffect(() => {
+    if (premium) return;
+    const schedule = new AdSchedule();
+    const offPlay = onPlay((p) => {
+      if (!p.preview) schedule.songStarted();
+    });
+    // Listening time: songs only (not ads), and not while paused.
+    let last = Date.now();
+    const timer = window.setInterval(() => {
+      const now = Date.now();
+      const s = getState();
+      if (s.playing && !s.ad) schedule.listen(Math.min(now - last, 65_000));
+      last = now;
+    }, 1000);
+    setAdBreaks({
+      due: () => schedule.due(),
+      skipped: () => schedule.skipped(),
+      fetch: async () => {
+        schedule.breakTaken();
+        const ad = await fetchNextAd();
+        return ad && { id: `ad:${ad.id}`, title: ad.title, subtitle: ad.advertiserName, duration: ad.duration, source: { kind: 'file', url: ad.audioUrl } };
+      },
+    });
+    return () => {
+      offPlay();
+      clearInterval(timer);
+      setAdBreaks(null);
+    };
+  }, [premium]);
 
   // Rehydrate uploaded audio from IndexedDB into object URLs (created once per upload, revoked on delete).
   const uploadIds = library.uploads.map((t) => t.id).join('|');

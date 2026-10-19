@@ -7,7 +7,7 @@ import { ExplicitBadge, LikeButton, Verified } from '../music/bits';
 import { LyricsView } from '../music/Lyrics';
 import { SoundButton } from '../music/SoundPanel';
 import { Waveform } from '../music/Waveform';
-import { MeshBackdrop, SeekBar, SleepTimer, Transport, Visualizer, VolumeControl, type NpTab } from './Player';
+import { AdLabel, MeshBackdrop, SeekBar, SleepTimer, Transport, Visualizer, VolumeControl, type NpTab } from './Player';
 import { QueueList } from './Queue';
 
 export function NowPlaying({ onClose, initialTab = 'wave' }: { onClose: () => void; initialTab?: NpTab }) {
@@ -92,18 +92,28 @@ export function NowPlaying({ onClose, initialTab = 'wave' }: { onClose: () => vo
           <div className="np__side">
             {tab === 'wave' ? (
               <>
-                <div className="np__titles">
-                  <a href={cur.href} onClick={onClose}>
+                {s.ad ? (
+                  <div className="np__titles">
                     <h2>
+                      <AdLabel />
                       {cur.title}
-                      {track?.explicit && <ExplicitBadge />}
                     </h2>
-                  </a>
-                  <a href={cur.subtitleHref} onClick={onClose} className="np__artist">
-                    {cur.subtitle}
-                    {verified && <Verified />}
-                  </a>
-                </div>
+                    <span className="np__artist">{s.ad.advertiser}</span>
+                  </div>
+                ) : (
+                  <div className="np__titles">
+                    <a href={cur.href} onClick={onClose}>
+                      <h2>
+                        {cur.title}
+                        {track?.explicit && <ExplicitBadge />}
+                      </h2>
+                    </a>
+                    <a href={cur.subtitleHref} onClick={onClose} className="np__artist">
+                      {cur.subtitle}
+                      {verified && <Verified />}
+                    </a>
+                  </div>
+                )}
                 <Visualizer />
                 {track ? <Waveform track={track} height={84} /> : <SeekBar />}
                 <div className="np__controls">
