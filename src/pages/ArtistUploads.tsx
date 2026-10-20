@@ -4,16 +4,15 @@ import type { GenreId } from '../catalog/types';
 import { analyzeAudio } from '../catalog/uploads';
 import { t, type Key } from '../i18n';
 import { useAccount } from '../lib/account';
-import { mySubmissions, submitSong, type Submission, type SubmissionError } from '../lib/submissions';
+import { submitSong, type Submission, type SubmissionError } from '../lib/submissions';
 import { fmtTime } from '../music';
 import { useApp } from '../store';
 
-/** On #/account for artists: send a song for review, and see where each one is. */
-export function ArtistUploads() {
+/** On #/account for artists (Upload tab): send a song for review. `onSent` gets the new submission. */
+export function ArtistUploads({ onSent }: { onSent: (s: Submission) => void }) {
   const { toast } = useApp();
   const { user } = useAccount();
   const saved = user?.artistName ?? '';
-  const [list, setList] = useState<Submission[] | null>(null);
   const [title, setTitle] = useState('');
   // Pre-filled with the saved artist name; editable for each song.
   const [artistName, setArtistName] = useState(saved);
@@ -25,10 +24,6 @@ export function ArtistUploads() {
   const [error, setError] = useState<SubmissionError | null>(null);
   const [busy, setBusy] = useState(false);
   const [formKey, setFormKey] = useState(0); // remounts the form to clear the file inputs
-
-  useEffect(() => {
-    void mySubmissions().then(setList);
-  }, []);
 
   // When the saved artist name changes, follow it unless this song already has another name.
   const lastSaved = useRef(saved);
@@ -53,7 +48,7 @@ export function ArtistUploads() {
     setBusy(false);
     if (!r.ok) return setError(r.error);
     toast(t('account.upload.sent', { title: r.upload.title }));
-    setList((l) => [r.upload, ...(l ?? [])]);
+    onSent(r.upload);
     setTitle('');
     setArtistName(saved);
     setFeatured('');
@@ -122,28 +117,33 @@ export function ArtistUploads() {
           </button>
         </form>
       </section>
-
-      <section className="card-panel account__panel" aria-labelledby="artist-mine-title">
-        <h2 className="panel-title" id="artist-mine-title">
-          {t('account.upload.mine')}
-        </h2>
-        {list && list.length === 0 && <p className="muted">{t('account.upload.none')}</p>}
-        {list && list.length > 0 && (
-          <ul className="account__songs">
-            {list.map((s) => (
-              <li key={s.id}>
-                <span>
-                  <b>{s.title}</b>
-                  <small className="muted">
-                    {GENRES.find((g) => g.id === s.genre)?.label} · {fmtTime(s.duration)}
-                  </small>
-                </span>
-                <span className={`status-pill status-pill--${s.status}`}>{t(`account.upload.status.${s.status}`)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
     </>
+  );
+}
+
+/** On #/account for artists (My Music tab): every song sent, and where its review is. */
+export function ArtistSubmissions({ list }: { list: Submission[] | null }) {
+  return (
+    <section className="card-panel account__panel" aria-labelledby="artist-mine-title">
+      <h2 className="panel-title" id="artist-mine-title">
+        {t('account.upload.mine')}
+      </h2>
+      {list && list.length === 0 && <p className="muted">{t('account.upload.none')}</p>}
+      {list && list.length > 0 && (
+        <ul className="account__songs">
+          {list.map((s) => (
+            <li key={s.id}>
+              <span>
+                <b>{s.title}</b>
+                <small className="muted">
+                  {GENRES.find((g) => g.id === s.genre)?.label} · {fmtTime(s.duration)}
+                </small>
+              </span>
+              <span className={`status-pill status-pill--${s.status}`}>{t(`account.upload.status.${s.status}`)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

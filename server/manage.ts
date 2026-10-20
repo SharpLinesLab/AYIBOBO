@@ -9,12 +9,12 @@
  *
  * In Docker:  docker exec <container> node dist-server/manage.js reset-link someone@example.com
  */
-import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { createAuth, ROLES, type Role } from './auth';
 import { Db } from './db';
 import { resetLink } from './mail';
 import { royaltiesRepo } from './royalties';
+import { issueStrike, liftStrikes } from './users';
 
 const HELP = `Usage:
   manage set-role <email> <listener|artist|admin>
@@ -81,13 +81,11 @@ if (command === 'strike' || command === 'lift-strikes') {
     console.error(`No account with the email ${email}.`);
     process.exit(1);
   }
-  const now = Date.now();
   if (command === 'strike') {
-    db.sql.prepare('INSERT INTO policy_strikes (id, user_id, reason, issued_at) VALUES (?, ?, ?, ?)').run(randomUUID(), user.id, [role, ...rest].join(' '), now);
+    issueStrike(db, user.id, [role, ...rest].join(' '));
     console.log(`Strike recorded for ${email}.`);
   } else {
-    const n = db.sql.prepare('UPDATE policy_strikes SET lifted_at = ? WHERE user_id = ? AND lifted_at IS NULL').run(now, user.id).changes;
-    console.log(`${n} strike(s) lifted for ${email}.`);
+    console.log(`${liftStrikes(db, user.id)} strike(s) lifted for ${email}.`);
   }
   db.close();
   process.exit(0);

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { GENRES } from '../catalog/genres';
 import { ExplicitBadge } from '../components/music/bits';
-import { fmtDate, t } from '../i18n';
+import { Tabs } from '../components/Tabs';
+import { fmtDate, fmtNumber, t, type Key } from '../i18n';
 import { useAccount } from '../lib/account';
+import { adminOverview, type AdminOverview } from '../lib/adminUsers';
 import { CATALOG_CHANGED } from '../lib/serverCatalog';
 import { moderate, pendingReviews, type ReviewItem } from '../lib/submissions';
 import { pendingVerifications, reviewVerification, type VerificationReview } from '../lib/verification';
@@ -10,6 +12,7 @@ import { fmtTime, useMusic } from '../music';
 import { useApp } from '../store';
 import { AdsAdmin } from './AdminAds';
 import { RoyaltiesAdmin } from './AdminRoyalties';
+import { UsersAdmin } from './AdminUsers';
 import { NotFound, PageHead } from './Browse';
 
 const mb = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
@@ -90,6 +93,7 @@ function VerificationQueue() {
   );
 }
 
+/** Uploads tab: pending songs to approve or reject. */
 function Review() {
   const { toast } = useApp();
   const [items, setItems] = useState<ReviewItem[] | null>(null);
@@ -112,8 +116,11 @@ function Review() {
   };
 
   return (
-    <div className="page-music admin">
-      <PageHead kicker={t('admin.kicker')} title={t('admin.title')} sub={t('admin.sub')} />
+    <section aria-labelledby="admin-uploads-title">
+      <h2 className="panel-title" id="admin-uploads-title">
+        {t('admin.title')}
+      </h2>
+      <p className="muted">{t('admin.sub')}</p>
       {failed && <p className="notice notice--error">{t('admin.failed')}</p>}
       {!items && !failed && <span className="spinner" role="status" aria-label={t('account.busy')} />}
       {items && items.length === 0 && <p className="notice">{t('admin.empty')}</p>}
@@ -145,17 +152,96 @@ function Review() {
           ))}
         </ul>
       )}
-      <VerificationQueue />
-      <AdsAdmin />
-      <RoyaltiesAdmin />
+    </section>
+  );
+}
+
+type Tab = 'overview' | 'uploads' | 'verification' | 'ads' | 'royalties' | 'users';
+
+/** Overview tab: the numbers at a glance, each with a way into its tab. Reloaded each time it's opened. */
+function Overview({ active, go }: { active: boolean; go: (tab: Tab) => void }) {
+  // undefined while loading; null if it couldn't be loaded.
+  const [data, setData] = useState<AdminOverview | null | undefined>(undefined);
+  useEffect(() => {
+    if (active) void adminOverview().then(setData);
+  }, [active]);
+
+  const tiles: [Key, keyof AdminOverview, Tab][] = [
+    ['admin.dash.pendingUploads', 'pendingUploads', 'uploads'],
+    ['admin.dash.pendingVerifications', 'pendingVerifications', 'verification'],
+    ['admin.dash.totalUsers', 'users', 'users'],
+    ['admin.dash.totalArtists', 'artists', 'users'],
+    ['admin.dash.streamsToday', 'royaltyStreamsToday', 'royalties'],
+    ['admin.dash.adPlaysToday', 'adPlaysToday', 'ads'],
+  ];
+  const links: [Tab, Key][] = [
+    ['uploads', 'admin.dash.goUploads'],
+    ['verification', 'admin.dash.goVerification'],
+    ['ads', 'admin.dash.goAds'],
+    ['royalties', 'admin.dash.goRoyalties'],
+    ['users', 'admin.dash.goUsers'],
+  ];
+
+  return (
+    <section aria-labelledby="admin-overview-title">
+      <h2 className="panel-title" id="admin-overview-title">
+        {t('admin.dash.overview')}
+      </h2>
+      {data === null && <p className="notice notice--error">{t('admin.failed')}</p>}
+      {data === undefined && <span className="spinner" role="status" aria-label={t('account.busy')} />}
+      {data && (
+        <div className="kpis admin__kpis">
+          {tiles.map(([label, field, tab]) => (
+            <button type="button" className="kpi card-panel admin__kpi" key={field} onClick={() => go(tab)}>
+              <span className="kpi__label">{t(label)}</span>
+              <span className="kpi__value">{fmtNumber(data[field])}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      <p className="muted account__fine">{t('admin.dash.todayNote')}</p>
+      <div className="account__actions">
+        {links.map(([tab, label]) => (
+          <button key={tab} type="button" className="btn-glass" onClick={() => go(tab)}>
+            {t(label)}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function Dashboard() {
+  const [tab, setTab] = useState<Tab>('overview');
+  const go = (to: Tab) => {
+    setTab(to);
+    requestAnimationFrame(() => document.getElementById(`admin-tab-${to}`)?.focus());
+  };
+  return (
+    <div className="page-music admin">
+      <PageHead kicker={t('admin.kicker')} title={t('admin.dash.title')} />
+      <Tabs
+        id="admin"
+        label={t('admin.dash.label')}
+        active={tab}
+        onChange={setTab}
+        tabs={[
+          { id: 'overview', label: t('admin.dash.overview'), panel: <Overview active={tab === 'overview'} go={go} /> },
+          { id: 'uploads', label: t('admin.dash.uploads'), panel: <Review /> },
+          { id: 'verification', label: t('admin.dash.verification'), panel: <VerificationQueue /> },
+          { id: 'ads', label: t('admin.dash.ads'), panel: <AdsAdmin /> },
+          { id: 'royalties', label: t('admin.dash.royalties'), panel: <RoyaltiesAdmin /> },
+          { id: 'users', label: t('admin.dash.users'), panel: <UsersAdmin /> },
+        ]}
+      />
     </div>
   );
 }
 
-/** #/admin: pending uploads to approve or reject. Anyone who isn't an admin gets "page not found". */
+/** #/admin: the admin dashboard, in tabs. Anyone who isn't an admin gets "page not found". */
 export function AdminPage() {
   const { status, user } = useAccount();
   if (status === 'loading') return <span className="spinner" role="status" aria-label={t('account.busy')} />;
   if (user?.role !== 'admin') return <NotFound what="page" />;
-  return <Review />;
+  return <Dashboard />;
 }

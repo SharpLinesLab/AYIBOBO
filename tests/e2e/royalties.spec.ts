@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { open, published, trackErrors } from './helpers';
+import { open, openTab, published, trackErrors } from './helpers';
 
 const PASSWORD = 'e2e long enough password';
 
@@ -29,6 +29,7 @@ test('a signed-in listener’s play is logged once, by the server', async ({ pag
 test('artists see their streams and the eligibility checklist, with no money', async ({ page }) => {
   expect((await page.request.post('/api/auth/login', { data: { email: 'artist-a@e2e.test', password: PASSWORD } })).ok()).toBe(true);
   await open(page, '#/account');
+  await openTab(page, 'Earnings');
   const panel = page.locator('section', { has: page.getByRole('heading', { name: 'Royalties (pre-launch)' }) });
   await expect(panel.getByText(/^Pre-launch:/)).toBeVisible();
   await expect(panel.getByText('Streams this month')).toBeVisible();
@@ -49,6 +50,7 @@ test('admins see a read-only monthly summary, labelled as not real money', async
   test.skip(isMobile, 'one project is enough');
   expect((await page.request.post('/api/auth/login', { data: { email: 'admin@e2e.test', password: PASSWORD } })).ok()).toBe(true);
   await open(page, '#/admin');
+  await openTab(page, 'Royalties');
   const section = page.locator('section', { has: page.getByRole('heading', { name: 'Royalties (pre-launch)' }) });
   await expect(section.getByText(/^Pre-launch — not real money\./)).toBeVisible();
   await expect(section.getByText(/Hypothetical artist pool \(80% of revenue after fees\): \$7,744\.00 — not real money/)).toBeVisible();

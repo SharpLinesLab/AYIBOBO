@@ -69,3 +69,10 @@ export async function position(page: Page): Promise<number> {
   const v = await page.locator('.seek__track, .pbar [role="slider"]').first().getAttribute('aria-valuenow');
   return Number(v ?? 0);
 }
+
+/** Open a dashboard tab (#/account for artists, #/admin) by its name; a count may follow the name. */
+export async function openTab(page: Page, name: string) {
+  const tab = page.getByRole('tab', { name: new RegExp(`^${name}( \\d+)?$`) });
+  await tab.click();
+  await expect(tab).toHaveAttribute('aria-selected', 'true');
+}

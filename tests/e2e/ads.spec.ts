@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type APIRequestContext } from '@playwright/test';
 import { ARTIST_A } from './data';
-import { open, playArtist } from './helpers';
+import { open, openTab, playArtist } from './helpers';
 import { wav } from './media';
 
 const PASSWORD = 'e2e long enough password';
@@ -77,6 +77,7 @@ test('admins upload, deactivate and delete ads, and see plays per day', async ({
   test.skip(isMobile, 'one project is enough');
   expect((await page.request.post('/api/auth/login', { data: { email: 'admin@e2e.test', password: PASSWORD } })).ok()).toBe(true);
   await open(page, '#/admin');
+  await openTab(page, 'Ads');
   const ads = page.locator('section', { has: page.getByRole('heading', { name: 'Ads', exact: true }) });
   const form = ads.locator('form', { has: page.getByRole('heading', { name: 'New ad' }) });
   await form.getByLabel('Title').fill('E2E Admin Ad');

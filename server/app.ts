@@ -9,6 +9,7 @@ import { registerLibraryRoutes } from './library';
 import { registerAdRoutes } from './ads';
 import { registerProfileRoutes } from './profile';
 import { registerRoyaltyRoutes } from './royalties';
+import { registerAdminUserRoutes } from './users';
 import { registerVerificationRoutes } from './verification';
 import { DEFAULT_LIMITS, registerUploadRoutes, type UploadLimits } from './uploads';
 
@@ -205,6 +206,10 @@ export function createApp(cfg: AppConfig) {
   // --- artist royalties (pre-launch: counted, no money moves) ----------------------------------
 
   registerRoyaltyRoutes(app, { db, rateLimit });
+
+  // --- account administration (admins) ----------------------------------------------------------
+
+  registerAdminUserRoutes(app, { db, auth, rateLimit });
 
   app.use('/api', (_req, res) => {
     res.status(404).json({ ok: false, error: 'Not found' });

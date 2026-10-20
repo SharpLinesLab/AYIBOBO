@@ -2,9 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { t, type Key } from '../i18n';
 import { requestPasswordReset, signIn, signOut, signUp, useAccount, type AccountError } from '../lib/account';
 import { useApp } from '../store';
-import { ArtistProfile } from './ArtistProfile';
-import { ArtistRoyalties } from './ArtistRoyalties';
-import { ArtistUploads } from './ArtistUploads';
+import { ArtistDashboard } from './ArtistDashboard';
 import { PageHead } from './Browse';
 
 /** "Forgot password?": ask for a reset link. The answer never says whether the account exists. */
@@ -205,13 +203,7 @@ export function AccountPage() {
             </button>
           </div>
         </section>
-        {(user.role === 'artist' || user.role === 'admin') && (
-          <>
-            <ArtistProfile key={user.id} />
-            <ArtistUploads />
-            <ArtistRoyalties />
-          </>
-        )}
+        {(user.role === 'artist' || user.role === 'admin') && <ArtistDashboard key={user.id} />}
       </>
     );
   return (

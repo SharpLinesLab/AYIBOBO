@@ -51,13 +51,16 @@ describe('#/admin', () => {
       await signedInAs(user);
       const html = renderAdmin();
       expect(html).toContain(en['browse.notFound.page']);
-      expect(html).not.toContain(en['admin.title']);
+      expect(html).not.toContain(en['admin.dash.title']);
     }
   });
 
-  it('shows the review queue to admins', async () => {
+  it('shows admins the dashboard, opening on the overview', async () => {
     await signedInAs({ role: 'admin' });
-    expect(renderAdmin()).toContain(`<h1>${en['admin.title']}</h1>`);
+    const html = renderAdmin();
+    expect(html).toContain(`<h1>${en['admin.dash.title']}</h1>`);
+    for (const k of ['overview', 'uploads', 'verification', 'ads', 'royalties', 'users'] as const) expect(html).toContain(`>${en[`admin.dash.${k}`]}</button>`);
+    expect(html).toMatch(/role="tab"[^>]*aria-selected="true"[^>]*>Overview</);
   });
 });
 

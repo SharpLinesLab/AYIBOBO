@@ -150,7 +150,7 @@ export function royaltiesRepo(db: Db) {
     return {
       period,
       asOf,
-      totalStreams: count(`SELECT COUNT(*) AS n FROM royalty_plays WHERE played_at >= ? AND played_at < ? AND ${STREAM}`, range.start, asOf),
+      totalStreams: streamsBetween(range.start, asOf),
       premiumStreams: count(`SELECT COUNT(*) AS n FROM royalty_plays WHERE played_at >= ? AND played_at < ? AND ${STREAM} AND listener_tier = 'premium'`, range.start, asOf),
       eligibleArtists: eligible.length,
       eligibleStreams: eligible.reduce((n, a) => n + a.premiumStreams, 0),
@@ -212,7 +212,10 @@ export function royaltiesRepo(db: Db) {
     }));
   }
 
-  return { logPlay, status, dashboard, summary, snapshot, snapshotClosedMonths, periods };
+  /** Royalty streams from every artist in [from, to). */
+  const streamsBetween = (from: number, to: number) => count(`SELECT COUNT(*) AS n FROM royalty_plays WHERE played_at >= ? AND played_at < ? AND ${STREAM}`, from, to);
+
+  return { logPlay, streamsBetween, status, dashboard, summary, snapshot, snapshotClosedMonths, periods };
 }
 
 export type RoyaltiesRepo = ReturnType<typeof royaltiesRepo>;

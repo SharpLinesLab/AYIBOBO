@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { ARTIST_A } from './data';
-import { open, published } from './helpers';
+import { open, openTab, published } from './helpers';
 import { png } from './media';
 
 test('songs show their artist credit, featured artists and explicit badge', async ({ page }) => {
@@ -25,21 +25,26 @@ test('artists set their profile, and the upload form starts from it', async ({ p
   expect((await page.request.put('/api/account/profile', { data: { artistName: '', bio: '' } })).ok()).toBe(true); // clean start on re-runs
 
   await open(page, '#/account');
+  await openTab(page, 'Profile');
   const profile = page.locator('section', { has: page.getByRole('heading', { name: 'Artist profile' }) });
   const form = page.locator('section', { has: page.getByRole('heading', { name: 'Send a song to ASF' }) });
   // The artist name starts as the display name; the upload form waits for a saved one.
   await expect(profile.getByLabel('Artist name')).toHaveValue('E2E Profile');
-  await expect(form.getByLabel('Artist name')).toHaveValue('');
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   expect(results.violations.map((v) => v.id)).toEqual([]);
+  await openTab(page, 'Upload');
+  await expect(form.getByLabel('Artist name')).toHaveValue('');
+  await openTab(page, 'Profile');
 
   await profile.getByLabel('Artist name').fill('E2E Stage Name');
   await profile.getByLabel(/About you/).fill('Kompa from Jacmel.');
   await profile.getByRole('button', { name: 'Save profile' }).click();
   await expect(page.getByText('Profile saved')).toBeVisible();
+  await openTab(page, 'Upload');
   await expect(form.getByLabel('Artist name')).toHaveValue('E2E Stage Name');
   await expect(form.getByLabel(/Featured artists/)).toHaveValue('');
   await expect(form.getByLabel('Explicit lyrics')).not.toBeChecked();
+  await openTab(page, 'Profile');
 
   await profile.getByLabel(/profile picture/i).setInputFiles({ name: 'me.png', mimeType: 'image/png', buffer: png([200, 80, 40]) });
   await expect(profile.getByRole('img', { name: 'Profile picture of E2E Stage Name' })).toBeVisible();

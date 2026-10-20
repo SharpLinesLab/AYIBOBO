@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { ARTIST_A, ARTIST_B } from './data';
-import { open, published } from './helpers';
+import { open, openTab, published } from './helpers';
 
 const PASSWORD = 'e2e long enough password';
 
@@ -30,6 +30,7 @@ test('artists request verification, and an admin approves it', async ({ page, pl
   expect((await page.request.post('/api/auth/signup', { data: { email, password: PASSWORD, displayName: 'E2E Hopeful', role: 'artist' } })).ok()).toBe(true);
 
   await open(page, '#/account');
+  await openTab(page, 'Profile');
   const profile = page.locator('section', { has: page.getByRole('heading', { name: 'Artist profile' }) });
   await profile.getByLabel('Proof (optional)').fill('instagram.com/e2e-hopeful');
   await profile.getByRole('button', { name: 'Request verification' }).click();
@@ -47,6 +48,7 @@ test('artists request verification, and an admin approves it', async ({ page, pl
   await admin.dispose();
 
   await page.reload();
+  await openTab(page, 'Profile');
   await expect(profile.getByText('You’re a verified artist.')).toBeVisible();
   await expect(profile.getByRole('img', { name: 'Verified' })).toBeVisible();
 });

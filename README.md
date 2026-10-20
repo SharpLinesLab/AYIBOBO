@@ -167,6 +167,17 @@ All responses are JSON with an `ok` field. Every POST, PUT, PATCH and DELETE is 
 
 The server writes each closed month to `royalty_periods` once (at start-up and hourly; re-running changes nothing). `manage snapshot-royalties [YYYY-MM]` does the same by hand; `manage strike <email> <reason>` and `manage lift-strikes <email>` record and lift policy strikes.
 
+**Account administration** (admins; everyone else gets 404)
+
+| Method | Path | |
+|---|---|---|
+| GET | `/api/admin/overview` | Uploads and verification requests waiting, total users and artists, and today's (UTC) royalty streams and ad plays. |
+| GET | `/api/admin/users` | Every account (newest 1000), with role, verified, tier, join date and active strikes. |
+| POST | `/api/admin/users/:id/role` | `{role}`: `listener`, `artist` or `admin`. An admin can't change their own role. |
+| POST | `/api/admin/users/:id/verified` | `{verified}`: set or take away the checkmark. |
+| POST | `/api/admin/users/:id/strikes` | `{reason}`: record an active policy strike (same as `manage strike`). |
+| POST | `/api/admin/users/:id/strikes/lift` | Lift every active strike (same as `manage lift-strikes`). |
+
 **Other**
 
 | Method | Path | |
