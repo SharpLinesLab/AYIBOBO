@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { fmtDate, fmtUsd, t, type Key } from '../i18n';
-import { PROMOTION_RULES, isoDay, promotionDays, promotionPrice, type PromotionStatus } from '../lib/promotionRules';
+import { fmtDate, fmtUsd, plural, t, type Key } from '../i18n';
+import { isoDay, packageEndDate, perDayCents, utcDay, PACKAGES, type PackageId, type PricedPackage, type PromotionStatus } from '../lib/promotionRules';
 import { createPromotion, myPromotions, type Promotion, type PromotionError } from '../lib/promotions';
 import type { Submission } from '../lib/submissions';
 import { useApp } from '../store';
@@ -27,16 +27,31 @@ const GROUPS: { key: Key; has: PromotionStatus[] }[] = [
   { key: 'account.promote.group.past', has: ['ended', 'cancelled'] },
 ];
 
-/** Promote tab on #/account: boost a published song in feeds for a few days, and see past promotions. */
+/** One package to pick: days, price, and the price per day so the discount shows. */
+function PackageChoice({ pkg, checked, onPick }: { pkg: PricedPackage; checked: boolean; onPick: () => void }) {
+  const best = PACKAGES.find((p) => p.id === pkg.id)?.bestValue;
+  return (
+    <label className={`promo__pkg${checked ? ' is-checked' : ''}`}>
+      <input type="radio" name="promotion-package" value={pkg.id} checked={checked} onChange={onPick} />
+      <span className="promo__pkg-days">{plural('account.promote.days', pkg.days)}</span>
+      <span className="promo__pkg-price">{fmtUsd(pkg.priceCents)}</span>
+      <span className="promo__pkg-per">{t('account.promote.perDay', { price: fmtUsd(perDayCents(pkg)) })}</span>
+      {best && <span className="promo-badge promo__best">{t('account.promote.bestValue')}</span>}
+    </label>
+  );
+}
+
+/** Promote tab on #/account: boost a published song in feeds with a package, and see past promotions. */
 export function ArtistPromote({ list }: { list: Submission[] | null }) {
   const { toast } = useApp();
   const published = (list ?? []).filter((s) => s.status === 'approved');
   // undefined while loading; null if it couldn't be loaded.
-  const [data, setData] = useState<{ rateCents: number; promotions: Promotion[] } | null | undefined>(undefined);
+  const [data, setData] = useState<{ packages: PricedPackage[]; promotions: Promotion[] } | null | undefined>(undefined);
+  // Dates are UTC days, as the server counts them.
   const today = isoDay(Date.now());
   const [trackId, setTrackId] = useState('');
+  const [packageId, setPackageId] = useState<PackageId>('day1');
   const [start, setStart] = useState(today);
-  const [end, setEnd] = useState(isoDay(Date.now() + 6 * DAY));
   const [error, setError] = useState<PromotionError | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -46,13 +61,13 @@ export function ArtistPromote({ list }: { list: Submission[] | null }) {
   // Default to the first published song once the list arrives.
   const chosen = published.some((s) => s.id === trackId) ? trackId : (published[0]?.id ?? '');
 
-  const days = promotionDays(start, end);
-  const rate = data?.rateCents ?? PROMOTION_RULES.defaultRateCents;
+  const pkg = data?.packages.find((p) => p.id === packageId);
+  const last = pkg ? packageEndDate(start, pkg.days) : null;
 
   const submit = async () => {
     setBusy(true);
     setError(null);
-    const r = await createPromotion(chosen, start, end);
+    const r = await createPromotion(chosen, packageId, start);
     setBusy(false);
     if (!r.ok) return setError(r.error);
     setData((d) => d && { ...d, promotions: [r.value, ...d.promotions] });
@@ -89,26 +104,33 @@ export function ArtistPromote({ list }: { list: Submission[] | null }) {
                 ))}
               </select>
             </label>
-            <div className="admin__dates">
-              <label className="field">
-                {t('account.promote.start')}
-                <input className="input" type="date" value={start} min={today} onChange={(e) => setStart(e.target.value)} required />
-              </label>
-              <label className="field">
-                {t('account.promote.end')}
-                <input className="input" type="date" value={end} min={start || today} onChange={(e) => setEnd(e.target.value)} required />
-              </label>
+            <fieldset className="promo__pkgs">
+              <legend>{t('account.promote.package')}</legend>
+              {data.packages.map((p) => (
+                <PackageChoice key={p.id} pkg={p} checked={p.id === packageId} onPick={() => setPackageId(p.id)} />
+              ))}
+            </fieldset>
+            <label className="field promo__start">
+              {t('account.promote.start')}
+              <input className="input" type="date" value={start} min={today} onChange={(e) => setStart(e.target.value)} required />
+            </label>
+            <div className="promo__total" aria-live="polite">
+              {pkg && last ? (
+                <>
+                  <p>{t('account.promote.runs', { from: day(utcDay(start)!), to: day(utcDay(last)!) })}</p>
+                  <p className="promo__sum">{t('account.promote.total', { total: fmtUsd(pkg.priceCents) })}</p>
+                </>
+              ) : (
+                <p>{t('account.promote.pickStart')}</p>
+              )}
             </div>
-            <p className="promo__total" aria-live="polite">
-              {days > 0 ? t('account.promote.total', { days, rate: fmtUsd(rate), total: fmtUsd(promotionPrice(rate, days)) }) : t('account.promote.pickDates')}
-            </p>
-            <p className="muted account__fine">{t('account.promote.payNote', { max: PROMOTION_RULES.maxDays })}</p>
+            <p className="muted account__fine">{t('account.promote.payNote')}</p>
             {error && (
               <div className="notice notice--error" role="alert">
                 {t(`account.promote.error.${error}` as Key)}
               </div>
             )}
-            <button className="cta cta--solid" type="submit" disabled={busy || days === 0}>
+            <button className="cta cta--solid" type="submit" disabled={busy || !last}>
               {busy ? t('account.busy') : t('account.promote.submit')}
             </button>
           </form>

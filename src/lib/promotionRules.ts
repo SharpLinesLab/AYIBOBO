@@ -1,18 +1,41 @@
 /**
- * Promoted tracks: the rules shared by the server and the browser (no imports). Artists pay a flat
- * per-day rate to boost a published song in feeds. Promotion money is separate from royalties and
- * never reaches the royalty pool or artist payouts.
+ * Promoted tracks: the rules shared by the server and the browser (no imports). Artists buy a
+ * package (a fixed number of days at a fixed price) to boost a published song in feeds. Promotion
+ * money is ASF's alone: it is separate from royalties and never reaches the royalty pool or payouts.
  */
 
 export type PromotionStatus = 'pending_payment' | 'active' | 'scheduled' | 'ended' | 'cancelled';
 
+export type PackageId = 'day1' | 'day3' | 'day7';
+
+export interface PromotionPackage {
+  id: PackageId;
+  days: number;
+  /** Price until an admin sets another, in cents. */
+  defaultCents: number;
+  /** Shown as "Best value". */
+  bestValue?: boolean;
+}
+
+/** The packages on sale. Their prices live in the settings table (see server/promotions.ts). */
+export const PACKAGES: readonly PromotionPackage[] = [
+  { id: 'day1', days: 1, defaultCents: 500 },
+  { id: 'day3', days: 3, defaultCents: 1200 },
+  { id: 'day7', days: 7, defaultCents: 2500, bestValue: true },
+];
+
+export const packageById = (id: unknown): PromotionPackage | undefined => PACKAGES.find((p) => p.id === id);
+
+/** A package with its current price, as the server sends it. */
+export interface PricedPackage {
+  id: PackageId;
+  days: number;
+  priceCents: number;
+}
+
 export const PROMOTION_RULES = {
-  /** Default price per day, in cents ($5), until an admin sets another. */
-  defaultRateCents: 500,
-  /** Highest per-day rate an admin can set, in cents. */
-  maxRateCents: 100_000,
-  /** Longest promotion, in days. */
-  maxDays: 90,
+  /** Highest package price an admin can set, in cents ($1,000). */
+  maxPackageCents: 100_000,
   /** How far ahead a promotion can start, in days. */
   maxLeadDays: 365,
   /** Promoted songs per feed, at most. */
@@ -32,15 +55,14 @@ export function utcDay(date: string): number | null {
 /** `YYYY-MM-DD` (UTC) of a time. */
 export const isoDay = (t: number) => new Date(t).toISOString().slice(0, 10);
 
-/** Days from a start date to an end date, both included (0 if the end is before the start). */
-export function promotionDays(startDate: string, endDate: string): number {
-  const a = utcDay(startDate);
-  const b = utcDay(endDate);
-  return a === null || b === null || b < a ? 0 : Math.round((b - a) / DAY) + 1;
+/** The last day (`YYYY-MM-DD`, UTC) of a promotion of `days` days from `startDate`, both included; null for a bad date. */
+export function packageEndDate(startDate: string, days: number): string | null {
+  const start = utcDay(startDate);
+  return start === null ? null : isoDay(start + (days - 1) * DAY);
 }
 
-/** Total price in cents: the flat per-day rate × days. */
-export const promotionPrice = (rateCents: number, days: number) => Math.max(0, Math.round(rateCents)) * Math.max(0, Math.floor(days));
+/** Price per day, in cents (rounded), so packages can be compared. */
+export const perDayCents = (p: { priceCents: number; days: number }) => Math.round(p.priceCents / p.days);
 
 /**
  * A feed with promoted songs mixed in: at most `slots` of them, none that already appear in the

@@ -5,6 +5,8 @@ import { open, openTab, published, trackErrors } from './helpers';
 const PASSWORD = 'e2e long enough password';
 const DAY = 86_400_000;
 const iso = (t: number) => new Date(t).toISOString().slice(0, 10);
+/** How the page writes a UTC day in English, e.g. "Oct 20, 2026". */
+const shown = (t: number) => new Date(t).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 
 async function noViolations(page: Page) {
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
@@ -32,14 +34,35 @@ test('an artist promotes a song, and an admin activates it through the test path
   const panel = page.getByRole('tabpanel', { name: 'Promote' });
   await expect(panel.getByText(/separate from royalties/)).toBeVisible();
   await panel.getByRole('combobox').selectOption({ label: title });
-  await panel.getByLabel('First day').fill(iso(Date.now()));
-  await panel.getByLabel('Last day').fill(iso(Date.now() + 2 * DAY));
-  await expect(panel.getByText(/^Total: \$[\d,.]+ \(\$[\d,.]+ a day × 3\)$/)).toBeVisible();
+
+  // Three packages, each with its price per day; the 7-day one is the best value.
+  const packages = panel.getByRole('radio');
+  await expect(packages).toHaveCount(3);
+  for (const [days, per] of [['1 day', /^\$[\d.]+ a day$/], ['3 days', /a day$/], ['7 days', /a day$/]] as const) {
+    const card = panel.locator('.promo__pkg', { hasText: days });
+    await expect(card.locator('.promo__pkg-per')).toHaveText(per);
+  }
+  await expect(panel.locator('.promo__pkg', { hasText: 'Best value' })).toHaveCount(1);
+  await expect(panel.locator('.promo__pkg', { hasText: 'Best value' })).toContainText('7 days');
+
+  // The end date follows the package (both days included, UTC days); the total is its price.
+  const start = Math.floor(Date.now() / DAY) * DAY;
+  await panel.getByLabel('First day').fill(iso(start));
+  for (const [name, days] of [['1 day', 1], ['7 days', 7], ['3 days', 3]] as const) {
+    // The card is the label: clicking it picks the package.
+    await panel.locator('.promo__pkg', { hasText: name }).click();
+    await expect(panel.getByRole('radio', { name: new RegExp(`^${name}`) })).toBeChecked();
+    await expect(panel.getByText(/^Runs from /)).toHaveText(`Runs from ${shown(start)} to ${shown(start + (days - 1) * DAY)}, both days included.`);
+    const price = await panel.locator('.promo__pkg', { hasText: name }).locator('.promo__pkg-price').textContent();
+    await expect(panel.locator('.promo__sum')).toHaveText(`Total: ${price}`);
+  }
+  const price = (await panel.locator('.promo__pkg', { hasText: '3 days' }).locator('.promo__pkg-price').textContent())!;
   await noViolations(page);
   await panel.getByRole('button', { name: 'Confirm promotion' }).click();
   await expect(page.getByText(`Promotion of “${title}” requested.`, { exact: false })).toBeVisible();
   const pending = panel.locator('.promo__mine > div', { has: page.getByRole('heading', { name: 'Waiting for payment' }) }).locator('li', { hasText: title });
   await expect(pending.locator('.status-pill')).toHaveText('Waiting for payment');
+  await expect(pending).toContainText(`${shown(start)} to ${shown(start + 2 * DAY)} · ${price}`);
 
   // The same days again are refused.
   await panel.getByRole('button', { name: 'Confirm promotion' }).click();
@@ -58,9 +81,16 @@ test('an artist promotes a song, and an admin activates it through the test path
   const item = section.locator('li', { hasText: title }).filter({ has: page.getByRole('button', { name: 'Mark as paid (test)' }) });
   await expect(item).toHaveCount(1);
   await expect(item).toContainText('E2E Artist A');
+  await expect(item).toContainText(price);
   await item.getByRole('button', { name: 'Mark as paid (test)' }).click();
   await expect(page.getByText(`The promotion of “${title}” is marked as paid (test).`)).toBeVisible();
   await expect(section.locator('li', { hasText: title }).locator('.status-pill', { hasText: 'Active' }).first()).toBeVisible();
+  // The package prices replace the old per-day rate; saving them as they are changes nothing.
+  const prices = section.locator('form', { has: page.getByRole('heading', { name: 'Packages' }) });
+  for (const label of ['1-day package (USD)', '3-day package (USD)', '7-day package (USD)']) await expect(prices.getByLabel(label)).toHaveValue(/^\d+\.\d\d$/);
+  await expect(section.getByText(/Price per day/)).toHaveCount(0);
+  await prices.getByRole('button', { name: 'Save prices' }).click();
+  await expect(page.getByText('Package prices saved.')).toBeVisible();
   await noViolations(page);
 
   // It's in the feed now. The song is already there organically, so it isn't shown twice, but it
