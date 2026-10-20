@@ -233,6 +233,17 @@ describe('royalty streams on the server', () => {
     expect(repo.periods().map((p) => p.period)).toEqual(['2026-09', '2026-08', '2026-07', '2026-06', '2026-05', '2026-04', '2026-03', '2026-02']);
   });
 
+  it('never counts an artist’s own plays', () => {
+    const now = Date.UTC(2026, 6, 15);
+    const before = repo.status(ids.star, now).premiumStreams90d;
+    const put = srv.db.sql.prepare("INSERT INTO royalty_plays (play_id, user_id, track_id, artist_id, played_at, seconds_listened, listener_tier) VALUES (?, ?, 'song-1', ?, ?, 60, 'premium')");
+    for (let i = 0; i < 10; i++) put.run(`self-${i}`, ids.star, ids.star, now - DAY);
+    put.run('fan-of-star', ids.fan, ids.star, now - DAY);
+    expect(repo.status(ids.star, now).premiumStreams90d).toBe(before + 1);
+    expect(repo.dashboard(ids.star, now).streamsThisMonth).toBe(repo.summary('2026-07', now)!.artists.find((a) => a.artistId === ids.star)!.streams);
+    srv.db.sql.prepare("DELETE FROM royalty_plays WHERE play_id LIKE 'self-%' OR play_id = 'fan-of-star'").run();
+  });
+
   it('uses the stream rules everywhere', () => {
     expect(ROYALTY_RULES).toMatchObject({ minSeconds: 30, minPremiumStreams: 500, windowDays: 90, minPublishedTracks: 3, artistShare: 0.8 });
   });

@@ -12,7 +12,9 @@ const DAY = 86_400_000;
 const WINDOW = ROYALTY_RULES.windowDays * DAY;
 /** Seconds a report may run ahead of the server's clock (network delay, timer drift). */
 const SLACK = 5;
-const STREAM = `seconds_listened >= ${ROYALTY_RULES.minSeconds}`;
+// An artist's own plays never count, so nobody can stream up their own share. (user_id is null
+// only once the listener's account was deleted.)
+const STREAM = `seconds_listened >= ${ROYALTY_RULES.minSeconds} AND (user_id IS NULL OR user_id <> artist_id)`;
 const PLAY_ID = /^[\w-]{8,64}$/;
 const TRACK_ID = /^[\w:.-]{1,120}$/;
 
