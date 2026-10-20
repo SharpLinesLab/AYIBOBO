@@ -2089,21 +2089,34 @@
 }
 
 /* Promoted tracks */
+/* "Promoted": the same chip as the chart rank on cards (.mcard__rank), inline in rows. */
 .promo-badge {
-  display: inline-flex;
-  align-items: center;
-  height: 18px;
+  display: inline-grid;
+  place-items: center;
+  height: 22px;
   margin-right: 6px;
   padding: 0 7px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
-  color: var(--accent);
-  font-size: 10.5px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   vertical-align: middle;
   white-space: nowrap;
+}
+
+/* On a card's artwork: top right, across from the rank (the play button sits bottom right). */
+.mcard__art .promo-badge {
+  position: absolute;
+  z-index: 1;
+  right: 8px;
+  top: 8px;
+  height: 28px;
+  margin: 0;
+  font-size: 12px;
 }
 
 .promo__total {

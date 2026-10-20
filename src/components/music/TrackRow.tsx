@@ -6,6 +6,7 @@ import { TrackMenu } from './TrackMenu';
 import { DownloadedMark } from './Offline';
 import { useOnline } from '../../offline';
 import { t } from '../../i18n';
+import { useIsPromoted } from '../../lib/promotions';
 
 export interface TrackRowProps {
   track: Track;
@@ -18,7 +19,7 @@ export interface TrackRowProps {
   change?: number | null;
   playlistId?: string;
   showAlbum?: boolean;
-  /** An artist paid to boost it here: it says so, and takes no chart position. */
+  /** A feed's promoted slot: it takes no chart position. (Any song promoted right now shows the badge.) */
   promoted?: boolean;
 }
 
@@ -57,6 +58,7 @@ export function ArtistLinks({ track }: { track: Track }) {
 export function TrackRow({ track, context, index, showCover = true, plays, change, playlistId, showAlbum, promoted }: TrackRowProps) {
   const m = useMusic();
   const { current, playing } = useIsCurrent([track.id]);
+  const isPromoted = useIsPromoted(track.id) || !!promoted;
   const album = showAlbum && track.albumId ? m.album(track.albumId) : undefined;
   const online = useOnline();
   const unavailable = !online && !m.availableOffline(track);
@@ -85,7 +87,7 @@ export function TrackRow({ track, context, index, showCover = true, plays, chang
           {track.explicit && <ExplicitBadge />}
         </a>
         <span className="trow__sub">
-          {promoted && <PromotedBadge />}
+          {isPromoted && <PromotedBadge />}
           {m.isDownloaded(track.id) && <DownloadedMark />}
           <ArtistLinks track={track} />
           {album && (

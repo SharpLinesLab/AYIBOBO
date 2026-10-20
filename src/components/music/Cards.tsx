@@ -6,17 +6,23 @@ import { Cover, ExplicitBadge, PlayAll, PromotedBadge, useIsCurrent, Verified } 
 
 export { Verified } from './bits';
 import { ArtistLinks } from './TrackRow';
+import { useIsPromoted } from '../../lib/promotions';
 
-/** `promoted`: an artist paid to boost it here; it says so. */
+/**
+ * A song as a card. A song an artist is paying to promote right now says so, wherever it's listed
+ * (`promoted` also marks a feed's promoted slot before the list of promotions has loaded).
+ */
 export function TrackCard({ track, context, rank, promoted }: { track: Track; context?: Track[]; rank?: number; promoted?: boolean }) {
   const m = useMusic();
   const { current } = useIsCurrent([track.id]);
+  const isPromoted = useIsPromoted(track.id) || !!promoted;
   return (
     <div className={`mcard${current ? ' is-current' : ''}`} role="listitem">
       <a className="mcard__art" href={`#/song/${track.id}`}>
         <span className="sr-only">{track.title}</span>
         <Cover spec={track.cover} />
         {rank !== undefined && <span className="mcard__rank">{rank}</span>}
+        {isPromoted && <PromotedBadge />}
       </a>
       <span className="mcard__play">
         <PlayAllSingle track={track} context={context} />
@@ -28,10 +34,7 @@ export function TrackCard({ track, context, rank, promoted }: { track: Track; co
       <span className="mcard__sub">
         <ArtistLinks track={track} />
       </span>
-      <span className="mcard__meta">
-        {promoted && <PromotedBadge />}
-        {plural('common.count.plays', m.totalPlays(track), { n: compact(m.totalPlays(track)) })}
-      </span>
+      <span className="mcard__meta">{plural('common.count.plays', m.totalPlays(track), { n: compact(m.totalPlays(track)) })}</span>
     </div>
   );
 }

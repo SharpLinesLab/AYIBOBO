@@ -2,7 +2,7 @@
  * Promoted tracks in the browser: the songs boosted in feeds right now, the artist's own
  * promotions (#/account, Promote tab) and the admin view (#/admin, Promotions tab).
  */
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import type { PromotionStatus } from './promotionRules';
 
 export interface Promotion {
@@ -57,15 +57,21 @@ export const activatePromotion = (id: string) => send(`/api/admin/promotions/${e
 export const cancelPromotion = (id: string) => send(`/api/admin/promotions/${encodeURIComponent(id)}/cancel`, 'POST', undefined, (b) => b.promotion as Promotion);
 export const setPromotionRate = (rateCents: number) => send('/api/admin/promotions/rate', 'PUT', { rateCents }, (b) => b.rateCents as number);
 
-// --- feeds ---------------------------------------------------------------------------------------
+// --- feeds and badges -------------------------------------------------------------------------------
 
 /** How long a fetched list of promoted songs is reused. */
 const TTL = 60_000;
-let cache: { at: number; ids: string[] } | null = null;
+const NONE: string[] = [];
+let cache: { at: number; ids: string[]; set: ReadonlySet<string> } | null = null;
 let loading: Promise<string[]> | null = null;
+const listeners = new Set<() => void>();
 
-/** Catalog ids (`srv-…`) of the songs promoted now, in a random order so every promotion gets its turn. */
-function load(): Promise<string[]> {
+/**
+ * Fetch the songs promoted right now (active, paid, inside their dates: /api/promoted decides),
+ * unless a fresh list is cached. Catalog ids (`srv-…`), in a random order so every promotion gets
+ * its turn in feeds. Every card, row and feed reads this one list.
+ */
+export function loadPromoted(): Promise<string[]> {
   if (cache && Date.now() - cache.at < TTL) return Promise.resolve(cache.ids);
   loading ??= get<{ trackIds?: string[] }>('/api/promoted')
     .then((b) => {
@@ -74,7 +80,8 @@ function load(): Promise<string[]> {
         const j = Math.floor(Math.random() * (i + 1));
         [ids[i], ids[j]] = [ids[j], ids[i]];
       }
-      cache = { at: Date.now(), ids };
+      cache = { at: Date.now(), ids, set: new Set(ids) };
+      listeners.forEach((l) => l());
       return ids;
     })
     .finally(() => {
@@ -83,15 +90,20 @@ function load(): Promise<string[]> {
   return loading;
 }
 
+function subscribe(l: () => void) {
+  listeners.add(l);
+  void loadPromoted();
+  return () => listeners.delete(l);
+}
+const ids = () => cache?.ids ?? NONE;
+
 /** The songs promoted right now ([] on static hosting, offline, or while loading). */
 export function usePromotedIds(): string[] {
-  const [ids, setIds] = useState<string[]>(() => cache?.ids ?? []);
-  useEffect(() => {
-    let live = true;
-    void load().then((x) => live && setIds(x));
-    return () => {
-      live = false;
-    };
-  }, []);
-  return ids;
+  return useSyncExternalStore(subscribe, ids, ids);
+}
+
+/** Whether a catalog track is promoted right now: it then carries the "Promoted" badge wherever it's listed. */
+export function useIsPromoted(trackId: string): boolean {
+  const has = () => !!cache?.set.has(trackId);
+  return useSyncExternalStore(subscribe, has, has);
 }
