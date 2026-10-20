@@ -545,12 +545,14 @@ kbd {
 
 /* toast */
 
+/* Bottom-right corner, clear of the player bar, the mobile tab bar and the pinned queue panel
+   (see music.css / signature.css); above menus, dialogs and the full-screen player. */
 .toast {
   position: fixed;
-  left: 50%;
-  bottom: calc(20px + env(safe-area-inset-bottom));
-  transform: translateX(-50%);
-  z-index: 100;
+  right: calc(16px + env(safe-area-inset-right));
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 150;
+  width: max-content;
   background: var(--text);
   color: var(--bg);
   padding: 12px 18px;
@@ -559,7 +561,8 @@ kbd {
   font-weight: 600;
   box-shadow: var(--shadow-lg);
   animation: pop 0.2s ease-out;
-  max-width: calc(100vw - 32px);
+  max-width: min(420px, calc(100vw - 32px));
+  pointer-events: none;
 }
 
 /* ---------------------------------------------------------------- motion */

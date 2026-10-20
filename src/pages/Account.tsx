@@ -167,44 +167,66 @@ function SignInForm() {
   );
 }
 
-/** #/account: sign in or create an account; once signed in, the account (and, for artists, their songs). */
-export function AccountPage() {
+/** Admin dashboard link (admins) and sign out. */
+function AccountActions() {
   const { toast } = useApp();
+  const { user } = useAccount();
+  return (
+    <div className="account__actions">
+      {user?.role === 'admin' && (
+        <a className="btn-accent" href="#/admin">
+          {t('admin.link')}
+        </a>
+      )}
+      <button
+        className="btn-glass"
+        onClick={async () => {
+          await signOut();
+          toast(t('account.signedOut'));
+        }}
+      >
+        {t('account.signOut')}
+      </button>
+    </div>
+  );
+}
+
+/**
+ * #/account: sign in or create an account; once signed in, the account. Artists (and admins) get
+ * one heading, their artist name, over the tabbed dashboard; listeners get the account panel.
+ */
+export function AccountPage() {
   const { status, user } = useAccount();
+  const artist = user && (user.role === 'artist' || user.role === 'admin');
+  if (user && artist)
+    return (
+      <div className="page-music account">
+        <PageHead kicker={t('account.dash.label')} title={user.artistName ?? user.displayName} sub={`${t('account.signedInAs', { email: user.email })} · ${t('account.role', { role: t(`account.role.${user.role}`) })}`}>
+          <AccountActions />
+        </PageHead>
+        <ArtistDashboard key={user.id} />
+        <p className="muted account__fine account__sync">
+          {t('account.sync.note')} {t('account.sync.signOutNote')}
+        </p>
+      </div>
+    );
+
   let body: ReactNode;
   if (status === 'loading') body = <span className="spinner" role="status" aria-label={t('account.busy')} />;
   else if (status === 'unavailable') body = <p className="notice">{t('account.unavailable')}</p>;
   else if (!user) body = <SignInForm />;
   else
     body = (
-      <>
-        <section className="card-panel account__panel" aria-labelledby="account-me">
-          <h2 className="panel-title" id="account-me">
-            {user.displayName}
-          </h2>
-          <p className="muted">{t('account.signedInAs', { email: user.email })}</p>
-          <p className="muted">{t('account.role', { role: t(`account.role.${user.role}`) })}</p>
-          <p className="muted">{t('account.sync.note')}</p>
-          <p className="muted account__fine">{t('account.sync.signOutNote')}</p>
-          <div className="account__actions">
-            {user.role === 'admin' && (
-              <a className="btn-accent" href="#/admin">
-                {t('admin.link')}
-              </a>
-            )}
-            <button
-              className="btn-glass"
-              onClick={async () => {
-                await signOut();
-                toast(t('account.signedOut'));
-              }}
-            >
-              {t('account.signOut')}
-            </button>
-          </div>
-        </section>
-        {(user.role === 'artist' || user.role === 'admin') && <ArtistDashboard key={user.id} />}
-      </>
+      <section className="card-panel account__panel" aria-labelledby="account-me">
+        <h2 className="panel-title" id="account-me">
+          {user.displayName}
+        </h2>
+        <p className="muted">{t('account.signedInAs', { email: user.email })}</p>
+        <p className="muted">{t('account.role', { role: t(`account.role.${user.role}`) })}</p>
+        <p className="muted">{t('account.sync.note')}</p>
+        <p className="muted account__fine">{t('account.sync.signOutNote')}</p>
+        <AccountActions />
+      </section>
     );
   return (
     <div className="page-music account">

@@ -1690,15 +1690,52 @@
 }
 
 .account__picture {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: start;
   gap: 16px;
   margin: 12px 0 16px;
 }
 
-.account__picture .field {
-  flex: 1 1 auto;
+/* Label, file input and "Remove picture" stacked, using the full width beside the avatar. */
+.account__picture-controls {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
   min-width: 0;
+}
+
+.account__picture-controls .field {
+  width: 100%;
+  line-height: 1.4;
+}
+
+.account__picture-controls .input[type='file'] {
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 44px;
+  padding: 7px 8px;
+  line-height: 28px;
+}
+
+.account__picture-controls .input[type='file']::file-selector-button {
+  margin-right: 12px;
+  padding: 4px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (max-width: 519px) {
+  .account__picture {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
 }
 
 .account__avatar {
@@ -1707,6 +1744,15 @@
   height: 72px;
   border-radius: 50%;
   object-fit: cover;
+}
+
+.phead .account__actions {
+  margin-top: 12px;
+}
+
+.account__sync {
+  margin-top: 24px;
+  max-width: 720px;
 }
 
 .account__verify {

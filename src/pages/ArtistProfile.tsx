@@ -66,15 +66,17 @@ export function ArtistProfile() {
             {shownName.slice(0, 1).toUpperCase()}
           </span>
         )}
-        <label className="field">
-          {t(user.avatarUrl ? 'account.profile.changePicture' : 'account.profile.picture')}
-          <input className="input" type="file" accept="image/jpeg,image/png,image/webp,image/avif" disabled={pictureBusy} onChange={(e) => void pick(e.target.files?.[0])} />
-        </label>
-        {user.avatarUrl && (
-          <button type="button" className="link-btn" disabled={pictureBusy} onClick={() => void removePicture()}>
-            {t('account.profile.removePicture')}
-          </button>
-        )}
+        <div className="account__picture-controls">
+          <label className="field">
+            {t(user.avatarUrl ? 'account.profile.changePicture' : 'account.profile.picture')}
+            <input className="input" type="file" accept="image/jpeg,image/png,image/webp,image/avif" disabled={pictureBusy} onChange={(e) => void pick(e.target.files?.[0])} />
+          </label>
+          {user.avatarUrl && (
+            <button type="button" className="link-btn" disabled={pictureBusy} onClick={() => void removePicture()}>
+              {t('account.profile.removePicture')}
+            </button>
+          )}
+        </div>
       </div>
       <form
         className="stack"

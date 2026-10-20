@@ -3187,7 +3187,23 @@ a.tag:hover {
 }
 
 .toast {
+  bottom: calc(var(--tabs-h) + 16px);
+}
+
+.app.has-player ~ .toast {
   bottom: calc(var(--tabs-h) + var(--player-h) + 16px);
+}
+
+@media (min-width: 760px) {
+  .toast {
+    right: 24px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .app.has-panel.has-player ~ .toast {
+    right: calc(340px + 24px);
+  }
 }
 
 /* --- fixes ----------------------------------------------------------------------------------- */
