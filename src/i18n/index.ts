@@ -113,6 +113,11 @@ export function fmtNumber(n: number, digits = 0): string {
   return new Intl.NumberFormat(numberLocale(), { maximumFractionDigits: digits }).format(n);
 }
 
+/** An amount in US dollars from cents, e.g. $5.00 / 5,00 $US. */
+export function fmtUsd(cents: number): string {
+  return new Intl.NumberFormat(numberLocale(), { style: 'currency', currency: 'USD' }).format(cents / 100);
+}
+
 /**
  * 1.2K / 3.4M style, with no space before the suffix in any language. French and Kreyòl keep the
  * decimal comma (1,2K) and write billions as Md (milliard / milya).

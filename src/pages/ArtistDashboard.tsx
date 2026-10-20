@@ -6,10 +6,11 @@ import { myRoyalties, type RoyaltyDashboard } from '../lib/royalties';
 import { ROYALTY_RULES, type EligibilityCriteria } from '../lib/royaltyMath';
 import { mySubmissions, type Submission } from '../lib/submissions';
 import { ArtistProfile } from './ArtistProfile';
+import { ArtistPromote } from './ArtistPromote';
 import { ArtistRoyalties } from './ArtistRoyalties';
 import { ArtistSubmissions, ArtistUploads } from './ArtistUploads';
 
-type Tab = 'overview' | 'upload' | 'music' | 'earnings' | 'profile';
+type Tab = 'overview' | 'upload' | 'music' | 'promote' | 'earnings' | 'profile';
 const CRITERIA: (keyof EligibilityCriteria)[] = ['verified', 'streams', 'tracks', 'noStrikes'];
 
 /** Overview tab: the numbers at a glance, the royalty checklist in short, and shortcuts. */
@@ -103,6 +104,7 @@ export function ArtistDashboard() {
         { id: 'overview', label: t('account.dash.overview'), panel: <Overview list={list} go={go} /> },
         { id: 'upload', label: t('account.dash.upload'), panel: <ArtistUploads onSent={(s) => setList((l) => [s, ...(l ?? [])])} /> },
         { id: 'music', label: t('account.dash.music'), badge: list?.filter((s) => s.status === 'pending').length, panel: <ArtistSubmissions list={list} /> },
+        { id: 'promote', label: t('account.dash.promote'), panel: <ArtistPromote list={list} /> },
         { id: 'earnings', label: t('account.dash.earnings'), panel: <ArtistRoyalties /> },
         { id: 'profile', label: t('account.dash.profile'), panel: <ArtistProfile key={user?.id} /> },
       ]}

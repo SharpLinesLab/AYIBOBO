@@ -17,7 +17,7 @@ test('the artist area is a tabbed dashboard', async ({ page }) => {
   expect((await page.request.post('/api/auth/login', { data: { email: 'artist-a@e2e.test', password: PASSWORD } })).ok()).toBe(true);
   await open(page, '#/account');
   const tabs = page.getByRole('tablist', { name: 'Artist dashboard' }).getByRole('tab');
-  await expect(tabs).toHaveText(['Overview', 'Upload', /^My Music/, 'Earnings', 'Profile']);
+  await expect(tabs).toHaveText(['Overview', 'Upload', /^My Music/, 'Promote', 'Earnings', 'Profile']);
   await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
 
   const overview = page.getByRole('tabpanel', { name: 'Overview' });
@@ -64,7 +64,7 @@ test('the admin area is a tabbed dashboard, with a users tab', async ({ page, pl
   expect((await page.request.post('/api/auth/login', { data: { email: 'admin@e2e.test', password: PASSWORD } })).ok()).toBe(true);
   await open(page, '#/admin');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Admin dashboard');
-  await expect(page.getByRole('tablist', { name: 'Admin sections' }).getByRole('tab')).toHaveText(['Overview', 'Uploads', 'Verification', 'Ads', 'Royalties', 'Users']);
+  await expect(page.getByRole('tablist', { name: 'Admin sections' }).getByRole('tab')).toHaveText(['Overview', 'Uploads', 'Verification', 'Ads', 'Promotions', 'Royalties', 'Users']);
   const overview = page.getByRole('tabpanel', { name: 'Overview' });
   for (const label of ['Uploads pending review', 'Verification requests pending', 'Total users', 'Total artists', 'Royalty streams today', 'Ad plays today']) await expect(overview.getByText(label, { exact: true })).toBeVisible();
   await noViolations(page);

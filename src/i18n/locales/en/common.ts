@@ -98,6 +98,7 @@ export const common = {
   'common.word.monthlyPlays': 'monthly plays',
   'common.word.verified': 'Verified',
   'common.word.explicit': 'Explicit',
+  'common.word.promoted': 'Promoted',
   'common.word.you': 'You',
   'common.word.new': 'NEW',
 

@@ -201,6 +201,28 @@ export const MIGRATIONS: string[] = [
      eligible INTEGER NOT NULL,
      PRIMARY KEY (period, artist_id)
    );`,
+  // 10: promoted tracks. Artists pay to boost a published song in feeds for a date range; the
+  // price is fixed when the promotion is created (rate × days). Promotion revenue is kept apart
+  // from royalties: nothing here is ever read by the royalty pool or payouts. Until Stripe is
+  // connected, an admin marks a promotion as paid (activated_at). `settings` holds admin-editable
+  // values such as the per-day rate.
+  `CREATE TABLE promotions (
+     id TEXT PRIMARY KEY,
+     track_id TEXT NOT NULL REFERENCES uploads(id),
+     artist_id TEXT NOT NULL REFERENCES users(id),
+     starts_at INTEGER NOT NULL,
+     ends_at INTEGER NOT NULL CHECK (ends_at > starts_at),
+     status TEXT NOT NULL CHECK (status IN ('pending_payment', 'active', 'scheduled', 'ended', 'cancelled')),
+     price_cents INTEGER NOT NULL CHECK (price_cents >= 0),
+     stripe_payment_id TEXT,
+     created_at INTEGER NOT NULL,
+     activated_at INTEGER,
+     cancelled_at INTEGER
+   );
+   CREATE INDEX promotions_track ON promotions(track_id, starts_at);
+   CREATE INDEX promotions_artist ON promotions(artist_id, created_at);
+   CREATE INDEX promotions_status ON promotions(status, starts_at);
+   CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at INTEGER NOT NULL);`,
 ];
 
 export interface DbOptions {

@@ -8,6 +8,7 @@ import type { Storage } from './storage';
 import { registerLibraryRoutes } from './library';
 import { registerAdRoutes } from './ads';
 import { registerProfileRoutes } from './profile';
+import { registerPromotionRoutes } from './promotions';
 import { registerRoyaltyRoutes } from './royalties';
 import { registerAdminUserRoutes } from './users';
 import { registerVerificationRoutes } from './verification';
@@ -206,6 +207,10 @@ export function createApp(cfg: AppConfig) {
   // --- artist royalties (pre-launch: counted, no money moves) ----------------------------------
 
   registerRoyaltyRoutes(app, { db, rateLimit });
+
+  // --- promoted tracks (paid boosts; kept apart from royalties) --------------------------------
+
+  registerPromotionRoutes(app, { db, rateLimit });
 
   // --- account administration (admins) ----------------------------------------------------------
 

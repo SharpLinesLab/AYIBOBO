@@ -11,6 +11,8 @@ import { PauseIcon, PlayIcon } from '../components/icons';
 import { Cover, HeartIcon, Shelf } from '../components/music/bits';
 import { AlbumCard, ArtistCard, GenreTile, PlaylistCard, PosterCard, TrackCard, Verified } from '../components/music/Cards';
 import { TrackRow } from '../components/music/TrackRow';
+import { injectPromoted } from '../lib/promotionRules';
+import { usePromotedIds } from '../lib/promotions';
 
 type Feature = { kind: 'album'; album: Album; tracks: Track[] } | { kind: 'single'; track: Track; tracks: Track[] };
 
@@ -123,6 +125,11 @@ export function DiscoverPage() {
     return { trend: trend.slice(0, 14), chart, features, rising: rising.slice(0, 10), releases, spotlight };
   }, [catalog, now, library.plays, m]);
 
+  // The trending feed, with up to 2 promoted songs that aren't already in it.
+  const promotedIds = usePromotedIds();
+  const trendFeed = useMemo(() => injectPromoted(data.trend, m.tracksOf(promotedIds)), [data.trend, promotedIds, m]);
+  const trendTracks = trendFeed.map((x) => x.item);
+
   const recent = m.tracksOf(library.recents).slice(0, 12);
   const liked = m.tracksOf(library.likes);
   const forYou = useMemo(() => {
@@ -169,11 +176,15 @@ export function DiscoverPage() {
         </Shelf>
       )}
 
-      {data.trend.length > 0 && (
+      {trendFeed.length > 0 && (
         <Shelf title={t('browse.discover.trending')} subtitle={t('browse.discover.trendingSub')} href="#/trending">
-          {data.trend.map((t, i) => (
-            <TrackCard key={t.id} track={t} context={data.trend} rank={i + 1} />
-          ))}
+          {trendFeed.map((x) =>
+            x.promoted ? (
+              <TrackCard key={x.item.id} track={x.item} context={trendTracks} promoted />
+            ) : (
+              <TrackCard key={x.item.id} track={x.item} context={trendTracks} rank={data.trend.indexOf(x.item) + 1} />
+            ),
+          )}
         </Shelf>
       )}
 

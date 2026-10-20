@@ -59,7 +59,7 @@ describe('#/admin', () => {
     await signedInAs({ role: 'admin' });
     const html = renderAdmin();
     expect(html).toContain(`<h1>${en['admin.dash.title']}</h1>`);
-    for (const k of ['overview', 'uploads', 'verification', 'ads', 'royalties', 'users'] as const) expect(html).toContain(`>${en[`admin.dash.${k}`]}</button>`);
+    for (const k of ['overview', 'uploads', 'verification', 'ads', 'promotions', 'royalties', 'users'] as const) expect(html).toContain(`>${en[`admin.dash.${k}`]}</button>`);
     expect(html).toMatch(/role="tab"[^>]*aria-selected="true"[^>]*>Overview</);
   });
 });

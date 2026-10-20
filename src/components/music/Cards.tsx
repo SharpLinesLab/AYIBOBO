@@ -2,12 +2,13 @@ import { genreById } from '../../catalog/genres';
 import type { Album, Artist, Playlist, Track } from '../../catalog/types';
 import { compact, useMusic } from '../../music';
 import { plural, t } from '../../i18n';
-import { Cover, ExplicitBadge, PlayAll, useIsCurrent, Verified } from './bits';
+import { Cover, ExplicitBadge, PlayAll, PromotedBadge, useIsCurrent, Verified } from './bits';
 
 export { Verified } from './bits';
 import { ArtistLinks } from './TrackRow';
 
-export function TrackCard({ track, context, rank }: { track: Track; context?: Track[]; rank?: number }) {
+/** `promoted`: an artist paid to boost it here; it says so. */
+export function TrackCard({ track, context, rank, promoted }: { track: Track; context?: Track[]; rank?: number; promoted?: boolean }) {
   const m = useMusic();
   const { current } = useIsCurrent([track.id]);
   return (
@@ -27,7 +28,10 @@ export function TrackCard({ track, context, rank }: { track: Track; context?: Tr
       <span className="mcard__sub">
         <ArtistLinks track={track} />
       </span>
-      <span className="mcard__meta">{plural('common.count.plays', m.totalPlays(track), { n: compact(m.totalPlays(track)) })}</span>
+      <span className="mcard__meta">
+        {promoted && <PromotedBadge />}
+        {plural('common.count.plays', m.totalPlays(track), { n: compact(m.totalPlays(track)) })}
+      </span>
     </div>
   );
 }

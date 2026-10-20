@@ -132,6 +132,11 @@ export function ExplicitBadge() {
   );
 }
 
+/** Marks a song an artist paid to boost in this feed. */
+export function PromotedBadge() {
+  return <span className="promo-badge">{t('common.word.promoted')}</span>;
+}
+
 /** Horizontal, swipeable shelf with a header and arrow buttons. */
 export function Shelf({ title, subtitle, href, children }: { title: string; subtitle?: string; href?: string; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);

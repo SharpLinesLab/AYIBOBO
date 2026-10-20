@@ -8,6 +8,8 @@ import { plural, t, type Key } from '../i18n';
 import { Cover, PlayAll, Shelf } from '../components/music/bits';
 import { AlbumCard, ArtistCard } from '../components/music/Cards';
 import { TrackList, TrackListHeader, TrackRow } from '../components/music/TrackRow';
+import { injectPromoted } from '../lib/promotionRules';
+import { usePromotedIds } from '../lib/promotions';
 
 function GenreChips({ base, active }: { base: string; active?: string }) {
   return (
@@ -171,11 +173,18 @@ export function GenresPage() {
 
 export function GenrePage({ id }: { id: string }) {
   const m = useMusic();
+  const promotedIds = usePromotedIds();
   if (!isGenreId(id)) return <NotFound what="genre" />;
   const g = genreById(id);
   const tracks = trending(m.catalog.tracks.filter((t) => t.genre === id && !t.uploaded), m.now);
   const artists = m.catalog.artists.filter((a) => a.genres.includes(id)).sort((a, b) => b.followers - a.followers);
   const albums = m.catalog.albums.filter((a) => m.tracksOf(a.trackIds).some((t) => t.genre === id));
+  // The top songs, with up to 2 promoted songs of this genre that aren't already among them.
+  const feed = injectPromoted(
+    tracks.slice(0, 10),
+    m.tracksOf(promotedIds).filter((t) => t.genre === id),
+  );
+  const promoted = new Set(feed.filter((x) => x.promoted).map((x) => x.item.id));
   return (
     <div className="page-music">
       <PageTint color={g.colors[0]} />
@@ -201,7 +210,7 @@ export function GenrePage({ id }: { id: string }) {
               {t('common.action.viewAll')}
             </a>
           </header>
-          <TrackList tracks={tracks.slice(0, 10)} showAlbum />
+          <TrackList tracks={feed.map((x) => x.item)} promotedIds={promoted} showAlbum />
         </section>
       ) : (
         <NoSongs />

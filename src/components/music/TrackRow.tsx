@@ -1,7 +1,7 @@
 import type { Track } from '../../catalog/types';
 import { compact, fmtTime, useMusic } from '../../music';
 import { PauseIcon, PlayIcon } from '../icons';
-import { Cover, Eq, ExplicitBadge, LikeButton, useIsCurrent, Verified } from './bits';
+import { Cover, Eq, ExplicitBadge, LikeButton, PromotedBadge, useIsCurrent, Verified } from './bits';
 import { TrackMenu } from './TrackMenu';
 import { DownloadedMark } from './Offline';
 import { useOnline } from '../../offline';
@@ -18,6 +18,8 @@ export interface TrackRowProps {
   change?: number | null;
   playlistId?: string;
   showAlbum?: boolean;
+  /** An artist paid to boost it here: it says so, and takes no chart position. */
+  promoted?: boolean;
 }
 
 export function ArtistLinks({ track }: { track: Track }) {
@@ -52,7 +54,7 @@ export function ArtistLinks({ track }: { track: Track }) {
   );
 }
 
-export function TrackRow({ track, context, index, showCover = true, plays, change, playlistId, showAlbum }: TrackRowProps) {
+export function TrackRow({ track, context, index, showCover = true, plays, change, playlistId, showAlbum, promoted }: TrackRowProps) {
   const m = useMusic();
   const { current, playing } = useIsCurrent([track.id]);
   const album = showAlbum && track.albumId ? m.album(track.albumId) : undefined;
@@ -66,7 +68,7 @@ export function TrackRow({ track, context, index, showCover = true, plays, chang
       onDoubleClick={() => m.toggle(track, context)}
     >
       <div className="trow__index">
-        <span className="trow__num">{current ? <Eq paused={!playing} /> : index}</span>
+        <span className="trow__num">{current ? <Eq paused={!playing} /> : promoted ? '' : index}</span>
         <button type="button" className="trow__play" aria-label={t(playing ? 'common.action.pauseName' : 'common.action.playName', { name: track.title })} onClick={() => m.toggle(track, context)}>
           {playing ? <PauseIcon /> : <PlayIcon />}
         </button>
@@ -83,6 +85,7 @@ export function TrackRow({ track, context, index, showCover = true, plays, chang
           {track.explicit && <ExplicitBadge />}
         </a>
         <span className="trow__sub">
+          {promoted && <PromotedBadge />}
           {m.isDownloaded(track.id) && <DownloadedMark />}
           <ArtistLinks track={track} />
           {album && (
@@ -125,13 +128,22 @@ export function TrackListHeader({ showCover = true, withChange = false }: { show
   );
 }
 
-export function TrackList({ tracks, startIndex = 1, header, ...rest }: { tracks: Track[]; startIndex?: number; header?: boolean } & Omit<TrackRowProps, 'track' | 'context' | 'index'>) {
+/** `promotedIds`: rows marked as promoted; they don't count toward the numbering. */
+export function TrackList({
+  tracks,
+  startIndex = 1,
+  header,
+  promotedIds,
+  ...rest
+}: { tracks: Track[]; startIndex?: number; header?: boolean; promotedIds?: ReadonlySet<string> } & Omit<TrackRowProps, 'track' | 'context' | 'index' | 'promoted'>) {
+  let n = startIndex;
   return (
     <div className="tlist" role="list">
       {header && <TrackListHeader showCover={rest.showCover !== false} withChange={rest.change !== undefined} />}
-      {tracks.map((t, i) => (
-        <TrackRow key={t.id} track={t} context={tracks} index={startIndex + i} {...rest} />
-      ))}
+      {tracks.map((t) => {
+        const promoted = !!promotedIds?.has(t.id);
+        return <TrackRow key={t.id} track={t} context={tracks} index={promoted ? 0 : n++} promoted={promoted} {...rest} />;
+      })}
     </div>
   );
 }

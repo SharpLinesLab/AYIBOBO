@@ -99,6 +99,7 @@ export const common: { [K in keyof typeof En]: string } = {
   'common.word.monthlyPlays': 'ekout chak mwa',
   'common.word.verified': 'Verifye',
   'common.word.explicit': 'Eksplisit',
+  'common.word.promoted': 'Pwomosyon',
   'common.word.you': 'Ou',
   'common.word.new': 'NOUVO',
 

@@ -11,6 +11,7 @@ import { pendingVerifications, reviewVerification, type VerificationReview } fro
 import { fmtTime, useMusic } from '../music';
 import { useApp } from '../store';
 import { AdsAdmin } from './AdminAds';
+import { PromotionsAdmin } from './AdminPromotions';
 import { RoyaltiesAdmin } from './AdminRoyalties';
 import { UsersAdmin } from './AdminUsers';
 import { NotFound, PageHead } from './Browse';
@@ -156,7 +157,7 @@ function Review() {
   );
 }
 
-type Tab = 'overview' | 'uploads' | 'verification' | 'ads' | 'royalties' | 'users';
+type Tab = 'overview' | 'uploads' | 'verification' | 'ads' | 'promotions' | 'royalties' | 'users';
 
 /** Overview tab: the numbers at a glance, each with a way into its tab. Reloaded each time it's opened. */
 function Overview({ active, go }: { active: boolean; go: (tab: Tab) => void }) {
@@ -178,6 +179,7 @@ function Overview({ active, go }: { active: boolean; go: (tab: Tab) => void }) {
     ['uploads', 'admin.dash.goUploads'],
     ['verification', 'admin.dash.goVerification'],
     ['ads', 'admin.dash.goAds'],
+    ['promotions', 'admin.dash.goPromotions'],
     ['royalties', 'admin.dash.goRoyalties'],
     ['users', 'admin.dash.goUsers'],
   ];
@@ -230,6 +232,7 @@ function Dashboard() {
           { id: 'uploads', label: t('admin.dash.uploads'), panel: <Review /> },
           { id: 'verification', label: t('admin.dash.verification'), panel: <VerificationQueue /> },
           { id: 'ads', label: t('admin.dash.ads'), panel: <AdsAdmin /> },
+          { id: 'promotions', label: t('admin.dash.promotions'), panel: <PromotionsAdmin /> },
           { id: 'royalties', label: t('admin.dash.royalties'), panel: <RoyaltiesAdmin /> },
           { id: 'users', label: t('admin.dash.users'), panel: <UsersAdmin /> },
         ]}
