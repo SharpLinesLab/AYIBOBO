@@ -1,29 +1,35 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { promotionsRepo } from '../server/promotions';
 import { royaltiesRepo } from '../server/royalties';
-import { PROMOTION_RULES, injectPromoted, isoDay, promotionDays, promotionPrice, utcDay } from '../src/lib/promotionRules';
+import { PACKAGES, injectPromoted, isoDay, packageEndDate, perDayCents, utcDay } from '../src/lib/promotionRules';
 import { startServer, type Client } from './harness';
 
 const DAY = 86_400_000;
 
 describe('promotion rules', () => {
-  it('reads dates as UTC days and counts both ends', () => {
+  it('reads dates as UTC days', () => {
     expect(utcDay('2026-10-20')).toBe(Date.UTC(2026, 9, 20));
     expect(utcDay('2026-02-30')).toBeNull();
     expect(utcDay('20-10-2026')).toBeNull();
     expect(isoDay(Date.UTC(2026, 9, 20, 23, 59))).toBe('2026-10-20');
-    expect(promotionDays('2026-10-20', '2026-10-20')).toBe(1);
-    expect(promotionDays('2026-10-20', '2026-10-26')).toBe(7);
-    expect(promotionDays('2026-12-30', '2027-01-02')).toBe(4);
-    expect(promotionDays('2026-10-20', '2026-10-19')).toBe(0);
-    expect(promotionDays('nope', '2026-10-19')).toBe(0);
   });
 
-  it('prices a promotion at a flat rate per day', () => {
-    expect(PROMOTION_RULES.defaultRateCents).toBe(500);
-    expect(promotionPrice(500, 7)).toBe(3500);
-    expect(promotionPrice(799, 3)).toBe(2397);
-    expect(promotionPrice(500, 0)).toBe(0);
+  it('sells three packages: 1 day $5, 3 days $12, 7 days $25 (best value)', () => {
+    expect(PACKAGES.map((p) => [p.id, p.days, p.defaultCents, !!p.bestValue])).toEqual([
+      ['day1', 1, 500, false],
+      ['day3', 3, 1200, false],
+      ['day7', 7, 2500, true],
+    ]);
+    expect(PACKAGES.map((p) => perDayCents({ days: p.days, priceCents: p.defaultCents }))).toEqual([500, 400, 357]);
+  });
+
+  it('ends a package on start + days − 1, both days included', () => {
+    expect(packageEndDate('2026-10-20', 1)).toBe('2026-10-20');
+    expect(packageEndDate('2026-10-20', 3)).toBe('2026-10-22');
+    expect(packageEndDate('2026-10-20', 7)).toBe('2026-10-26');
+    expect(packageEndDate('2026-12-30', 3)).toBe('2027-01-01');
+    expect(packageEndDate('2028-02-27', 3)).toBe('2028-02-29');
+    expect(packageEndDate('2026-02-30', 3)).toBeNull();
   });
 
   const s = (id: string) => ({ id });
@@ -71,7 +77,10 @@ describe('promotions on the server', () => {
          VALUES (?, ?, ?, 'kompa', ?, 'audio/mpeg', 1, 'image/png', 1, 180, 1, 1, 'Star')`,
       )
       .run(uploadId, owner, `Song ${uploadId}`, status);
-  const promote = (c: Client, trackId: string, from: number, to: number) => c.post('/api/promotions', { trackId, startDate: date(from), endDate: date(to) });
+  const promote = (c: Client, trackId: string, packageId: string, from: number) => c.post('/api/promotions', { trackId, packageId, startDate: date(from) });
+  const setPrices = (c: Client, prices: unknown) => c.send('/api/admin/promotions/packages', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ prices }) });
+  type P = { id: string; trackId: string; status: string; startsAt: number; endsAt: number; days: number; priceCents: number };
+  const allPromotions = async () => (await (await admin.get('/api/admin/promotions')).json()).promotions as P[];
 
   beforeAll(async () => {
     srv = await startServer();
@@ -89,52 +98,86 @@ describe('promotions on the server', () => {
   afterAll(() => srv.close());
 
   it('lets artists promote only their own published songs', async () => {
-    expect((await promote(srv.client(), 's1', 0, 2)).status).toBe(401);
+    expect((await promote(srv.client(), 's1', 'day1', 0)).status).toBe(401);
     for (const trackId of ['p1', 'o1', 'nope']) {
-      const r = await promote(artist, trackId, 0, 2);
+      const r = await promote(artist, trackId, 'day1', 0);
       expect([r.status, (await r.json()).code]).toEqual([400, 'not_published']);
     }
   });
 
-  it('checks the dates', async () => {
-    const code = async (body: object) => (await (await artist.post('/api/promotions', { trackId: 's1', ...body })).json()).code;
-    expect(await code({ startDate: date(3), endDate: date(2) })).toBe('invalid_dates');
-    expect(await code({ startDate: 'tomorrow', endDate: date(2) })).toBe('invalid_dates');
-    expect(await code({ startDate: date(-1), endDate: date(2) })).toBe('in_past');
-    expect(await code({ startDate: date(0), endDate: date(90) })).toBe('too_long');
-    expect(await code({ startDate: date(366), endDate: date(367) })).toBe('too_far');
+  it('needs a package and a first day that isn’t in the past', async () => {
+    // A free-form day count isn't a way to buy anymore.
+    const r = await artist.post('/api/promotions', { trackId: 's1', startDate: date(0), endDate: date(4) });
+    expect([r.status, (await r.json()).code]).toEqual([400, 'invalid_package']);
+    // (Straight to the repository from here: the creation endpoint is rate-limited.)
+    expect(repo.create(id.star, 's1', 'day2', date(0))).toBe('invalid_package');
+    expect(repo.create(id.star, 's1', 'day3', 'tomorrow')).toBe('invalid_dates');
+    expect(repo.create(id.star, 's1', 'day3', date(-1))).toBe('in_past');
+    expect(repo.create(id.star, 's1', 'day3', date(366))).toBe('too_far');
   });
 
-  it('starts as pending payment, priced at the per-day rate', async () => {
-    const r = await promote(artist, 's1', 0, 6);
+  it('stores the package’s price, not a per-day price, and ends the package on its last day', async () => {
+    const mine = await (await artist.get('/api/promotions/mine')).json();
+    expect(mine.packages).toEqual([
+      { id: 'day1', days: 1, priceCents: 500 },
+      { id: 'day3', days: 3, priceCents: 1200 },
+      { id: 'day7', days: 7, priceCents: 2500 },
+    ]);
+    const r = await promote(artist, 's1', 'day7', 0);
     expect(r.status).toBe(201);
     const { promotion } = await r.json();
-    expect(promotion).toMatchObject({ trackId: 's1', title: 'Song s1', artistId: id.star, artistName: 'Star', startsAt: today, endsAt: today + 7 * DAY, days: 7, status: 'pending_payment', priceCents: 3500, stripePaymentId: null, activatedAt: null });
-    const mine = await (await artist.get('/api/promotions/mine')).json();
-    expect(mine.rateCents).toBe(500);
-    expect(mine.promotions.map((p: { id: string }) => p.id)).toEqual([promotion.id]);
+    // 2500, not 7 × 500.
+    expect(promotion).toMatchObject({ trackId: 's1', title: 'Song s1', artistId: id.star, artistName: 'Star', startsAt: today, endsAt: today + 7 * DAY, days: 7, status: 'pending_payment', priceCents: 2500, stripePaymentId: null, activatedAt: null });
+    // 1200, not 3 × 500; the last day is the 3rd, counted in UTC days.
+    const three = (await (await promote(artist, 's2', 'day3', 0)).json()).promotion;
+    expect(three).toMatchObject({ startsAt: today, endsAt: today + 3 * DAY, days: 3, priceCents: 1200 });
+    expect(isoDay(three.endsAt - DAY)).toBe(packageEndDate(date(0), 3));
+    const one = repo.create(id.star, 's3', 'day1', date(30)) as P;
+    expect(one).toMatchObject({ startsAt: today + 30 * DAY, endsAt: today + 31 * DAY, days: 1, priceCents: 500 });
+    expect(repo.cancel(one.id)).toMatchObject({ status: 'cancelled' });
     expect((await (await other.get('/api/promotions/mine')).json()).promotions).toEqual([]);
   });
 
-  it('refuses overlapping dates for the same song; cancelling frees them', async () => {
-    const clash = await promote(artist, 's1', 6, 10);
-    expect([clash.status, (await clash.json()).code]).toEqual([409, 'overlap']);
-    expect((await promote(artist, 's1', 7, 10)).status).toBe(201); // starts the day after
-    expect((await promote(artist, 's2', 0, 6)).status).toBe(201); // another song, same days
-    const pending = (await (await admin.get('/api/admin/promotions')).json()).promotions.find((p: { trackId: string; startsAt: number }) => p.trackId === 's1' && p.startsAt === today + 7 * DAY);
-    expect((await admin.post(`/api/admin/promotions/${pending.id}/cancel`)).status).toBe(200);
-    expect((await promote(artist, 's1', 8, 9)).status).toBe(201);
+  it('refuses overlapping promotions of the same song; cancelling frees the dates', async () => {
+    // s1 holds days 0–6 (7-day package).
+    for (const [pkg, from] of [['day1', 6], ['day3', 5], ['day7', 0], ['day1', 0]] as const) {
+      const clash = await promote(artist, 's1', pkg, from);
+      expect([clash.status, (await clash.json()).code]).toEqual([409, 'overlap']);
+    }
+    expect((await promote(artist, 's1', 'day3', 7)).status).toBe(201); // starts the day after
+    expect((await promote(artist, 's3', 'day7', 0)).status).toBe(201); // another song, same days
+    const later = (await allPromotions()).find((p) => p.trackId === 's1' && p.startsAt === today + 7 * DAY)!;
+    expect((await promote(artist, 's1', 'day1', 8)).status).toBe(409);
+    expect((await admin.post(`/api/admin/promotions/${later.id}/cancel`)).status).toBe(200);
+    expect((await promote(artist, 's1', 'day1', 8)).status).toBe(201);
+    // Clean up s3 for the next tests.
+    const s3 = (await allPromotions()).find((p) => p.trackId === 's3' && p.status === 'pending_payment')!;
+    expect((await admin.post(`/api/admin/promotions/${s3.id}/cancel`)).status).toBe(200);
   });
 
-  it('keeps the price a promotion was made with when the rate changes', async () => {
-    for (const bad of [0, -5, 1.5, '700', 100_001]) expect((await admin.send('/api/admin/promotions/rate', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ rateCents: bad }) })).status).toBe(400);
-    const r = await admin.send('/api/admin/promotions/rate', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ rateCents: 700 }) });
-    expect(await r.json()).toEqual({ ok: true, rateCents: 700 });
-    const { promotion } = await (await promote(artist, 's3', 1, 2)).json();
-    expect(promotion.priceCents).toBe(1400);
-    const all = (await (await admin.get('/api/admin/promotions')).json()).promotions as { trackId: string; priceCents: number }[];
-    expect(all.find((p) => p.trackId === 's2')!.priceCents).toBe(3500);
-    expect((await (await artist.get('/api/promotions/mine')).json()).rateCents).toBe(700);
+  it('editing package prices changes only promotions created afterwards', async () => {
+    const before = JSON.stringify(await allPromotions());
+    for (const bad of [null, [], {}, { day2: 600 }, { day1: 0 }, { day1: -5 }, { day1: 1.5 }, { day1: '700' }, { day1: 100_001 }, { day1: 600, day3: 0 }]) {
+      const r = await setPrices(admin, bad);
+      expect([r.status, (await r.json()).code]).toEqual([400, 'invalid_prices']);
+    }
+    // All or nothing: the refused { day1: 600, day3: 0 } changed nothing.
+    expect((await (await artist.get('/api/promotions/mine')).json()).packages[0].priceCents).toBe(500);
+
+    const r = await setPrices(admin, { day1: 600, day3: 1500, day7: 3000 });
+    expect(await r.json()).toEqual({ ok: true, packages: [
+      { id: 'day1', days: 1, priceCents: 600 },
+      { id: 'day3', days: 3, priceCents: 1500 },
+      { id: 'day7', days: 7, priceCents: 3000 },
+    ] });
+    expect((await setPrices(admin, { day7: 2800 })).status).toBe(200); // one at a time works too
+    expect(JSON.stringify(await allPromotions())).toBe(before);
+
+    const { promotion } = await (await promote(artist, 's3', 'day3', 1)).json();
+    expect(promotion).toMatchObject({ startsAt: today + DAY, endsAt: today + 4 * DAY, priceCents: 1500 });
+    expect((await (await artist.get('/api/promotions/mine')).json()).packages.map((p: { priceCents: number }) => p.priceCents)).toEqual([600, 1500, 2800]);
+    // The retired per-day rate is gone.
+    expect((await admin.send('/api/admin/promotions/rate', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: '{"rateCents":700}' })).status).toBe(404);
   });
 
   it('is managed by admins only', async () => {
@@ -142,7 +185,7 @@ describe('promotions on the server', () => {
       expect((await c.get('/api/admin/promotions')).status).toBe(404);
       expect((await c.post('/api/admin/promotions/x/activate')).status).toBe(404);
       expect((await c.post('/api/admin/promotions/x/cancel')).status).toBe(404);
-      expect((await c.send('/api/admin/promotions/rate', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: '{"rateCents":1}' })).status).toBe(404);
+      expect((await setPrices(c, { day1: 1 })).status).toBe(404);
     }
     expect((await admin.post('/api/admin/promotions/nope/activate')).status).toBe(404);
   });
@@ -152,7 +195,7 @@ describe('promotions on the server', () => {
     const at = today + DAY / 2;
     const royaltyView = () => JSON.stringify([royalties.summary(isoDay(at).slice(0, 7), at), royalties.status(id.star, at), royalties.dashboard(id.star, at), royalties.periods()]);
     const before = royaltyView();
-    const all = async () => (await (await admin.get('/api/admin/promotions')).json()) as { revenueCents: number; promotions: { id: string; trackId: string; status: string; startsAt: number; priceCents: number }[] };
+    const all = async () => (await (await admin.get('/api/admin/promotions')).json()) as { revenueCents: number; promotions: P[] };
     const promoted = async () => (await (await srv.client().get('/api/promoted')).json()).trackIds;
 
     // Waiting for payment: not in feeds, no revenue.
@@ -165,14 +208,14 @@ describe('promotions on the server', () => {
     const again = await admin.post(`/api/admin/promotions/${s1.id}/activate`);
     expect([again.status, (await again.json()).code]).toEqual([409, 'not_pending']);
     // Starts tomorrow: paid, but scheduled and not in feeds yet.
-    const s3 = (await all()).promotions.find((p) => p.trackId === 's3')!;
+    const s3 = (await all()).promotions.find((p) => p.trackId === 's3' && p.status === 'pending_payment')!;
     expect((await (await admin.post(`/api/admin/promotions/${s3.id}/activate`)).json()).promotion.status).toBe('scheduled');
     expect(await promoted()).toEqual(['s1']);
-    expect((await all()).revenueCents).toBe(3500 + 1400);
+    expect((await all()).revenueCents).toBe(2500 + 1500);
 
     // The calendar moves it along: scheduled → active → ended.
     expect(repo.activeTrackIds(today + DAY + 1)).toEqual(['s1', 's3']);
-    expect(repo.activeTrackIds(today + 3 * DAY)).toEqual(['s1']);
+    expect(repo.activeTrackIds(today + 4 * DAY)).toEqual(['s1']);
     expect((await all()).promotions.find((p) => p.id === s3.id)!.status).toBe('ended');
 
     // A song taken off ASF isn't boosted even while its promotion runs.
@@ -183,7 +226,7 @@ describe('promotions on the server', () => {
     // Cancelling stops it and takes it out of revenue; ended ones can't be cancelled.
     expect((await admin.post(`/api/admin/promotions/${s1.id}/cancel`)).status).toBe(200);
     expect(await promoted()).toEqual([]);
-    expect((await all()).revenueCents).toBe(1400);
+    expect((await all()).revenueCents).toBe(1500);
     const ended = await admin.post(`/api/admin/promotions/${s3.id}/cancel`);
     expect([ended.status, (await ended.json()).code]).toEqual([409, 'not_cancellable']);
 
@@ -192,14 +235,14 @@ describe('promotions on the server', () => {
   });
 
   it('can’t activate a promotion whose dates are over', () => {
-    const p = repo.create(id.star, 's2', date(20), date(21));
+    const p = repo.create(id.star, 's2', 'day1', date(20));
     expect(typeof p).toBe('object');
     expect(repo.activate((p as { id: string }).id, today + 30 * DAY)).toBe('expired');
   });
 
   it('rate-limits new promotions like other writes', async () => {
     const statuses: number[] = [];
-    for (let i = 0; i < 22; i++) statuses.push((await promote(other, 'o1', 40 + i, 40 + i)).status);
+    for (let i = 0; i < 22; i++) statuses.push((await promote(other, 'o1', 'day1', 40 + i)).status);
     expect(statuses.filter((s) => s === 429).length).toBeGreaterThan(0);
   });
 });

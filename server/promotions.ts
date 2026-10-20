@@ -1,20 +1,21 @@
 /**
- * Promoted tracks: artists pay a flat per-day rate to boost one of their published songs in the
- * Discover and genre feeds. Until Stripe is connected, a new promotion waits in pending_payment and
+ * Promoted tracks: artists buy a package (1, 3 or 7 days at a fixed price) to boost one of their
+ * published songs in the Discover and genre feeds. Until Stripe is connected, a new promotion waits in pending_payment and
  * an admin activates it by hand (a test path). Promotion revenue is kept entirely apart from
  * royalties: the royalty code never reads these tables, and nothing here touches royalty_*.
  */
 import { randomUUID } from 'node:crypto';
 import type { Express, RequestHandler } from 'express';
-import { PROMOTION_RULES, promotionPrice, utcDay, type PromotionStatus } from '../src/lib/promotionRules';
+import { PACKAGES, PROMOTION_RULES, packageById, utcDay, type PricedPackage, type PromotionStatus } from '../src/lib/promotionRules';
 import { currentUser, requireRole, sameOrigin } from './auth';
 import type { Db } from './db';
 
 const DAY = 86_400_000;
-const RATE_KEY = 'promotion_rate_cents';
+/** Each package's price lives in settings under this prefix plus its id. */
+const PRICE_KEY = 'promotion_package_cents:';
 
 /** Error codes the browser shows in the visitor's language (`account.promote.error.*` / `admin.promotions.error.*`). */
-export type PromotionError = 'not_published' | 'invalid_dates' | 'in_past' | 'too_long' | 'too_far' | 'overlap' | 'not_found' | 'not_pending' | 'expired' | 'not_cancellable' | 'invalid_rate';
+export type PromotionError = 'not_published' | 'invalid_package' | 'invalid_dates' | 'in_past' | 'too_far' | 'overlap' | 'not_found' | 'not_pending' | 'expired' | 'not_cancellable' | 'invalid_prices';
 
 interface Row {
   id: string;
@@ -79,39 +80,49 @@ export function promotionsRepo(db: Db) {
     q.prepare("UPDATE promotions SET status = 'active' WHERE status = 'scheduled' AND starts_at <= ?").run(now);
   }
 
-  /** The current price per day, in cents. */
-  function rate(): number {
-    const r = q.prepare('SELECT value FROM settings WHERE key = ?').get(RATE_KEY) as { value: string } | undefined;
-    const n = Number(r?.value);
-    return r && Number.isInteger(n) && n >= 0 ? n : PROMOTION_RULES.defaultRateCents;
+  /** Every package with its current price, in cents. */
+  function packages(): PricedPackage[] {
+    const get = q.prepare('SELECT value FROM settings WHERE key = ?');
+    return PACKAGES.map((p) => {
+      const n = Number((get.get(PRICE_KEY + p.id) as { value: string } | undefined)?.value);
+      return { id: p.id, days: p.days, priceCents: Number.isInteger(n) && n > 0 ? n : p.defaultCents };
+    });
   }
 
-  /** Change the per-day rate. Promotions already created keep the price they were made with. */
-  function setRate(cents: unknown, now = Date.now()): PromotionError | number {
-    const n = Number(cents);
-    if (typeof cents !== 'number' || !Number.isInteger(n) || n < 1 || n > PROMOTION_RULES.maxRateCents) return 'invalid_rate';
-    q.prepare('INSERT INTO settings (key, value, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at').run(RATE_KEY, String(n), now);
-    return n;
+  /**
+   * Change package prices: `{ day1: 600, … }` in cents, any of the packages. All or nothing.
+   * Promotions already created keep the price they were made with.
+   */
+  function setPrices(prices: unknown, now = Date.now()): PromotionError | PricedPackage[] {
+    if (!prices || typeof prices !== 'object' || Array.isArray(prices)) return 'invalid_prices';
+    const entries = Object.entries(prices as Record<string, unknown>);
+    const ok = (v: unknown) => typeof v === 'number' && Number.isInteger(v) && v >= 1 && v <= PROMOTION_RULES.maxPackageCents;
+    if (!entries.length || entries.some(([id, v]) => !packageById(id) || !ok(v))) return 'invalid_prices';
+    const put = q.prepare('INSERT INTO settings (key, value, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at');
+    db.transaction(() => {
+      for (const [id, v] of entries) put.run(PRICE_KEY + id, String(v), now);
+    });
+    return packages();
   }
 
   const byId = (id: string) => q.prepare(`${SELECT} WHERE p.id = ?`).get(id) as Row | undefined;
 
   /**
-   * A new promotion of one of the artist's own published songs, from `startDate` to `endDate`
-   * (both included, UTC days). Priced at today's rate; it waits for payment.
+   * A new promotion of one of the artist's own published songs: a package of days from
+   * `startDate` (a UTC day, included). Priced at the package's current price; it waits for payment.
    */
-  function create(artistId: string, trackId: unknown, startDate: unknown, endDate: unknown, now = Date.now()): PromotionError | Promotion {
+  function create(artistId: string, trackId: unknown, packageId: unknown, startDate: unknown, now = Date.now()): PromotionError | Promotion {
     const track = typeof trackId === 'string' ? (q.prepare("SELECT id FROM uploads WHERE id = ? AND user_id = ? AND status = 'approved'").get(trackId, artistId) as { id: string } | undefined) : undefined;
     if (!track) return 'not_published';
+    const pkg = packages().find((p) => p.id === packageId);
+    if (!pkg) return 'invalid_package';
     const start = typeof startDate === 'string' ? utcDay(startDate) : null;
-    const last = typeof endDate === 'string' ? utcDay(endDate) : null;
-    if (start === null || last === null || last < start) return 'invalid_dates';
+    if (start === null) return 'invalid_dates';
     const today = Math.floor(now / DAY) * DAY;
     if (start < today) return 'in_past';
     if (start > today + PROMOTION_RULES.maxLeadDays * DAY) return 'too_far';
-    const end = last + DAY;
-    const days = Math.round((end - start) / DAY);
-    if (days > PROMOTION_RULES.maxDays) return 'too_long';
+    // Exclusive: midnight after the last day.
+    const end = start + pkg.days * DAY;
     return db.transaction(() => {
       // Cancelled promotions free their dates; any other one holds them.
       const clash = q.prepare("SELECT 1 FROM promotions WHERE track_id = ? AND status != 'cancelled' AND starts_at < ? AND ends_at > ?").get(track.id, end, start);
@@ -123,7 +134,7 @@ export function promotionsRepo(db: Db) {
         artistId,
         start,
         end,
-        promotionPrice(rate(), days),
+        pkg.priceCents,
         now,
       );
       return toPromotion(byId(id)!);
@@ -179,7 +190,7 @@ export function promotionsRepo(db: Db) {
     ).map((r) => r.track_id);
   }
 
-  return { refresh, rate, setRate, create, mine, all, activate, cancel, revenueCents, activeTrackIds };
+  return { refresh, packages, setPrices, create, mine, all, activate, cancel, revenueCents, activeTrackIds };
 }
 
 export interface PromotionRoutesConfig {
@@ -203,12 +214,12 @@ export function registerPromotionRoutes(app: Express, cfg: PromotionRoutesConfig
 
   app.get('/api/promotions/mine', requireRole('artist', 'admin'), (_req, res) => {
     res.setHeader('Cache-Control', 'no-store');
-    res.json({ ok: true, rateCents: repo.rate(), promotions: repo.mine(currentUser(res)!.id) });
+    res.json({ ok: true, packages: repo.packages(), promotions: repo.mine(currentUser(res)!.id) });
   });
 
-  // JSON { trackId, startDate, endDate } (YYYY-MM-DD, both included).
+  // JSON { trackId, packageId, startDate } (YYYY-MM-DD); the package decides the days and price.
   app.post('/api/promotions', cfg.rateLimit('promotions', 20, 60 * 60_000), sameOrigin, requireRole('artist', 'admin'), (req, res) => {
-    answer(res, repo.create(currentUser(res)!.id, req.body?.trackId, req.body?.startDate, req.body?.endDate), 201);
+    answer(res, repo.create(currentUser(res)!.id, req.body?.trackId, req.body?.packageId, req.body?.startDate), 201);
   });
 
   // --- admins (everyone else gets a plain 404) ---------------------------------------------------
@@ -221,16 +232,16 @@ export function registerPromotionRoutes(app: Express, cfg: PromotionRoutesConfig
 
   app.get('/api/admin/promotions', adminOnly, (_req, res) => {
     res.setHeader('Cache-Control', 'no-store');
-    res.json({ ok: true, rateCents: repo.rate(), revenueCents: repo.revenueCents(), promotions: repo.all() });
+    res.json({ ok: true, packages: repo.packages(), revenueCents: repo.revenueCents(), promotions: repo.all() });
   });
   app.post('/api/admin/promotions/:id/activate', moderate, sameOrigin, adminOnly, (req, res) => answer(res, repo.activate(String(req.params.id))));
   app.post('/api/admin/promotions/:id/cancel', moderate, sameOrigin, adminOnly, (req, res) => answer(res, repo.cancel(String(req.params.id))));
 
-  // JSON { rateCents }: the per-day price of new promotions.
-  app.put('/api/admin/promotions/rate', moderate, sameOrigin, adminOnly, (req, res) => {
-    const out = repo.setRate(req.body?.rateCents);
+  // JSON { prices: { day1?, day3?, day7? } } in cents: the prices of new promotions.
+  app.put('/api/admin/promotions/packages', moderate, sameOrigin, adminOnly, (req, res) => {
+    const out = repo.setPrices(req.body?.prices);
     if (typeof out === 'string') return void res.status(400).json({ ok: false, code: out });
-    res.json({ ok: true, rateCents: out });
+    res.json({ ok: true, packages: out });
   });
 
   return repo;

@@ -3,7 +3,7 @@
  * promotions (#/account, Promote tab) and the admin view (#/admin, Promotions tab).
  */
 import { useEffect, useState } from 'react';
-import type { PromotionStatus } from './promotionRules';
+import type { PackageId, PricedPackage, PromotionStatus } from './promotionRules';
 
 export interface Promotion {
   id: string;
@@ -24,7 +24,7 @@ export interface Promotion {
 }
 
 /** Server error codes plus `rate_limited` and `unknown`; shown via `account.promote.error.*`. */
-export type PromotionError = 'not_published' | 'invalid_dates' | 'in_past' | 'too_long' | 'too_far' | 'overlap' | 'not_found' | 'not_pending' | 'expired' | 'not_cancellable' | 'invalid_rate' | 'rate_limited' | 'unknown';
+export type PromotionError = 'not_published' | 'invalid_package' | 'invalid_dates' | 'in_past' | 'too_far' | 'overlap' | 'not_found' | 'not_pending' | 'expired' | 'not_cancellable' | 'invalid_prices' | 'rate_limited' | 'unknown';
 
 type Result<T> = { ok: true; value: T } | { ok: false; error: PromotionError };
 
@@ -48,14 +48,14 @@ async function get<T>(path: string): Promise<T | null> {
   }
 }
 
-export const myPromotions = () => get<{ rateCents: number; promotions: Promotion[] }>('/api/promotions/mine');
-export const createPromotion = (trackId: string, startDate: string, endDate: string) =>
-  send('/api/promotions', 'POST', { trackId, startDate, endDate }, (b) => b.promotion as Promotion);
+export const myPromotions = () => get<{ packages: PricedPackage[]; promotions: Promotion[] }>('/api/promotions/mine');
+export const createPromotion = (trackId: string, packageId: PackageId, startDate: string) =>
+  send('/api/promotions', 'POST', { trackId, packageId, startDate }, (b) => b.promotion as Promotion);
 
-export const adminPromotions = () => get<{ rateCents: number; revenueCents: number; promotions: Promotion[] }>('/api/admin/promotions');
+export const adminPromotions = () => get<{ packages: PricedPackage[]; revenueCents: number; promotions: Promotion[] }>('/api/admin/promotions');
 export const activatePromotion = (id: string) => send(`/api/admin/promotions/${encodeURIComponent(id)}/activate`, 'POST', undefined, (b) => b.promotion as Promotion);
 export const cancelPromotion = (id: string) => send(`/api/admin/promotions/${encodeURIComponent(id)}/cancel`, 'POST', undefined, (b) => b.promotion as Promotion);
-export const setPromotionRate = (rateCents: number) => send('/api/admin/promotions/rate', 'PUT', { rateCents }, (b) => b.rateCents as number);
+export const setPackagePrices = (prices: Partial<Record<PackageId, number>>) => send('/api/admin/promotions/packages', 'PUT', { prices }, (b) => b.packages as PricedPackage[]);
 
 // --- feeds ---------------------------------------------------------------------------------------
 

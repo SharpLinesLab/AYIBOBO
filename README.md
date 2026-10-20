@@ -167,17 +167,17 @@ All responses are JSON with an `ok` field. Every POST, PUT, PATCH and DELETE is 
 
 The server writes each closed month to `royalty_periods` once (at start-up and hourly; re-running changes nothing). `manage snapshot-royalties [YYYY-MM]` does the same by hand; `manage strike <email> <reason>` and `manage lift-strikes <email>` record and lift policy strikes.
 
-**Promoted tracks** (artists pay a flat per-day rate to boost a published song; this money is kept apart from royalties and never reaches the royalty pool or payouts)
+**Promoted tracks** (artists buy a package — 1 day $5, 3 days $12 or 7 days $25 by default — to boost a published song; this money is ASF's alone, kept apart from royalties, and never reaches the royalty pool or payouts)
 
 | Method | Path | |
 |---|---|---|
 | GET | `/api/promoted` | Songs promoted right now (active, inside their dates, still published). Discover's trending feed and the genre pages mix in up to 2 that aren't already there, marked "Promoted". |
-| GET | `/api/promotions/mine` | Artists: the current per-day rate and their promotions. |
-| POST | `/api/promotions` | Artists: `{trackId, startDate, endDate}` (`YYYY-MM-DD`, both included, up to 90 days) for one of their published songs. Priced at today's rate; starts as `pending_payment`. No overlapping dates for the same song (cancelled promotions free them). |
-| GET | `/api/admin/promotions` | Admins: every promotion, the rate and the revenue collected. |
+| GET | `/api/promotions/mine` | Artists: the packages with their current prices, and their promotions. |
+| POST | `/api/promotions` | Artists: `{trackId, packageId, startDate}` (`day1`, `day3` or `day7`; `YYYY-MM-DD`, UTC) for one of their published songs. Runs `days` days from the start, both ends included, at the package's current price; starts as `pending_payment`. No overlapping dates for the same song (cancelled promotions free them). |
+| GET | `/api/admin/promotions` | Admins: every promotion, the packages and the revenue collected. |
 | POST | `/api/admin/promotions/:id/activate` | Admins, test path until Stripe is connected: marks a pending promotion as paid (`active`, or `scheduled` if it starts later). |
 | POST | `/api/admin/promotions/:id/cancel` | Admins: cancels a promotion that hasn't ended. |
-| PUT | `/api/admin/promotions/rate` | Admins: `{rateCents}`, the per-day price of new promotions (default 500 = $5). |
+| PUT | `/api/admin/promotions/packages` | Admins: `{prices: {day1?, day3?, day7?}}` in cents, all or nothing. Only promotions created afterwards use the new prices. |
 
 **Account administration** (admins; everyone else gets 404)
 
